@@ -12,7 +12,8 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] App is deployed to Azure using free-tier services (Azure Functions + free DB) — Validated in Phase 1: Infrastructure & Auth
+- [x] Access is restricted to a single authorized user — Validated in Phase 1: Infrastructure & Auth
 
 ### Active
 
@@ -25,8 +26,6 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [ ] Dashboard shows plan calendar, run history/stats, and progress toward goal
 - [ ] Coach chat history is accessible as a dedicated section
 - [ ] User can import a training plan from raw LLM conversation text (Claude parses and structures it)
-- [ ] App is deployed to Azure using free-tier services (Azure Functions + free DB)
-- [ ] Access is restricted to a single authorized user
 
 ### Out of Scope
 
@@ -77,5 +76,9 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+## Current State
+
+Phase 1 complete — Azure SWA infrastructure, GitHub OAuth with owner-only access, React+Vite scaffold, and local dev environment are all in place. Ready for Phase 2 (Coach Chat & Plan Generation).
+
 ---
-*Last updated: 2026-03-21 after initialization*
+*Last updated: 2026-03-22 after Phase 1: Infrastructure & Auth*
