@@ -11,10 +11,10 @@
 
 **Requirements covered:** AUTH-01, AUTH-02, AUTH-03
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 01-01-PLAN.md — Project scaffold (Vite+React+Tailwind, API, shared types, Docker Compose, test infra)
+- [x] 01-01-PLAN.md — Project scaffold (Vite+React+Tailwind, API, shared types, Docker Compose, test infra)
 - [ ] 01-02-PLAN.md — SWA auth config (owner-only lockdown) + React sidebar shell with placeholder pages
 - [ ] 01-03-PLAN.md — API health function, GitHub Actions CI/CD, post-deploy scripts
 
