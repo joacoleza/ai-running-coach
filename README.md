@@ -37,6 +37,10 @@ This app is designed for a single owner. Access is restricted via GitHub OAuth â
 
 > Setup instructions will be added in Phase 1.
 
+## Built with
+
+Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
+
 ## Roadmap
 
 - **Phase 1** â€” Infrastructure & Auth (Azure setup, GitHub OAuth, local dev)
