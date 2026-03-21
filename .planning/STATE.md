@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-21T23:16:44.823Z"
+last_updated: "2026-03-22T00:20:30Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 3
+  percent: 100
 ---
 
 # State
@@ -25,24 +25,24 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Phase:** 1 — Infrastructure & Auth
 **Status:** Executing Phase 01
-**Plans:** 1/3 complete
-**Progress:** [███░░░░░░░] 33%
+**Plans:** 3/3 complete
+**Progress:** [██████████] 100%
 
 ## Current Position
 
-**Stopped at:** Completed 01-01-PLAN.md (Plan 1: Project Scaffold)
-**Last session:** 2026-03-21T23:15:34Z
-**Next:** 01-02-PLAN.md
+**Stopped at:** Completed 01-02-PLAN.md (Plan 2: SWA Auth Lockdown + App Shell)
+**Last session:** 2026-03-22T00:20:30Z
+**Next:** 01-03-PLAN.md
 
 ## Milestone
 
 **Milestone:** v1 — Personal AI Running Coach
 **Phases:** 4 total
-**Overall progress:** 33%
+**Overall progress:** 67%
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
-| 1 | Infrastructure & Auth | ▶ Executing | 1/3 done |
+| 1 | Infrastructure & Auth | ▶ Executing | 2/3 done |
 | 2 | Coach Chat & Plan Generation | ○ Pending | — |
 | 3 | Run Logging & Feedback | ○ Pending | — |
 | 4 | Dashboard & Plan Import | ○ Pending | — |
@@ -53,13 +53,17 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - **01-01:** `vitest passWithNoTests: true` so CI passes before first test files exist
 - **01-01:** `api/src/functions/placeholder.ts` needed to satisfy tsconfig include before real functions exist
 - **01-01:** `api/local.settings.json` gitignored — contains `OWNER_GITHUB_USERNAME` only in local secrets (AUTH-03)
+- **01-02:** `owner` role (not `authenticated`) on /* and /api/* — prevents any random GitHub user from logging in
+- **01-02:** Sidebar collapses to icon-only on mobile (w-16) via Tailwind responsive prefix md:w-56 — no JS state needed
+- **01-02:** NavLink `end={true}` on / prevents Dashboard from being active-highlighted on all sub-routes
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 01-infrastructure-auth | 01 | 6 min | 2 | 20 |
+| 01-infrastructure-auth | 02 | 5 min | 2 | 9 |
 
 ---
 *Initialized: 2026-03-21*
-*Last updated: 2026-03-21 — completed plan 01-01*
+*Last updated: 2026-03-22 — completed plan 01-02*

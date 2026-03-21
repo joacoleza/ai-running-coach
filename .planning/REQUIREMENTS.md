@@ -7,8 +7,8 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: App is accessible only to the owner (single-user gate via GitHub OAuth + SWA custom role)
-- [ ] **AUTH-02**: Unauthenticated requests are redirected to GitHub login
+- [x] **AUTH-01**: App is accessible only to the owner (single-user gate via GitHub OAuth + SWA custom role)
+- [x] **AUTH-02**: Unauthenticated requests are redirected to GitHub login
 - [x] **AUTH-03**: Owner GitHub username is configurable via environment variable (no hardcoding)
 
 ### Goal & Profile
@@ -89,8 +89,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
 | GOAL-01 | Phase 2 | Pending |
 | GOAL-02 | Phase 2 | Pending |
