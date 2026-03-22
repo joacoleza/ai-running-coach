@@ -20,6 +20,11 @@ async function getDb(): Promise<Db> {
   return db;
 }
 
+export function _resetConnectionForTest(): void {
+  client = null;
+  db = null;
+}
+
 export async function checkBlocked(): Promise<boolean> {
   const database = await getDb();
   const auth = database.collection('auth');
