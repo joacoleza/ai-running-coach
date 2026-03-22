@@ -21,6 +21,7 @@ export function PasswordPage({ onSuccess }: PasswordPageProps) {
 
       if (response.ok) {
         localStorage.setItem('app_password', password)
+        setPassword('')
         onSuccess()
       } else if (response.status === 401) {
         setError('Wrong password')
