@@ -79,7 +79,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 1. **Create Azure SWA resource** — Free plan, link to this repo, branch `master`, app location `./web`, API location `api`, output location `dist`
 
-2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the workflow file references the correct secret name.
+2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](https://github.com/joacoleza/ai-running-coach/blob/master/.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
 3. **Assign owner role** — Azure Portal → your SWA resource → Role management → Invite user. Set provider to GitHub, enter your GitHub username, role `owner`. Open the generated invite link to complete the flow.
 
