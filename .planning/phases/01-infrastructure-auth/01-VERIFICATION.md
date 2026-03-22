@@ -5,7 +5,7 @@ status: passed
 score: 11/11 must-haves verified
 re_verification: false
 human_verification:
-  - test: "Open http://localhost:5173 with npm run dev:vite"
+  - test: "Open http://localhost:5173 with npm run dev:web (from repo root)"
     expected: "Sidebar renders with 4 links; clicking each changes the page heading; sidebar collapses to icon-only below 768px viewport"
     why_human: "Visual layout, responsive behavior, and nav interaction cannot be verified by static analysis"
   - test: "Deploy to Azure SWA and visit the root URL without being logged in"
@@ -128,7 +128,7 @@ None of these are blockers. All placeholder pages are intentional stubs document
 
 ### 1. Sidebar visual and responsive behavior
 
-**Test:** Run `npm run dev:vite` from repo root. Open http://localhost:5173 in a browser.
+**Test:** Run `npm run dev:web` from repo root. Open http://localhost:5173 in a browser.
 **Expected:** Left sidebar shows 4 links (Dashboard, Training Plan, Coach Chat, Runs). Clicking each link changes the page heading. Resizing viewport below 768px collapses sidebar to icon-only; above 768px shows full labels.
 **Why human:** CSS responsive classes (w-16 / md:w-56) and NavLink active state cannot be verified by static analysis.
 

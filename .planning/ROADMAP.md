@@ -20,7 +20,7 @@ Plans:
 
 **Deliverables:**
 - Azure resource group with Static Web Apps, Functions (Windows Consumption), Cosmos DB free tier, Blob Storage
-- Local dev environment: SWA CLI + Functions Core Tools + Azurite (Cosmos DB Emulator)
+- Local dev environment: Vite + Functions Core Tools + Azurite (Cosmos DB Emulator) via `npm run dev`
 - `staticwebapp.config.json` with all routes locked to `owner` role
 - GitHub OAuth configured, owner role assigned post-deploy via `az staticwebapp users update`
 - CI/CD via GitHub Actions (SWA built-in workflow)
@@ -31,7 +31,7 @@ Plans:
 - Visiting the app URL redirects to GitHub login when not authenticated
 - After GitHub login with owner account, app loads
 - After GitHub login with a different account, access is denied (403)
-- `npm run dev` (SWA CLI) runs locally with hot reload
+- `npm run dev:web` runs locally with hot reload (auth tested against deployed Azure)
 
 ---
 
