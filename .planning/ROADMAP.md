@@ -70,11 +70,11 @@ Plans:
 
 **Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
 
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
-- [ ] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
+- [x] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
 - [ ] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
 
 **Deliverables:**
