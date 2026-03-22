@@ -1,0 +1,14 @@
+{
+  "name": "ai-running-coach",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "concurrently --names \"docker,web,func\" --prefix-colors \"cyan,blue,yellow\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\"",
+    "dev:web": "npm run dev --prefix web",
+    "dev:func": "npm run start --prefix api",
+    "test": "npm run test --prefix web"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

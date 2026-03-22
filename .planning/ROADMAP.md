@@ -11,11 +11,18 @@
 
 **Requirements covered:** AUTH-01, AUTH-02, AUTH-03
 
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 01-01-PLAN.md — Project scaffold (Vite+React+Tailwind, API, shared types, Docker Compose, test infra)
+- [x] 01-02-PLAN.md — SWA auth config (owner-only lockdown) + React sidebar shell with placeholder pages
+- [x] 01-03-PLAN.md — API health function, GitHub Actions CI/CD, post-deploy scripts
+
 **Deliverables:**
 - Azure resource group with Static Web Apps, Functions (Windows Consumption), Cosmos DB free tier, Blob Storage
-- Local dev environment: SWA CLI + Functions Core Tools + Azurite (Cosmos DB Emulator)
-- `staticwebapp.config.json` with all routes locked to `authenticated` role
-- GitHub OAuth configured, role-assignment function that validates GitHub username against `OWNER_GITHUB_USERNAME` env var
+- Local dev environment: Vite + Functions Core Tools + Azurite (Cosmos DB Emulator) via `npm run dev`
+- `staticwebapp.config.json` with all routes locked to `owner` role
+- GitHub OAuth configured, owner role assigned post-deploy via `az staticwebapp users update`
 - CI/CD via GitHub Actions (SWA built-in workflow)
 - React + TypeScript + Vite scaffold deployed and accessible only to owner
 - Basic layout shell (nav, routing) — no features yet
@@ -24,7 +31,7 @@
 - Visiting the app URL redirects to GitHub login when not authenticated
 - After GitHub login with owner account, app loads
 - After GitHub login with a different account, access is denied (403)
-- `npm run dev` (SWA CLI) runs locally with hot reload
+- `npm run dev:web` runs locally with hot reload (auth tested against deployed Azure)
 
 ---
 

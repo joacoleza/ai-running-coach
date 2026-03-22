@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Access Denied — AI Running Coach</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      text-align: center;
+      max-width: 400px;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    p { color: #9ca3af; margin-bottom: 1.5rem; }
+    a {
+      display: inline-block;
+      padding: 0.5rem 1.25rem;
+      background: #1d4ed8;
+      color: white;
+      border-radius: 0.375rem;
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+    a:hover { background: #1e40af; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Access Denied</h1>
+    <p>This app is private. Only the owner can log in.</p>
+    <a href="/.auth/logout?post_logout_redirect_uri=/.auth/login/github">Try a different account</a>
+  </div>
+</body>
+</html>
