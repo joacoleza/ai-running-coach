@@ -39,6 +39,13 @@ jobs:
       - name: Run web tests with coverage
         run: cd web && npx vitest run --coverage
 
+      - name: Install Azure Functions Core Tools
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+          echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" | sudo tee /etc/apt/sources.list.d/azure-functions.list
+          sudo apt-get update -qq
+          sudo apt-get install -y azure-functions-core-tools-4
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
