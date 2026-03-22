@@ -64,6 +64,35 @@ Plans:
 
 ---
 
+## Phase 1.2 — Testing Strategy & CI (INSERTED)
+
+**Goal:** Establish a comprehensive testing foundation: unit tests (API + web), E2E tests, code coverage tracking, and GitHub Actions CI running on every PR.
+
+**Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
+- [ ] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
+- [ ] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
+
+**Deliverables:**
+- Unit tests for API (Azure Functions) and web (React components)
+- E2E tests covering auth flow and lockout algorithm
+- GitHub Actions CI workflow: run unit + E2E tests on every PR; block merge on failure
+- Code coverage tracking with badge in README (updated by CI)
+- Database assertions in tests (MongoDB integration tests)
+- Test badges (CI status, coverage) in README
+
+**UAT:**
+- PR triggers CI workflow; failing test blocks merge
+- Coverage badge in README reflects current test coverage
+- Auth flow tests: correct password passes, wrong password rejected, lockout triggers after N failures
+- E2E tests pass against local stack (MongoDB + API + web)
+
+---
+
 ## Phase 2 — Coach Chat & Plan Generation
 
 **Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view it on a calendar.

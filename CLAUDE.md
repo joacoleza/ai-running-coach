@@ -12,6 +12,12 @@
 - **MongoDB must be running for the app to work** — if MongoDB is down, all API requests return 503. This is intentional for security. Do NOT add graceful degradation or fallback behavior when MongoDB is unavailable.
 - **Azure Functions Core Tools** — the system-installed `func` binary may be outdated. The project pins `azure-functions-core-tools@4` as a devDependency in `api/package.json`. Always use `npx func start` (already set in the `start` script) — never rely on the global `func` in PATH.
 
+## Testing & Documentation
+
+- **Always run tests after making changes** — `npm test` in `api/` and `web/` to validate work before committing
+- **Review and update README.md** after changes — keep setup instructions, feature list, and any relevant sections accurate
+- **Review and update CLAUDE.md** after changes — keep architecture decisions and guidelines current
+
 ## GSD Workflow
 
 - This project uses [Get Your Shit Done (GSD)](https://github.com/gsd-build/get-shit-done)
