@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: shipped
-stopped_at: "Phase 1 shipped — PR #1 open against master"
+status: active
+stopped_at: "Phase 1.1 in progress — auth replacement (pre-shared password)"
 last_updated: "2026-03-22T00:00:00Z"
 progress:
   total_phases: 1
@@ -24,26 +24,27 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 ## Current Phase
 
-**Phase:** 1
-**Status:** Milestone complete
-**Plans:** 3/3 complete
-**Progress:** [██████████] 100%
+**Phase:** 1.1
+**Status:** In progress — planning
+**Plans:** 0/TBD
+**Progress:** [░░░░░░░░░░] 0%
 
 ## Current Position
 
-**Stopped at:** Completed 01-03-PLAN.md (Plan 3: API Health Check, CI/CD, Post-Deploy Scripts)
-**Last session:** 2026-03-22T00:21:00Z
-**Next:** PR #1 open — merge when CI passes, then run deploy checklist
+**Stopped at:** Starting Phase 1.1 — replace GitHub OAuth with pre-shared password auth
+**Last session:** 2026-03-22
+**Next:** /gsd:discuss-phase 1.1 to gather context and plan
 
 ## Milestone
 
 **Milestone:** v1 — Personal AI Running Coach
-**Phases:** 4 total
-**Overall progress:** 67%
+**Phases:** 5 total
+**Overall progress:** 20%
 
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
 | 1 | Infrastructure & Auth | ✓ Complete | 3/3 done |
+| 1.1 | Replace Auth with Simple Password | ◎ In Progress | TBD |
 | 2 | Coach Chat & Plan Generation | ○ Pending | — |
 | 3 | Run Logging & Feedback | ○ Pending | — |
 | 4 | Dashboard & Plan Import | ○ Pending | — |

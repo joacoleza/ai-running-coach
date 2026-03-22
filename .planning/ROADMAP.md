@@ -35,6 +35,30 @@ Plans:
 
 ---
 
+## Phase 1.1 — Replace Auth with Simple Password (INSERTED)
+
+**Goal:** Replace Azure SWA GitHub OAuth + owner role with a simple pre-shared secret. Password prompt on frontend, stored in localStorage, sent as header on every API call. Clean logout clears only local state.
+
+**Requirements:** TBD
+**Plans:** TBD
+
+**Deliverables:**
+- Remove `staticwebapp.config.json` owner role lockdown and GitHub OAuth config
+- `APP_PASSWORD` env var checked by API middleware on every protected request
+- Frontend password prompt page (no GitHub login redirect)
+- Password stored in localStorage; sent as custom header on every API call
+- Logout clears localStorage only — no redirects to GitHub or Azure
+- All existing routes protected behind password check
+
+**UAT:**
+- Visiting the app URL shows a password prompt (not GitHub OAuth)
+- Correct password → app loads
+- Wrong password → rejected, stays on prompt
+- Logout clears local state, returns to password prompt — no GitHub/Azure redirects
+- After page refresh with valid stored password → app loads without re-entering
+
+---
+
 ## Phase 2 — Coach Chat & Plan Generation
 
 **Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view it on a calendar.
@@ -117,7 +141,7 @@ Plans:
 
 ## Milestone Complete: v1
 
-When all 4 phases are verified, the full coaching loop is functional:
+When all phases are verified, the full coaching loop is functional:
 1. Set goal → onboarding chat → training plan generated
 2. Upload run → parsed data → coaching feedback → plan adjusted
 3. Dashboard shows progress, history, and coach conversations

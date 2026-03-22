@@ -8,6 +8,8 @@
 
 A personal web app that acts as an AI running coach. Set a goal, get a training plan, log runs from Apple Watch, and receive coaching feedback that adapts the plan over time.
 
+**Live:** https://mango-hill-0974dda10.6.azurestaticapps.net
+
 ## What it does
 
 - **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
@@ -77,11 +79,9 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 1. **Create Azure SWA resource** — Free plan, link to this repo, branch `master`, app location `./web`, API location `api`, output location `dist`
 
-2. **Add deployment secret** to GitHub repo secrets:
-   - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
-   - Value: Azure Portal → your SWA resource → Settings → Deployment token
+2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
-3. **Assign owner role** — Azure Portal → your SWA resource → Role management → Invite user. Set provider to GitHub, enter your GitHub username, role `owner`. Open the generated invite link to complete the flow.
+3. **Set app password** — Add a `APP_PASSWORD` secret in Azure Portal → SWA resource → Configuration. This is the password used to access the app.
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB account):
    ```bash
@@ -95,6 +95,7 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 ## Roadmap
 
 - **Phase 1** — Infrastructure & Auth (Azure setup, GitHub OAuth, local dev)
+- **Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)
 - **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
