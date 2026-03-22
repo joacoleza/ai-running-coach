@@ -32,6 +32,15 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="p-2 mb-2">
+        <a
+          href="/.auth/logout"
+          className="flex items-center px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors"
+        >
+          <span className="text-lg">🚪</span>
+          <span className="ml-3 hidden md:inline">Logout</span>
+        </a>
+      </div>
     </aside>
   )
 }

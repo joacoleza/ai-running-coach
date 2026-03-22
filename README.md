@@ -1,5 +1,11 @@
 # AI Running Coach
 
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Azure Static Web Apps](https://img.shields.io/badge/Azure-Static_Web_Apps-0078D4?logo=microsoftazure&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)
+![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_API-D97757?logo=anthropic&logoColor=white)
+
 A personal web app that acts as an AI running coach. Set a goal, get a training plan, log runs from Apple Watch, and receive coaching feedback that adapts the plan over time.
 
 ## What it does
@@ -33,9 +39,33 @@ This app is designed for a single owner. Access is restricted via GitHub OAuth �
 - Azure infrastructure: **$0/month** (all free tier)
 - Claude API: **~$1–3/month** for typical personal usage
 
-## Development
+## Getting started
 
-> Setup instructions will be added in Phase 1.
+**Prerequisites:** Node.js 22, Docker Desktop, Azure Functions Core Tools v4
+
+```bash
+npm install
+cd web && npm install && cd ..
+cd api && npm install && cd ..
+```
+
+**Check everything compiles:**
+```bash
+cd web && npx tsc --noEmit && cd ..
+cd api && npx tsc --noEmit && cd ..
+```
+
+**Run tests:**
+```bash
+cd web && npx vitest run
+```
+
+**Start local dev server** (SWA CLI + Functions + Docker emulators):
+```bash
+npm run dev
+```
+
+Open `http://localhost:4280` — SWA CLI enforces the auth rules from `staticwebapp.config.json` and shows a mock login form (no real GitHub OAuth needed locally).
 
 ## Built with
 

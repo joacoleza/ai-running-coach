@@ -1,10 +1,10 @@
 {
   "configurations": {
     "ai-running-coach": {
-      "appLocation": ".",
+      "appLocation": "web",
       "apiLocation": "api",
       "outputLocation": "dist",
-      "appDevserverUrl": "http://localhost:3000",
+      "appDevserverUrl": "http://localhost:5173",
       "apiDevserverUrl": "http://localhost:7071"
     }
   }
