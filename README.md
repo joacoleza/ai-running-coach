@@ -69,6 +69,26 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+## Deploying
+
+**Prerequisites:** Azure CLI logged in (`az login`), GitHub CLI authenticated.
+
+1. **Create Azure SWA resource** — Free plan, link to this repo, branch `master`, app location `./web`, API location `api`, output location `dist`
+
+2. **Add deployment secret** to GitHub repo secrets:
+   - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
+   - Value: Azure Portal → your SWA resource → Settings → Deployment token
+
+3. **Assign owner role** after first deploy (sign in to the app first, then run):
+   ```bash
+   OWNER_GITHUB_USERNAME=yourusername ./scripts/assign-owner-role.sh
+   ```
+
+4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB account):
+   ```bash
+   COSMOS_ACCOUNT_NAME=your-account ./scripts/setup-cosmos-db.sh
+   ```
+
 ## Built with
 
 Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
