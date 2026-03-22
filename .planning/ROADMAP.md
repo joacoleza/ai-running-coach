@@ -44,7 +44,7 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01.1-01-PLAN.md — API auth middleware with MongoDB lockout + health endpoint update
+- [x] 01.1-01-PLAN.md — API auth middleware with MongoDB lockout + health endpoint update
 - [x] 01.1-02-PLAN.md — Frontend password page, auth gate, logout, SWA config cleanup
 
 **Deliverables:**
