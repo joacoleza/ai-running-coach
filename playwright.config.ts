@@ -11,7 +11,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'cd api && npm run start',
-      url: 'http://localhost:7071/api/health',
+      url: 'http://localhost:7071/api/ping',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
