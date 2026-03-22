@@ -1,6 +1,8 @@
 import { HttpRequest, HttpResponseInit } from '@azure/functions';
 import { MongoClient, Db } from 'mongodb';
 
+const MAX_FAILURES = 30;
+
 let client: MongoClient | null = null;
 let db: Db | null = null;
 
@@ -52,7 +54,7 @@ export async function requirePassword(req: HttpRequest): Promise<HttpResponseIni
 
     // If failure count reaches threshold, set blocked
     const failureCount: number = (result as { failureCount?: number } | null)?.failureCount ?? 1;
-    if (failureCount >= 30) {
+    if (failureCount >= MAX_FAILURES) {
       await auth.updateOne(
         { _id: 'lockout' as unknown as import('mongodb').ObjectId },
         { $set: { blocked: true } },
