@@ -71,6 +71,23 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+## Useful commands
+
+**Check lockout state:**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').find().toArray()"
+```
+
+**Unlock the app (PowerShell):**
+```powershell
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{`$set:{failureCount:0,blocked:false}})"
+```
+
+**Unlock the app (bash):**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{\$set:{failureCount:0,blocked:false}})"
+```
+
 ## Deploying
 
 Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/CD](.github/workflows/azure-static-web-apps.yml) workflow.
