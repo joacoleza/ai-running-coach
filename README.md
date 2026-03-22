@@ -81,7 +81,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
    - Value: Azure Portal → your SWA resource → Settings → Deployment token
 
-3. **Assign owner role** — Azure Portal → swa resource → **Role management → Invite user**, set provider to GitHub, enter your GitHub username, role `owner`. Open the generated invite link to complete the flow.
+3. **Assign owner role** — Azure Portal → your SWA resource → Role management → Invite user. Set provider to GitHub, enter your GitHub username, role `owner`. Open the generated invite link to complete the flow.
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB account):
    ```bash
