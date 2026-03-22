@@ -58,6 +58,9 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 | Chat interface for coaching | Natural for open-ended coaching questions and feedback | — Pending |
 | Azure free tier deployment | User wants minimal cost; usage will be low (solo) | — Pending |
 | Plan import via raw text paste | Simple, no special format required; Claude parses it | — Pending |
+| Frontend in `web/` (not repo root) | Keeps root clean; symmetric with `api/` and `shared/` | Confirmed Phase 1 |
+| No SWA CLI in local dev | Auth emulation added friction with no real benefit; auth tested against deployed Azure | Confirmed Phase 1 |
+| SWA Free plan uses `az staticwebapp users update` for role assignment (not a runtime function) | Runtime role-assignment functions require Standard plan ($9/mo) | Confirmed Phase 1 |
 
 ## Evolution
 
