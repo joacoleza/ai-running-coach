@@ -1,3 +1,6 @@
+![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://raw.githubusercontent.com/joacoleza/ai-running-coach/badges/badges/coverage.svg)
+
 # AI Running Coach
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
@@ -57,7 +60,14 @@ cd api && npx tsc --noEmit && cd ..
 
 **Run tests:**
 ```bash
+# Unit tests (API)
+cd api && npx vitest run
+
+# Unit tests (web)
 cd web && npx vitest run
+
+# E2E tests (requires running stack)
+npx playwright test
 ```
 
 **Start local dev server** (Vite + Functions + Docker emulators):
