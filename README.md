@@ -8,6 +8,8 @@
 
 A personal web app that acts as an AI running coach. Set a goal, get a training plan, log runs from Apple Watch, and receive coaching feedback that adapts the plan over time.
 
+**Live:** https://mango-hill-0974dda10.6.azurestaticapps.net
+
 ## What it does
 
 - **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
