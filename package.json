@@ -3,14 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "concurrently --names \"docker,web,func,swa\" --prefix-colors \"cyan,blue,yellow,green\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\" \"npm run dev:swa\"",
+    "dev": "concurrently --names \"docker,web,func\" --prefix-colors \"cyan,blue,yellow\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\"",
     "dev:web": "npm run dev --prefix web",
     "dev:func": "npm run start --prefix api",
-    "dev:swa": "swa start http://localhost:5173 --api-devserver-url http://localhost:7071 --app-location web",
     "test": "npm run test --prefix web"
   },
   "devDependencies": {
-    "@azure/static-web-apps-cli": "^2.0.8",
     "concurrently": "^9.2.1"
   }
 }

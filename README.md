@@ -43,6 +43,8 @@ This app is designed for a single owner. Access is restricted via GitHub OAuth �
 
 **Prerequisites:** Node.js 22, Docker Desktop, Azure Functions Core Tools v4
 
+> Auth is not emulated locally. Use `http://localhost:5173` (Vite) directly — auth is tested against the deployed Azure environment.
+
 ```bash
 npm install
 cd web && npm install && cd ..
@@ -60,12 +62,12 @@ cd api && npx tsc --noEmit && cd ..
 cd web && npx vitest run
 ```
 
-**Start local dev server** (SWA CLI + Functions + Docker emulators):
+**Start local dev server** (Vite + Functions + Docker emulators):
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:4280` — SWA CLI enforces the auth rules from `staticwebapp.config.json` and shows a mock login form (no real GitHub OAuth needed locally).
+Open `http://localhost:5173`.
 
 ## Built with
 
