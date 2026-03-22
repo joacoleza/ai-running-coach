@@ -27,14 +27,14 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 | Frontend | React + TypeScript + Vite |
 | Hosting | Azure Static Web Apps (free tier) |
 | Backend | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
-| Database | Azure Cosmos DB (free tier) |
+| Database | Azure Cosmos DB for MongoDB (free tier) |
 | File storage | Azure Blob Storage |
 | AI | Claude API (Anthropic) |
-| Auth | SWA built-in GitHub OAuth |
+| Auth | Pre-shared password (stored in Azure config) |
 
 ## Personal use only
 
-This app is designed for a single owner. Access is restricted via GitHub OAuth — only the configured GitHub account can log in.
+This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
 
 ## Cost
 
@@ -83,9 +83,9 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 3. **Set app password** — Add a `APP_PASSWORD` secret in Azure Portal → SWA resource → Configuration. This is the password used to access the app.
 
-4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB account):
+4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
-   COSMOS_ACCOUNT_NAME=your-account ./scripts/setup-cosmos-db.sh
+   COSMOS_ACCOUNT_NAME=your-account RESOURCE_GROUP=your-rg ./scripts/setup-cosmos-db.sh
    ```
 
 ## Built with
