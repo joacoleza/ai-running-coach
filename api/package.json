@@ -11,11 +11,11 @@
   },
   "dependencies": {
     "@azure/functions": "^4.11.2",
-    "@azure/cosmos": "^4.9.2",
-    "@azure/storage-blob": "^12.31.0"
+    "@azure/storage-blob": "^12.31.0",
+    "mongodb": "^7.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
   }
 }

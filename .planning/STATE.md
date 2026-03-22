@@ -61,6 +61,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - **01-03:** `authLevel: 'anonymous'` on health function — SWA route rules enforce owner role at proxy level
 - **01-03:** assign-owner-role.sh uses `${OWNER_GITHUB_USERNAME}` env var (AUTH-03 — no hardcoded username)
 - **01-03:** setup-cosmos-db.sh requires `COSMOS_ACCOUNT_NAME` env var — creates 'running-coach' DB in existing free-tier account (D-14)
+- **01-03:** Switched from Cosmos DB SQL API to MongoDB API — reusing existing free-tier `wedding-db` account (`casamientonatiyleza` RG). Replaced `@azure/cosmos` with `mongodb` driver.
 
 ## Performance Metrics
 
