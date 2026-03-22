@@ -43,9 +43,7 @@ This app is designed for a single owner. Access is protected by a pre-shared pas
 
 ## Getting started
 
-**Prerequisites:** Node.js 22, Docker Desktop, Azure Functions Core Tools v4
-
-> Auth is not emulated locally. Use `http://localhost:5173` (Vite) directly — auth is tested against the deployed Azure environment.
+**Prerequisites:** Node.js 22, Docker Desktop
 
 ```bash
 npm install
@@ -69,7 +67,24 @@ cd web && npx vitest run
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open the local URL shown in the terminal (typically `http://localhost:5173`).
+
+## Useful commands
+
+**Check lockout state:**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').find().toArray()"
+```
+
+**Unlock the app (PowerShell):**
+```powershell
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{`$set:{failureCount:0,blocked:false}})"
+```
+
+**Unlock the app (bash):**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{\$set:{failureCount:0,blocked:false}})"
+```
 
 ## Deploying
 
@@ -81,7 +96,9 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
-3. **Set app password** — Add a `APP_PASSWORD` secret in Azure Portal → SWA resource → Configuration. This is the password used to access the app.
+3. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
+   - `APP_PASSWORD` — the password used to access the app
+   - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
@@ -94,7 +111,7 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 
 ## Roadmap
 
-- **Phase 1** — Infrastructure & Auth (Azure setup, GitHub OAuth, local dev)
+- **Phase 1** — Infrastructure & Auth (Azure setup, local dev)
 - **Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)
 - **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)

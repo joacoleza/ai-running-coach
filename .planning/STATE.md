@@ -2,14 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: active
-stopped_at: "Phase 1.1 in progress — auth replacement (pre-shared password)"
-last_updated: "2026-03-22T00:00:00Z"
+status: verifying
+last_updated: "2026-03-22T19:12:41.735Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -20,20 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 01 — infrastructure-auth
+**Current focus:** Phase 01.1 — replace-auth
 
 ## Current Phase
 
 **Phase:** 1.1
-**Status:** In progress — planning
+**Status:** Phase complete — ready for verification
 **Plans:** 0/TBD
-**Progress:** [░░░░░░░░░░] 0%
+**Progress:** [██████████] 100%
 
 ## Current Position
 
-**Stopped at:** Starting Phase 1.1 — replace GitHub OAuth with pre-shared password auth
-**Last session:** 2026-03-22
-**Next:** /gsd:discuss-phase 1.1 to gather context and plan
+Phase: 01.1 (replace-auth) — EXECUTING
+Plan: 2 of 2
 
 ## Milestone
 
@@ -62,6 +60,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - **01-03:** assign-owner-role.sh uses `${OWNER_GITHUB_USERNAME}` env var (AUTH-03 — no hardcoded username)
 - **01-03:** setup-cosmos-db.sh requires `COSMOS_ACCOUNT_NAME` env var — creates 'running-coach' DB in existing free-tier account (D-14)
 - # **01-03:** Switched from Cosmos DB SQL API to MongoDB API — reusing existing free-tier account. Replaced `@azure/cosmos` with `mongodb` driver.
+- [Phase 01.1-02]: Global fetch interceptor in App.tsx handles 401 from any API call
+- [Phase 01.1-01]: requirePassword returns HttpResponseInit or null where null means auth passed
 
 ## Performance Metrics
 
@@ -75,3 +75,5 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 _Initialized: 2026-03-21_
 _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
+| Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
+| Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |

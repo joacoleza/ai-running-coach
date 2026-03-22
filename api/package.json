@@ -2,11 +2,10 @@
   "name": "ai-running-coach-api",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "main": "dist/src/functions/*.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "func start",
+    "start": "npx func start",
     "prestart": "npm run build"
   },
   "dependencies": {
@@ -16,6 +15,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "azure-functions-core-tools": "^4.8.0",
     "typescript": "^5.9.3"
   }
 }
