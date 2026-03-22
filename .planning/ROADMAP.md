@@ -39,8 +39,13 @@ Plans:
 
 **Goal:** Replace Azure SWA GitHub OAuth + owner role with a simple pre-shared secret. Password prompt on frontend, stored in localStorage, sent as header on every API call. Clean logout clears only local state.
 
-**Requirements:** TBD
-**Plans:** TBD
+**Requirements:** AUTH1.1-API-MIDDLEWARE, AUTH1.1-LOCKOUT, AUTH1.1-HEALTH-BLOCKED, AUTH1.1-PASSWORD-PAGE, AUTH1.1-AUTH-GATE, AUTH1.1-LOGOUT, AUTH1.1-SWA-CLEANUP
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01.1-01-PLAN.md — API auth middleware with MongoDB lockout + health endpoint update
+- [ ] 01.1-02-PLAN.md — Frontend password page, auth gate, logout, SWA config cleanup
 
 **Deliverables:**
 - Remove `staticwebapp.config.json` owner role lockdown and GitHub OAuth config
