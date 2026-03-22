@@ -73,7 +73,7 @@ Open `http://localhost:5173`.
 
 ## Deploying
 
-Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/CD](.github/workflows/azure-static-web-apps.yml) workflow.
+Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/CD](https://github.com/joacoleza/ai-running-coach/blob/master/.github/workflows/azure-static-web-apps.yml) workflow.
 
 **One-time setup** (prerequisites: Azure CLI logged in via `az login`, GitHub CLI authenticated):
 
