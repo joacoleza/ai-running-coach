@@ -43,9 +43,7 @@ This app is designed for a single owner. Access is protected by a pre-shared pas
 
 ## Getting started
 
-**Prerequisites:** Node.js 22, Docker Desktop, Azure Functions Core Tools v4
-
-> Auth is not emulated locally. Use `http://localhost:5173` (Vite) directly — auth is tested against the deployed Azure environment.
+**Prerequisites:** Node.js 22, Docker Desktop
 
 ```bash
 npm install
