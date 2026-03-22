@@ -75,7 +75,7 @@ Plans:
 Plans:
 - [x] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
 - [x] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
-- [ ] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
+- [x] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
 
 **Deliverables:**
 - Unit tests for API (Azure Functions) and web (React components)
