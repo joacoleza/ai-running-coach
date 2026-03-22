@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-22T21:43:07.772Z"
+last_updated: "2026-03-22T21:45:06.293Z"
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
-  percent: 75
+  completed_plans: 7
+  percent: 88
 ---
 
 # State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 1.1
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [████████░░] 75%
+**Progress:** [█████████░] 88%
 
 ## Current Position
 
 Phase: 01.2 (testing-strategy) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Milestone
 
@@ -64,6 +64,8 @@ Plan: 2 of 3
 - [Phase 01.1-01]: requirePassword returns HttpResponseInit or null where null means auth passed
 - [Phase 01.2-02]: Use getAllByText for Dashboard since it appears in both sidebar nav and page heading
 - [Phase 01.2-02]: Use input.closest('form') for form submit since form has no accessible role name
+- [Phase 01.2-01]: vi.hoisted() required for mock fn references in vi.mock factory
+- [Phase 01.2-01]: _resetConnectionForTest exported from auth.ts to reset MongoClient singleton between integration tests
 
 ## Performance Metrics
 
@@ -80,3 +82,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
+| Phase 01.2-testing-strategy P01 | 4 min | 2 tasks | 6 files |
