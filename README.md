@@ -98,7 +98,9 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
-3. **Set app password** — Add a `APP_PASSWORD` secret in Azure Portal → SWA resource → Configuration. This is the password used to access the app.
+3. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
+   - `APP_PASSWORD` — the password used to access the app
+   - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
