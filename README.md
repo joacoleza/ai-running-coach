@@ -67,7 +67,7 @@ cd web && npx vitest run
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open the local URL shown in the terminal (typically `http://localhost:5173`).
 
 ## Useful commands
 
@@ -111,7 +111,7 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 
 ## Roadmap
 
-- **Phase 1** — Infrastructure & Auth (Azure setup, GitHub OAuth, local dev)
+- **Phase 1** — Infrastructure & Auth (Azure setup, local dev)
 - **Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)
 - **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
