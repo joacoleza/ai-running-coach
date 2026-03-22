@@ -77,6 +77,11 @@ npm run dev
 
 Open the local URL shown in the terminal (typically `http://localhost:5173`).
 
+**E2E tests** (requires running stack):
+```bash
+npx playwright test
+```
+
 ## Useful commands
 
 **Check lockout state:**
