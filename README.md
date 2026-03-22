@@ -109,8 +109,9 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 
 ## Roadmap
 
-- **Phase 1** — Infrastructure & Auth (Azure setup, local dev)
-- **Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)
+- ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
+- ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
+- **Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)
 - **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
