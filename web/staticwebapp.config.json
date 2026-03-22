@@ -5,6 +5,10 @@
       "allowedRoles": ["anonymous"]
     },
     {
+      "route": "/.auth/invitations/accept",
+      "allowedRoles": ["anonymous"]
+    },
+    {
       "route": "/unauthorized.html",
       "allowedRoles": ["anonymous", "authenticated"]
     },
