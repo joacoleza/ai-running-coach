@@ -104,6 +104,25 @@ export function useChat(): UseChatReturn {
       if (!cancelled) {
         if (existingPlan && (existingPlan.status === 'onboarding' || existingPlan.status === 'active')) {
           setPlan(existingPlan);
+
+          // Fetch past messages from MongoDB
+          try {
+            const msgResponse = await fetch(`/api/messages?planId=${existingPlan._id}`, {
+              headers: authHeaders(),
+            });
+            if (msgResponse.ok) {
+              const data = await msgResponse.json() as { messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }> };
+              if (!cancelled && data.messages.length > 0) {
+                setMessages(data.messages.map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                  timestamp: typeof m.timestamp === 'string' ? m.timestamp : new Date(m.timestamp).toISOString(),
+                })));
+              }
+            }
+          } catch {
+            // Non-fatal: messages just won't be restored from history
+          }
         }
         setIsLoading(false);
       }
