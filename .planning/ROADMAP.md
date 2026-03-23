@@ -99,10 +99,10 @@ Plans:
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
-**Plans:** 7 plans
+**Plans:** 1/7 plans executed
 
 Plans:
-- [ ] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
+- [x] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
 - [ ] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
 - [ ] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
 - [ ] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window

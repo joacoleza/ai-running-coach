@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: completed
-last_updated: "2026-03-22T22:09:43.778Z"
+status: executing
+last_updated: "2026-03-23T15:39:12.523Z"
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
-  percent: 100
+  total_plans: 16
+  completed_plans: 10
+  percent: 63
 ---
 
 # State
@@ -19,19 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 01.2 — testing-strategy
+**Current focus:** Phase 02 — coach-chat
 
 ## Current Phase
 
 **Phase:** 01.2
-**Status:** Milestone complete
+**Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [██████████] 100%
+**Progress:** [██████░░░░] 63%
 
 ## Current Position
 
-Phase: 01.2 (testing-strategy) — EXECUTING
-Plan: Not started
+Phase: 02 (coach-chat) — EXECUTING
+Plan: 2 of 7
 
 ## Milestone
 
@@ -70,6 +70,7 @@ Plan: Not started
 - [Phase 01.2-03]: Coverage badges use no-commit: true + manual orphan branch push to unprotected badges branch (avoids master branch protection)
 - [Phase 01.2-03]: Single CI test job runs all three test layers sequentially to share one MongoDB instance
 - [Phase 01.2-04]: TEST-01 through TEST-06 registered in REQUIREMENTS.md under Testing Infrastructure section with traceability to Phase 1.2 Complete
+- [Phase 02-00]: Use it.todo() for all Phase 2 stub tests
 
 ## Performance Metrics
 
@@ -89,3 +90,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 01.2-testing-strategy P01 | 4 min | 2 tasks | 6 files |
 | Phase 01.2-testing-strategy P03 | 3 min | 2 tasks | 6 files |
 | Phase 01.2-testing-strategy P04 | 3min | 1 tasks | 1 files |
+| Phase 02-coach-chat P00 | 3 min | 2 tasks | 6 files |
