@@ -17,6 +17,8 @@ export default defineConfig({
       env: {
         APP_PASSWORD: 'e2e-test-password',
         MONGODB_CONNECTION_STRING: process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017',
+        FUNCTIONS_WORKER_RUNTIME: 'node',
+        AzureWebJobsStorage: 'UseDevelopmentStorage=false',
       },
     },
     {
