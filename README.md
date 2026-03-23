@@ -37,6 +37,8 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
 
+After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [Useful commands](#useful-commands)).
+
 ## Cost
 
 - Azure infrastructure: **$0/month** (all free tier)
