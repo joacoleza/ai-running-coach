@@ -7,7 +7,7 @@
 - When a phase is complete, open a PR against `master` using `gh pr create`
 - Stop after opening the PR — the user reviews and merges manually via GitHub UI
 - **Always ask for confirmation before pushing** — do not push on every small change; batch commits and push only when the user says so
-- **Always rebase onto master before starting work** — run `git fetch origin && git rebase origin/master` at the start of each session on a feature branch
+- **ALWAYS rebase onto master before pushing — NO EXCEPTIONS** — run `git fetch origin && git rebase origin/master` immediately before every `git push`. This prevents merge conflicts in PRs. Skipping this causes code conflicts in the PR diff. Do it even if you think the branch is up to date.
 
 ## Architecture Decisions
 
