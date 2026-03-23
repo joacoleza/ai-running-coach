@@ -19,8 +19,8 @@ test.describe('Auth flow', () => {
     await page.goto('/')
     await page.getByPlaceholder('Enter password').fill('e2e-test-password')
     await page.getByRole('button', { name: 'Unlock' }).click()
-    // After success, should see app content (Dashboard nav link)
-    await expect(page.getByText('Dashboard')).toBeVisible({ timeout: 10_000 })
+    // After success, should see app content (Dashboard heading)
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
   })
 
   test('wrong password shows error', async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe('Auth flow', () => {
     await page.goto('/')
     await page.getByPlaceholder('Enter password').fill('e2e-test-password')
     await page.getByRole('button', { name: 'Unlock' }).click()
-    await expect(page.getByText('Dashboard')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
     // Click logout
     await page.getByRole('button', { name: /Logout/i }).click()
     // Should be back on password page
