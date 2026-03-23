@@ -1,6 +1,7 @@
 # Phase 2: Coach Chat & Plan Generation — Context
 
 **Gathered:** 2026-03-22
+**Updated:** 2026-03-23
 **Status:** Ready for planning
 
 <domain>
@@ -31,18 +32,20 @@ Owner can complete coaching onboarding (conversational or from pasted LLM text),
 - **D-08:** Color coding, session card layout, and visual differentiation between session types is Claude's discretion for first implementation. User will provide feedback after seeing it.
 - **D-09:** Session block shows minimum: date + distance. Full details (duration, avgPace, avgBpm, notes) visible on click.
 
-### Coach chat page structure
+### App layout — persistent AI assistant panel (OVERRIDES prior coach page structure)
 
-- **D-10:** `/coach` page has two tabs: "Chat" (active conversation) and "History" (past conversations for the current plan). Previous plan conversations are accessible from within that plan's record (out of scope for this phase — Phase 4 territory).
-- **D-11:** The chat UI is the same component throughout onboarding and ongoing coaching. A step title in the header indicates the current mode: "Onboarding" during initial setup, "Coach Chat" once the plan exists.
-- **D-12:** The rolling 20-message window + condensed memory summary mechanic is purely backend. No UI indication that the coach is working from a summary.
+- **D-10:** **The AI coach is always visible** — a persistent right-side panel present on every page of the app, not a separate `/coach` route. The user never leaves a page to chat; the coach is a constant companion alongside all content.
+- **D-11:** The coach panel drives data manipulation: it creates the training plan, gives feedback on runs, navigates to relevant sections of the app. It is the primary interaction surface. Direct manipulation (editing sessions inline, uploading a run) remains available as a secondary path.
+- **D-12:** Layout is three-column: `[sidebar nav] | [main content area] | [persistent coach panel]`. The sidebar navigates to: Home/Dashboard, Training Plan (calendar), Runs. The coach panel fills the right side throughout. Width proportions are Claude's discretion (suggest 2/3 main + 1/3 coach).
+- **D-13:** The `/coach` route no longer exists as a dedicated page — the coach is embedded in the layout shell. The "History" tab (past conversations) is accessible from within the coach panel itself (a toggle/icon in the panel header).
+- **D-14:** The rolling 20-message window + condensed memory summary mechanic is purely backend. No UI indication that the coach is working from a summary.
 
 ### Plan generation UX
 
-- **D-13:** During plan generation, show a loading indicator in the chat (spinner or "Generating your plan..." message). The streaming response content itself serves as the progress once generation begins.
-- **D-14:** On Claude API success: the coach's streamed response contains the plan. The backend parses the JSON from the streamed content, saves it to MongoDB, and the frontend receives a "plan ready" signal at stream end.
-- **D-15:** On JSON parse failure: surface an error message to the user in the chat ("Something went wrong generating your plan"), log full error detail server-side, and show a retry button. No silent retry.
-- **D-16:** Post-generation routing: Claude's discretion (easiest approach — likely a coach message saying the plan is ready with a link or cue to navigate to Training Plan).
+- **D-15:** During plan generation, show a loading indicator in the coach panel (spinner or "Generating your plan..." message). The streaming response content itself serves as the progress once generation begins.
+- **D-16:** On Claude API success: the coach's streamed response contains the plan. The backend parses the JSON from the streamed content, saves it to MongoDB, and the frontend receives a "plan ready" signal at stream end. The coach panel stays open; the main content area updates to show the calendar.
+- **D-17:** On JSON parse failure: surface an error message in the coach panel ("Something went wrong generating your plan"), log full error detail server-side, and show a retry button. No silent retry.
+- **D-18:** Post-generation routing: the coach sends a message in the panel (e.g. "Your plan is ready! Check the Training Plan view.") and the main content area navigates to the calendar — no full page navigation required since coach panel persists.
 
 ### Claude's Discretion
 
@@ -51,6 +54,9 @@ Owner can complete coaching onboarding (conversational or from pasted LLM text),
 - Active thread management (whether user can start a new conversation mid-plan or always has one active thread)
 - Exact plan-ready follow-up message from coach after generation succeeds
 - MongoDB collection/document structure for chat messages and plan sessions
+- Exact width proportions for the three-column layout (sidebar / main / coach panel)
+- Whether the coach panel is collapsible in the first implementation
+- How the coach navigates the main content area (direct route push, event-based, etc.)
 
 </decisions>
 
@@ -81,8 +87,8 @@ Owner can complete coaching onboarding (conversational or from pasted LLM text),
 ### Existing frontend patterns
 - `web/src/App.tsx` — Auth gate + global 401 interceptor (fetch override) — new pages live inside `AppShell`
 - `web/src/components/layout/Sidebar.tsx` — Navigation routes already defined: `/`, `/plan`, `/coach`, `/runs`
-- `web/src/components/layout/AppShell.tsx` — Layout shell: sidebar + `<main>` content area
-- `web/src/pages/Coach.tsx` — Stub to replace with full chat implementation
+- `web/src/components/layout/AppShell.tsx` — Layout shell: sidebar + `<main>` content area — **must be extended to three-column layout (sidebar | main | coach panel)**
+- `web/src/pages/Coach.tsx` — Stub — **this page may be removed or repurposed; coach moves to persistent panel in AppShell**
 - `web/src/pages/TrainingPlan.tsx` — Stub to replace with calendar implementation
 
 ### State decisions from prior phases
