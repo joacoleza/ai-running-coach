@@ -11,6 +11,15 @@
 - [x] **AUTH-02**: Unauthenticated requests are redirected to GitHub login
 - [x] **AUTH-03**: Owner GitHub username is configurable via environment variable (no hardcoding)
 
+### Testing Infrastructure
+
+- [x] **TEST-01**: Unit tests for API functions (Azure Functions) with mocked MongoDB
+- [x] **TEST-02**: Unit tests for web components (React) covering auth flow and UI behavior
+- [x] **TEST-03**: E2E tests covering the full auth flow and lockout behavior in a real browser
+- [x] **TEST-04**: GitHub Actions CI workflow runs all tests on every PR to master and blocks merge on failure
+- [x] **TEST-05**: Code coverage tracking with badge in README updated automatically by CI
+- [x] **TEST-06**: Database assertions in integration tests verify MongoDB document state directly
+
 ### Goal & Profile
 
 - [ ] **GOAL-01**: User can set a running goal (event type: 5K/10K/half marathon/marathon, target date)
@@ -92,6 +101,12 @@
 | AUTH-01 | Phase 1 | Complete |
 | AUTH-02 | Phase 1 | Complete |
 | AUTH-03 | Phase 1 | Complete |
+| TEST-01 | Phase 1.2 | Complete |
+| TEST-02 | Phase 1.2 | Complete |
+| TEST-03 | Phase 1.2 | Complete |
+| TEST-04 | Phase 1.2 | Complete |
+| TEST-05 | Phase 1.2 | Complete |
+| TEST-06 | Phase 1.2 | Complete |
 | GOAL-01 | Phase 2 | Pending |
 | GOAL-02 | Phase 2 | Pending |
 | GOAL-03 | Phase 2 | Pending |
@@ -119,10 +134,10 @@
 | IMP-03 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 27
+- v1 requirements: 33 total
+- Mapped to phases: 33
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-21*
-*Last updated: 2026-03-21 after initial definition*
+*Last updated: 2026-03-22 after adding TEST-01 through TEST-06 (Phase 1.2 testing infrastructure)*

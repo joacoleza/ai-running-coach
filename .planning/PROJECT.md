@@ -14,6 +14,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - [x] App is deployed to Azure using free-tier services (Azure Functions + free DB) — Validated in Phase 1: Infrastructure & Auth
 - [x] Access is restricted to a single authorized user — Validated in Phase 1: Infrastructure & Auth
+- [x] Testing pyramid established (unit → integration → E2E) with CI on every PR — Validated in Phase 1.2: Testing Strategy & CI
 
 ### Active
 
@@ -81,7 +82,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 1 complete — Azure SWA infrastructure, GitHub OAuth with owner-only access, React+Vite scaffold, and local dev environment are all in place. Ready for Phase 2 (Coach Chat & Plan Generation).
+Phase 1.2 complete — Full testing pyramid in place: 11 API tests (unit + integration), 9 web unit tests, 6 E2E specs, GitHub Actions CI on every PR, coverage badge pipeline. Auth is simple password + MongoDB lockout. Ready for Phase 2 (Coach Chat & Plan Generation).
 
 ---
-*Last updated: 2026-03-22 after Phase 1: Infrastructure & Auth*
+*Last updated: 2026-03-22 after Phase 1.2: Testing Strategy & CI*

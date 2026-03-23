@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.12.1
+        with:
+          mongodb-version: '7.0'
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install web deps
+        run: cd web && npm ci
+
+      - name: Install API deps
+        run: cd api && npm ci
+
+      - name: Run API tests with coverage
+        run: cd api && npx vitest run --coverage
+        env:
+          MONGODB_CONNECTION_STRING: mongodb://localhost:27017
+          APP_PASSWORD: ci-test-password
+
+      - name: Run web tests with coverage
+        run: cd web && npx vitest run --coverage
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            api/coverage/coverage-summary.json
+            web/coverage/coverage-summary.json
+
+      - name: Install Azure Functions Core Tools
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+          echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-jammy-prod jammy main" | sudo tee /etc/apt/sources.list.d/azure-functions.list
+          sudo apt-get update -qq
+          sudo apt-get install -y azure-functions-core-tools-4
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          MONGODB_CONNECTION_STRING: mongodb://localhost:27017
+          APP_PASSWORD: ci-test-password
+          CI: true
+
+  coverage-badge:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      - name: Update coverage badge in README
+        run: |
+          node -e "
+            const fs = require('fs');
+            const api = JSON.parse(fs.readFileSync('api/coverage/coverage-summary.json'));
+            const web = JSON.parse(fs.readFileSync('web/coverage/coverage-summary.json'));
+            const metrics = ['lines', 'statements', 'functions', 'branches'];
+            let totalLines = 0, coveredLines = 0;
+            for (const m of ['lines']) {
+              totalLines += api.total[m].total + web.total[m].total;
+              coveredLines += api.total[m].covered + web.total[m].covered;
+            }
+            const pct = totalLines > 0 ? +((coveredLines / totalLines) * 100).toFixed(1) : 0;
+            const color = pct >= 80 ? 'brightgreen' : pct >= 60 ? 'yellow' : pct >= 40 ? 'orange' : 'red';
+            const url = \`https://img.shields.io/badge/coverage-\${pct}%25-\${color}\`;
+            let readme = fs.readFileSync('README.md', 'utf8');
+            readme = readme.replace(/!\[Coverage\]\([^)]*\)/, \`![Coverage](\${url})\`);
+            fs.writeFileSync('README.md', readme);
+            console.log(\`Coverage: \${pct}% (\${color})\`);
+          "
+
+      - name: Commit and push updated README
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --staged --quiet && echo "No change" && exit 0
+          git commit -m "chore: update coverage badge [skip ci]"
+          git pull --rebase origin ${{ github.head_ref }}
+          git push origin HEAD:${{ github.head_ref }}

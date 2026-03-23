@@ -64,18 +64,18 @@ Plans:
 
 ---
 
-## Phase 1.2 — Testing Strategy & CI (INSERTED)
+## Phase 1.2 — Testing Strategy & CI (INSERTED) ✓
 
 **Goal:** Establish a comprehensive testing foundation: unit tests (API + web), E2E tests, code coverage tracking, and GitHub Actions CI running on every PR.
 
 **Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
 
-**Plans:** 3 plans
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
-- [ ] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
-- [ ] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
+- [x] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
+- [x] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
+- [x] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
 
 **Deliverables:**
 - Unit tests for API (Azure Functions) and web (React components)
