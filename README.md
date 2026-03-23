@@ -1,5 +1,5 @@
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://raw.githubusercontent.com/joacoleza/ai-running-coach/badges/badges/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/joacoleza/ai-running-coach/badges/badges/web/coverage-total.svg)
 
 # AI Running Coach
 
