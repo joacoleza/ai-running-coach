@@ -11,6 +11,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@azure/functions": "^4.11.2",
     "@azure/storage-blob": "^12.31.0",
     "mongodb": "^7.1.0"
