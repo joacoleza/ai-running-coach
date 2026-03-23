@@ -30,7 +30,7 @@
 
 - [x] **PLAN-01**: Coach generates a structured training plan from goal and onboarding context
 - [x] **PLAN-02**: Training plan is stored with sessions: week, day, type (EASY/LONG/TEMPO/INTERVAL/RECOVERY/REST/XT), distance, pace target, HR zone
-- [ ] **PLAN-03**: User can view the training plan as a weekly calendar
+- [x] **PLAN-03**: User can view the training plan as a weekly calendar
 - [x] **PLAN-04**: Plan sessions can be marked complete (automatically when a matched run is logged)
 
 ### Run Logging
@@ -112,7 +112,7 @@
 | GOAL-03 | Phase 2 | Complete |
 | PLAN-01 | Phase 2 | Complete |
 | PLAN-02 | Phase 2 | Complete |
-| PLAN-03 | Phase 2 | Pending |
+| PLAN-03 | Phase 2 | Complete |
 | PLAN-04 | Phase 2 | Complete |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
