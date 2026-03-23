@@ -103,7 +103,7 @@ jobs:
         uses: jpb06/coverage-badges-action@latest
         with:
           coverage-summary-path: ./merged-coverage.json
-          output-folder: ./badges
+          output-folder: .
           no-commit: true
 
       - name: Push badges to badges branch
@@ -111,12 +111,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           mkdir -p /tmp/badges-deploy
-          cp -r ./badges/* /tmp/badges-deploy/
+          cp coverage-*.svg /tmp/badges-deploy/
           git fetch origin badges:badges 2>/dev/null || true
           git checkout --orphan badges-tmp
           git rm -rf .
-          mkdir -p badges
-          cp -r /tmp/badges-deploy/* badges/
-          git add badges/
+          cp /tmp/badges-deploy/* .
+          git add coverage-*.svg
           git commit -m "Update coverage badges [skip ci]"
           git push origin HEAD:badges --force
