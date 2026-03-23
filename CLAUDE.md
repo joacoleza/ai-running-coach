@@ -10,7 +10,9 @@
 ## Architecture Decisions
 
 - **MongoDB must be running for the app to work** — if MongoDB is down, all API requests return 503. This is intentional for security. Do NOT add graceful degradation or fallback behavior when MongoDB is unavailable.
-- **Azure Functions Core Tools** — the system-installed `func` binary may be outdated. The project pins `azure-functions-core-tools@4` as a devDependency in `api/package.json`. Always use `npx func start` (already set in the `start` script) — never rely on the global `func` in PATH.
+- **Azure Functions Core Tools** — `func start` must be run from the `api/` directory. CI installs `azure-functions-core-tools-4` via apt. Locally, use the system `func` or `npx func start` (set in the `start` script).
+- **`func start` requires `FUNCTIONS_WORKER_RUNTIME=node`** — `local.settings.json` is gitignored, so this env var must be set explicitly in any environment that doesn't have it (CI, Playwright webServer). Without it, `func start` hangs on an interactive runtime selection prompt.
+- **E2E tests use `APP_PASSWORD=e2e-test-password`** — when starting the API manually to run E2E tests, set this: `APP_PASSWORD=e2e-test-password npm start` from `api/`. The Playwright webServer config sets it automatically when Playwright manages the server.
 
 ## Testing & Documentation
 

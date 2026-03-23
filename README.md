@@ -66,7 +66,8 @@ cd api && npx vitest run
 # Unit tests (web)
 cd web && npx vitest run
 
-# E2E tests (requires running stack)
+# E2E tests — Playwright starts the stack automatically
+# If you pre-start the API manually, use: APP_PASSWORD=e2e-test-password npm start (from api/)
 npx playwright test
 ```
 
@@ -76,11 +77,6 @@ npm run dev
 ```
 
 Open the local URL shown in the terminal (typically `http://localhost:5173`).
-
-**E2E tests** (requires running stack):
-```bash
-npx playwright test
-```
 
 ## Useful commands
 
