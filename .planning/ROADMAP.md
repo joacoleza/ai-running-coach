@@ -99,15 +99,27 @@ Plans:
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
+**Plans:** 7 plans
+
+Plans:
+- [ ] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
+- [ ] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
+- [ ] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
+- [ ] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
+- [ ] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
+- [ ] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
+- [ ] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
+
 **Deliverables:**
 - Profile setup: goal type, target date, current fitness, available days, display units (km/miles)
 - Onboarding chat: Claude asks 4–6 questions sequentially, collects context
 - Claude API integration with SSE streaming (Functions → frontend via `ReadableStream`)
-- Training plan generation: Claude outputs structured JSON plan stored in Cosmos DB
-- Plan stored with full session schema (week, day, type, distance, pace target, HR zone, notes)
+- Training plan generation: Claude outputs structured JSON plan stored in MongoDB
+- Plan stored with session schema: date, distance, duration, avgPace, avgBpm, notes
 - Training calendar view (`react-big-calendar`): weekly view showing planned sessions
-- Chat persistence: messages stored in Cosmos DB, rolling 20-message window + summary
-- Chat history UI: dedicated section to browse past coaching conversations
+- Chat persistence: messages stored in MongoDB, rolling 20-message window + summary
+- Persistent coach panel visible on every page (not a separate route)
+- Chat history accessible from within coach panel
 
 **UAT:**
 - Can complete onboarding chat and see a full training plan generated
