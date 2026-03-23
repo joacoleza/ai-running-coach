@@ -1,7 +1,16 @@
 import { test, expect } from '@playwright/test'
+import { MongoClient } from 'mongodb'
+
+const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017'
 
 test.describe('Auth flow', () => {
   test.beforeEach(async ({ page }) => {
+    // Reset lockout state so auth tests are never blocked by prior lockout tests
+    const client = new MongoClient(MONGO_URI)
+    await client.connect()
+    await client.db('running-coach').collection('auth').deleteMany({})
+    await client.close()
+
     // Clear localStorage to start unauthenticated
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
