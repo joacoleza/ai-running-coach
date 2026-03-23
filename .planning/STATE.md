@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: verifying
-last_updated: "2026-03-23T15:52:38.781Z"
+status: executing
+last_updated: "2026-03-23T20:38:42.039Z"
 progress:
   total_phases: 4
   completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
+  total_plans: 17
+  completed_plans: 17
   percent: 100
 ---
 
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Phase
 
 **Phase:** 01.2
-**Status:** Phase complete — ready for verification
+**Status:** Ready to execute
 **Plans:** 0/TBD
 **Progress:** [██████████] 100%
 
 ## Current Position
 
 Phase: 02 (coach-chat) — EXECUTING
-Plan: 7 of 7
+Plan: 2 of 8
 
 ## Milestone
 
@@ -83,6 +83,8 @@ Plan: 7 of 7
 - [Phase 02-05]: extractGoalFromText parses <goal> XML block or returns sensible defaults for plan generation
 - [Phase 02-05]: startPlan('conversational') auto-sends initial message to kick off onboarding immediately
 - [Phase 02-06]: verbatimModuleSyntax requires import type for View and PlanSession
+- [Phase 02-08]: GET /api/messages uses same requirePassword auth middleware pattern as all other endpoints
+- [Phase 02-08]: useChat history fetch non-fatal: failure leaves messages empty same as before
 
 ## Performance Metrics
 
@@ -109,3 +111,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02-coach-chat P04 | 2min | 2 tasks | 3 files |
 | Phase 02-coach-chat P05 | 4min | 2 tasks | 4 files |
 | Phase 02 P06 | 8min | 2 tasks | 4 files |
+| Phase 02-coach-chat P08 | 3min | 2 tasks | 3 files |
