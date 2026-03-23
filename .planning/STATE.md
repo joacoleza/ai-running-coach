@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-23T15:40:44.209Z"
+last_updated: "2026-03-23T15:45:35.735Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 12
-  percent: 75
+  completed_plans: 13
+  percent: 81
 ---
 
 # State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 01.2
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [████████░░] 75%
+**Progress:** [████████░░] 81%
 
 ## Current Position
 
 Phase: 02 (coach-chat) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Milestone
 
@@ -75,6 +75,8 @@ Plan: 4 of 7
 - [Phase 02-02]: /coach route removed; coach embedded as persistent panel in AppShell per D-10/D-13
 - [Phase 02-01]: auth.ts keeps its own getDb() to avoid breaking existing tests; new functions import from shared/db.ts
 - [Phase 02-01]: app.setup({ enableHttpStream: true }) placed before all function imports in index.ts per Azure Functions streaming requirement
+- [Phase 02-03]: maybeSummarize is fire-and-forget after stream closes to avoid delaying SSE done event
+- [Phase 02-03]: ANTHROPIC_API_KEY validated at handler start with 500 error for clear diagnostic feedback
 
 ## Performance Metrics
 
@@ -97,3 +99,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02-coach-chat P00 | 3 min | 2 tasks | 6 files |
 | Phase 02-coach-chat P02 | 2min | 2 tasks | 5 files |
 | Phase 02-coach-chat P01 | 3min | 2 tasks | 5 files |
+| Phase 02-coach-chat P03 | 2min | 2 tasks | 4 files |

@@ -44,10 +44,10 @@
 ### AI Coaching Chat
 
 - [x] **COACH-01**: Chat interface for back-and-forth conversation with the AI coach
-- [ ] **COACH-02**: Coach responses stream to the UI in real-time (no waiting for full response)
+- [x] **COACH-02**: Coach responses stream to the UI in real-time (no waiting for full response)
 - [ ] **COACH-03**: Post-run: coach provides feedback (run summary vs plan, one insight, any plan adjustment)
 - [ ] **COACH-04**: Coach can adjust the training plan based on run history and conversation
-- [ ] **COACH-05**: Chat history persists across sessions (user can review past coaching conversations)
+- [x] **COACH-05**: Chat history persists across sessions (user can review past coaching conversations)
 - [x] **COACH-06**: Claude context uses rolling 20-message window + condensed memory summary
 
 ### Dashboard
@@ -120,10 +120,10 @@
 | RUN-04 | Phase 3 | Pending |
 | RUN-05 | Phase 3 | Pending |
 | COACH-01 | Phase 2 | Complete |
-| COACH-02 | Phase 2 | Pending |
+| COACH-02 | Phase 2 | Complete |
 | COACH-03 | Phase 3 | Pending |
 | COACH-04 | Phase 3 | Pending |
-| COACH-05 | Phase 2 | Pending |
+| COACH-05 | Phase 2 | Complete |
 | COACH-06 | Phase 2 | Complete |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
