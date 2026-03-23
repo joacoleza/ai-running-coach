@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: executing
-last_updated: "2026-03-23T15:49:51.335Z"
+status: verifying
+last_updated: "2026-03-23T15:52:38.781Z"
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
-  completed_plans: 14
-  percent: 88
+  completed_plans: 16
+  percent: 100
 ---
 
 # State
@@ -24,14 +24,14 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Phase
 
 **Phase:** 01.2
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 **Plans:** 0/TBD
-**Progress:** [█████████░] 88%
+**Progress:** [██████████] 100%
 
 ## Current Position
 
 Phase: 02 (coach-chat) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 
 ## Milestone
 
@@ -79,6 +79,10 @@ Plan: 6 of 7
 - [Phase 02-03]: ANTHROPIC_API_KEY validated at handler start with 500 error for clear diagnostic feedback
 - [Phase 02-04]: updateMany used to discard existing onboarding plans to handle edge case of multiple stale onboarding docs
 - [Phase 02-04]: delete (updates as Record<string, unknown>).id pattern prevents session id overwrite in PATCH handler
+- [Phase 02-05]: type-only import required for Message in ChatHistory.tsx due to verbatimModuleSyntax tsconfig
+- [Phase 02-05]: extractGoalFromText parses <goal> XML block or returns sensible defaults for plan generation
+- [Phase 02-05]: startPlan('conversational') auto-sends initial message to kick off onboarding immediately
+- [Phase 02-06]: verbatimModuleSyntax requires import type for View and PlanSession
 
 ## Performance Metrics
 
@@ -103,3 +107,5 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02-coach-chat P01 | 3min | 2 tasks | 5 files |
 | Phase 02-coach-chat P03 | 2min | 2 tasks | 4 files |
 | Phase 02-coach-chat P04 | 2min | 2 tasks | 3 files |
+| Phase 02-coach-chat P05 | 4min | 2 tasks | 4 files |
+| Phase 02 P06 | 8min | 2 tasks | 4 files |
