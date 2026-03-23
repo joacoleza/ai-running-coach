@@ -64,7 +64,7 @@ Plans:
 
 ---
 
-## Phase 1.2 — Testing Strategy & CI (INSERTED)
+## Phase 1.2 — Testing Strategy & CI (INSERTED) ✓
 
 **Goal:** Establish a comprehensive testing foundation: unit tests (API + web), E2E tests, code coverage tracking, and GitHub Actions CI running on every PR.
 
