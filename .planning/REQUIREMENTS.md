@@ -22,8 +22,8 @@
 
 ### Goal & Profile
 
-- [ ] **GOAL-01**: User can set a running goal (event type: 5K/10K/half marathon/marathon, target date)
-- [ ] **GOAL-02**: User can set profile preferences (current weekly mileage, available days per week, display units: km/miles)
+- [x] **GOAL-01**: User can set a running goal (event type: 5K/10K/half marathon/marathon, target date)
+- [x] **GOAL-02**: User can set profile preferences (current weekly mileage, available days per week, display units: km/miles)
 - [ ] **GOAL-03**: Coach conducts an onboarding chat session to gather context before generating the first plan
 
 ### Training Plan
@@ -107,8 +107,8 @@
 | TEST-04 | Phase 1.2 | Complete |
 | TEST-05 | Phase 1.2 | Complete |
 | TEST-06 | Phase 1.2 | Complete |
-| GOAL-01 | Phase 2 | Pending |
-| GOAL-02 | Phase 2 | Pending |
+| GOAL-01 | Phase 2 | Complete |
+| GOAL-02 | Phase 2 | Complete |
 | GOAL-03 | Phase 2 | Pending |
 | PLAN-01 | Phase 2 | Complete |
 | PLAN-02 | Phase 2 | Complete |

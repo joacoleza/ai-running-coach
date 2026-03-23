@@ -106,7 +106,7 @@ Plans:
 - [x] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
 - [x] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
 - [x] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
-- [ ] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
+- [x] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
 - [ ] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
 - [ ] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
 
