@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-23T15:39:12.523Z"
+last_updated: "2026-03-23T15:40:44.209Z"
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 10
-  percent: 63
+  completed_plans: 12
+  percent: 75
 ---
 
 # State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 01.2
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [██████░░░░] 63%
+**Progress:** [████████░░] 75%
 
 ## Current Position
 
 Phase: 02 (coach-chat) — EXECUTING
-Plan: 2 of 7
+Plan: 4 of 7
 
 ## Milestone
 
@@ -71,6 +71,10 @@ Plan: 2 of 7
 - [Phase 01.2-03]: Single CI test job runs all three test layers sequentially to share one MongoDB instance
 - [Phase 01.2-04]: TEST-01 through TEST-06 registered in REQUIREMENTS.md under Testing Infrastructure section with traceability to Phase 1.2 Complete
 - [Phase 02-00]: Use it.todo() for all Phase 2 stub tests
+- [Phase 02-02]: CoachPanel uses fixed width (w-80/w-96) in three-column flex layout; flex-1 main fills remaining space without explicit percentages
+- [Phase 02-02]: /coach route removed; coach embedded as persistent panel in AppShell per D-10/D-13
+- [Phase 02-01]: auth.ts keeps its own getDb() to avoid breaking existing tests; new functions import from shared/db.ts
+- [Phase 02-01]: app.setup({ enableHttpStream: true }) placed before all function imports in index.ts per Azure Functions streaming requirement
 
 ## Performance Metrics
 
@@ -91,3 +95,5 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 01.2-testing-strategy P03 | 3 min | 2 tasks | 6 files |
 | Phase 01.2-testing-strategy P04 | 3min | 1 tasks | 1 files |
 | Phase 02-coach-chat P00 | 3 min | 2 tasks | 6 files |
+| Phase 02-coach-chat P02 | 2min | 2 tasks | 5 files |
+| Phase 02-coach-chat P01 | 3min | 2 tasks | 5 files |

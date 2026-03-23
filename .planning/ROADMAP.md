@@ -99,12 +99,12 @@ Plans:
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
-**Plans:** 1/7 plans executed
+**Plans:** 3/7 plans executed
 
 Plans:
 - [x] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
-- [ ] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
-- [ ] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
+- [x] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
+- [x] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
 - [ ] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
 - [ ] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
 - [ ] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
