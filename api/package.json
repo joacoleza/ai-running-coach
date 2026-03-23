@@ -2,12 +2,13 @@
   "name": "ai-running-coach-api",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "main": "dist/src/functions/*.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "func start",
-    "prestart": "npm run build"
+    "start": "npx func start",
+    "prestart": "npm run build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@azure/functions": "^4.11.2",
@@ -16,6 +17,9 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.9.3"
+    "@vitest/coverage-v8": "^3.2.4",
+    "mongodb-memory-server": "^11.0.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

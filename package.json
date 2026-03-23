@@ -6,9 +6,14 @@
     "dev": "concurrently --names \"docker,web,func\" --prefix-colors \"cyan,blue,yellow\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\"",
     "dev:web": "npm run dev --prefix web",
     "dev:func": "npm run start --prefix api",
-    "test": "npm run test --prefix web"
+    "test": "npm run test --prefix web",
+    "test:api": "npm run test --prefix api",
+    "test:web": "npm run test --prefix web",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "@playwright/test": "^1.58.2",
+    "concurrently": "^9.2.1",
+    "mongodb": "^7.1.0"
   }
 }

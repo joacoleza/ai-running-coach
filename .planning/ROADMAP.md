@@ -44,8 +44,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01.1-01-PLAN.md — API auth middleware with MongoDB lockout + health endpoint update
-- [ ] 01.1-02-PLAN.md — Frontend password page, auth gate, logout, SWA config cleanup
+- [x] 01.1-01-PLAN.md — API auth middleware with MongoDB lockout + health endpoint update
+- [x] 01.1-02-PLAN.md — Frontend password page, auth gate, logout, SWA config cleanup
 
 **Deliverables:**
 - Remove `staticwebapp.config.json` owner role lockdown and GitHub OAuth config
@@ -64,21 +64,62 @@ Plans:
 
 ---
 
+## Phase 1.2 — Testing Strategy & CI (INSERTED) ✓
+
+**Goal:** Establish a comprehensive testing foundation: unit tests (API + web), E2E tests, code coverage tracking, and GitHub Actions CI running on every PR.
+
+**Requirements:** TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06
+
+**Plans:** 4/4 plans complete
+
+Plans:
+- [x] 01.2-01-PLAN.md — API test infra + unit tests (mocked MongoDB) + lockout integration tests (mongodb-memory-server)
+- [x] 01.2-02-PLAN.md — Web unit tests (PasswordPage + App auth gate) + coverage config
+- [x] 01.2-03-PLAN.md — Playwright E2E tests + GitHub Actions CI workflow + README badges
+
+**Deliverables:**
+- Unit tests for API (Azure Functions) and web (React components)
+- E2E tests covering auth flow and lockout algorithm
+- GitHub Actions CI workflow: run unit + E2E tests on every PR; block merge on failure
+- Code coverage tracking with badge in README (updated by CI)
+- Database assertions in tests (MongoDB integration tests)
+- Test badges (CI status, coverage) in README
+
+**UAT:**
+- PR triggers CI workflow; failing test blocks merge
+- Coverage badge in README reflects current test coverage
+- Auth flow tests: correct password passes, wrong password rejected, lockout triggers after N failures
+- E2E tests pass against local stack (MongoDB + API + web)
+
+---
+
 ## Phase 2 — Coach Chat & Plan Generation
 
 **Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view it on a calendar.
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
+**Plans:** 7 plans
+
+Plans:
+- [ ] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
+- [ ] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
+- [ ] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
+- [ ] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
+- [ ] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
+- [ ] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
+- [ ] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
+
 **Deliverables:**
 - Profile setup: goal type, target date, current fitness, available days, display units (km/miles)
 - Onboarding chat: Claude asks 4–6 questions sequentially, collects context
 - Claude API integration with SSE streaming (Functions → frontend via `ReadableStream`)
-- Training plan generation: Claude outputs structured JSON plan stored in Cosmos DB
-- Plan stored with full session schema (week, day, type, distance, pace target, HR zone, notes)
+- Training plan generation: Claude outputs structured JSON plan stored in MongoDB
+- Plan stored with session schema: date, distance, duration, avgPace, avgBpm, notes
 - Training calendar view (`react-big-calendar`): weekly view showing planned sessions
-- Chat persistence: messages stored in Cosmos DB, rolling 20-message window + summary
-- Chat history UI: dedicated section to browse past coaching conversations
+- Chat persistence: messages stored in MongoDB, rolling 20-message window + summary
+- Persistent coach panel visible on every page (not a separate route)
+- Chat history accessible from within coach panel
 
 **UAT:**
 - Can complete onboarding chat and see a full training plan generated

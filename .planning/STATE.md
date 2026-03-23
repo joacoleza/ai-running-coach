@@ -2,14 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: active
-stopped_at: "Phase 1.1 in progress — auth replacement (pre-shared password)"
-last_updated: "2026-03-22T00:00:00Z"
+status: completed
+last_updated: "2026-03-22T22:09:43.778Z"
 progress:
-  total_phases: 1
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 9
+  completed_plans: 9
   percent: 100
 ---
 
@@ -20,20 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 01 — infrastructure-auth
+**Current focus:** Phase 01.2 — testing-strategy
 
 ## Current Phase
 
-**Phase:** 1.1
-**Status:** In progress — planning
+**Phase:** 01.2
+**Status:** Milestone complete
 **Plans:** 0/TBD
-**Progress:** [░░░░░░░░░░] 0%
+**Progress:** [██████████] 100%
 
 ## Current Position
 
-**Stopped at:** Starting Phase 1.1 — replace GitHub OAuth with pre-shared password auth
-**Last session:** 2026-03-22
-**Next:** /gsd:discuss-phase 1.1 to gather context and plan
+Phase: 01.2 (testing-strategy) — EXECUTING
+Plan: Not started
 
 ## Milestone
 
@@ -62,6 +60,16 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - **01-03:** assign-owner-role.sh uses `${OWNER_GITHUB_USERNAME}` env var (AUTH-03 — no hardcoded username)
 - **01-03:** setup-cosmos-db.sh requires `COSMOS_ACCOUNT_NAME` env var — creates 'running-coach' DB in existing free-tier account (D-14)
 - # **01-03:** Switched from Cosmos DB SQL API to MongoDB API — reusing existing free-tier account. Replaced `@azure/cosmos` with `mongodb` driver.
+- [Phase 01.1-02]: Global fetch interceptor in App.tsx handles 401 from any API call
+- [Phase 01.1-01]: requirePassword returns HttpResponseInit or null where null means auth passed
+- [Phase 01.2-02]: Use getAllByText for Dashboard since it appears in both sidebar nav and page heading
+- [Phase 01.2-02]: Use input.closest('form') for form submit since form has no accessible role name
+- [Phase 01.2-01]: vi.hoisted() required for mock fn references in vi.mock factory
+- [Phase 01.2-01]: _resetConnectionForTest exported from auth.ts to reset MongoClient singleton between integration tests
+- [Phase 01.2-03]: Playwright webServer uses npm run start (not npx func start directly) to ensure TypeScript prestart build runs first
+- [Phase 01.2-03]: Coverage badges use no-commit: true + manual orphan branch push to unprotected badges branch (avoids master branch protection)
+- [Phase 01.2-03]: Single CI test job runs all three test layers sequentially to share one MongoDB instance
+- [Phase 01.2-04]: TEST-01 through TEST-06 registered in REQUIREMENTS.md under Testing Infrastructure section with traceability to Phase 1.2 Complete
 
 ## Performance Metrics
 
@@ -75,3 +83,9 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 _Initialized: 2026-03-21_
 _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
+| Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
+| Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
+| Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
+| Phase 01.2-testing-strategy P01 | 4 min | 2 tasks | 6 files |
+| Phase 01.2-testing-strategy P03 | 3 min | 2 tasks | 6 files |
+| Phase 01.2-testing-strategy P04 | 3min | 1 tasks | 1 files |

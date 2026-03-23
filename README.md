@@ -1,5 +1,8 @@
 # AI Running Coach
 
+![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-79.3%25-yellow)
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
 ![Azure Static Web Apps](https://img.shields.io/badge/Azure-Static_Web_Apps-0078D4?logo=microsoftazure&logoColor=white)
@@ -7,8 +10,6 @@
 ![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_API-D97757?logo=anthropic&logoColor=white)
 
 A personal web app that acts as an AI running coach. Set a goal, get a training plan, log runs from Apple Watch, and receive coaching feedback that adapts the plan over time.
-
-**Live:** https://mango-hill-0974dda10.6.azurestaticapps.net
 
 ## What it does
 
@@ -36,6 +37,8 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
 
+After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [Useful commands](#useful-commands)).
+
 ## Cost
 
 - Azure infrastructure: **$0/month** (all free tier)
@@ -43,9 +46,7 @@ This app is designed for a single owner. Access is protected by a pre-shared pas
 
 ## Getting started
 
-**Prerequisites:** Node.js 22, Docker Desktop, Azure Functions Core Tools v4
-
-> Auth is not emulated locally. Use `http://localhost:5173` (Vite) directly — auth is tested against the deployed Azure environment.
+**Prerequisites:** Node.js 22, Docker Desktop
 
 ```bash
 npm install
@@ -61,7 +62,15 @@ cd api && npx tsc --noEmit && cd ..
 
 **Run tests:**
 ```bash
+# Unit tests (API)
+cd api && npx vitest run
+
+# Unit tests (web)
 cd web && npx vitest run
+
+# E2E tests — Playwright starts the stack automatically
+# If you pre-start the API manually, use: APP_PASSWORD=e2e-test-password npm start (from api/)
+npx playwright test
 ```
 
 **Start local dev server** (Vite + Functions + Docker emulators):
@@ -69,7 +78,24 @@ cd web && npx vitest run
 npm run dev
 ```
 
-Open `http://localhost:5173`.
+Open the local URL shown in the terminal (typically `http://localhost:5173`).
+
+## Useful commands
+
+**Check lockout state:**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').find().toArray()"
+```
+
+**Unlock the app (PowerShell):**
+```powershell
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{`$set:{failureCount:0,blocked:false}})"
+```
+
+**Unlock the app (bash):**
+```bash
+docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{\$set:{failureCount:0,blocked:false}})"
+```
 
 ## Deploying
 
@@ -81,7 +107,9 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
-3. **Set app password** — Add a `APP_PASSWORD` secret in Azure Portal → SWA resource → Configuration. This is the password used to access the app.
+3. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
+   - `APP_PASSWORD` — the password used to access the app
+   - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
@@ -94,8 +122,9 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 
 ## Roadmap
 
-- **Phase 1** — Infrastructure & Auth (Azure setup, GitHub OAuth, local dev)
-- **Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)
+- ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
+- ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
+- ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
 - **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

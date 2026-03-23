@@ -1,43 +1,13 @@
 {
   "routes": [
     {
-      "route": "/.auth/login/github",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/.auth/invitations/accept",
-      "allowedRoles": ["anonymous"]
-    },
-    {
-      "route": "/unauthorized.html",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/.auth/logout",
-      "allowedRoles": ["anonymous", "authenticated"]
-    },
-    {
-      "route": "/api/*",
-      "allowedRoles": ["owner"]
-    },
-    {
       "route": "/*",
-      "allowedRoles": ["owner"]
+      "allowedRoles": ["anonymous"]
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/api/*", "/assets/*"]
-  },
-  "responseOverrides": {
-    "401": {
-      "redirect": "/.auth/login/github?post_login_redirect_uri=.referrer",
-      "statusCode": 302
-    },
-    "403": {
-      "redirect": "/unauthorized.html",
-      "statusCode": 302
-    }
   },
   "platform": {
     "apiRuntime": "node:22"

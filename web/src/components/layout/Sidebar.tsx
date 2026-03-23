@@ -33,13 +33,17 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="p-2 mb-2">
-        <a
-          href="/.auth/logout"
-          className="flex items-center px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors"
+        <button
+          type="button"
+          onClick={() => {
+            localStorage.removeItem('app_password')
+            window.location.href = '/'
+          }}
+          className="flex items-center w-full text-left px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors"
         >
-          <span className="text-lg">🚪</span>
+          <span className="text-lg">&#x1F6AA;</span>
           <span className="ml-3 hidden md:inline">Logout</span>
-        </a>
+        </button>
       </div>
     </aside>
   )
