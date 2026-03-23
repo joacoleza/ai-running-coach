@@ -93,7 +93,7 @@ jobs:
           git checkout --orphan badges-tmp
           git rm -rf .
           mkdir -p badges
-          cp /tmp/badges-deploy/* badges/
+          cp -r /tmp/badges-deploy/* badges/
           git add badges/
           git commit -m "Update coverage badges [skip ci]"
           git push origin HEAD:badges --force
