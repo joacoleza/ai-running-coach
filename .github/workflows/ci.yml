@@ -64,58 +64,45 @@ jobs:
           APP_PASSWORD: ci-test-password
           CI: true
 
-  coverage-badges:
+  coverage-badge:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: '22'
 
       - name: Download coverage artifacts
         uses: actions/download-artifact@v4
         with:
           name: coverage
 
-      - name: Merge API and web coverage summaries
+      - name: Update coverage badge in README
         run: |
           node -e "
             const fs = require('fs');
             const api = JSON.parse(fs.readFileSync('api/coverage/coverage-summary.json'));
             const web = JSON.parse(fs.readFileSync('web/coverage/coverage-summary.json'));
             const metrics = ['lines', 'statements', 'functions', 'branches'];
-            const merged = { total: {} };
-            for (const m of metrics) {
-              const total = api.total[m].total + web.total[m].total;
-              const covered = api.total[m].covered + web.total[m].covered;
-              const skipped = api.total[m].skipped + web.total[m].skipped;
-              merged.total[m] = { total, covered, skipped, pct: total > 0 ? +((covered / total) * 100).toFixed(2) : 0 };
+            let totalLines = 0, coveredLines = 0;
+            for (const m of ['lines']) {
+              totalLines += api.total[m].total + web.total[m].total;
+              coveredLines += api.total[m].covered + web.total[m].covered;
             }
-            fs.writeFileSync('merged-coverage.json', JSON.stringify(merged));
+            const pct = totalLines > 0 ? +((coveredLines / totalLines) * 100).toFixed(1) : 0;
+            const color = pct >= 80 ? 'brightgreen' : pct >= 60 ? 'yellow' : pct >= 40 ? 'orange' : 'red';
+            const url = \`https://img.shields.io/badge/coverage-\${pct}%25-\${color}\`;
+            let readme = fs.readFileSync('README.md', 'utf8');
+            readme = readme.replace(/!\[Coverage\]\([^)]*\)/, \`![Coverage](\${url})\`);
+            fs.writeFileSync('README.md', readme);
+            console.log(\`Coverage: \${pct}% (\${color})\`);
           "
 
-      - name: Generate coverage badges
-        uses: jpb06/coverage-badges-action@latest
-        with:
-          coverage-summary-path: ./merged-coverage.json
-          output-folder: .
-          no-commit: true
-
-      - name: Push badges to badges branch
+      - name: Commit and push updated README
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          mkdir -p /tmp/badges-deploy
-          cp coverage-*.svg /tmp/badges-deploy/
-          git fetch origin badges:badges 2>/dev/null || true
-          git checkout --orphan badges-tmp
-          git rm -rf .
-          cp /tmp/badges-deploy/* .
-          git add coverage-*.svg
-          git commit -m "Update coverage badges [skip ci]"
-          git push origin HEAD:badges --force
+          git add README.md
+          git diff --staged --quiet && echo "No change" && exit 0
+          git commit -m "chore: update coverage badge [skip ci]"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}

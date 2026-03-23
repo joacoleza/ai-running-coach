@@ -1,7 +1,7 @@
 # AI Running Coach
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://raw.githubusercontent.com/joacoleza/ai-running-coach/badges/coverage-total.svg)
+![Coverage](https://img.shields.io/badge/coverage-0%25-red)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
