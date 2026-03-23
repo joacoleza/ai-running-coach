@@ -46,6 +46,18 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y azure-functions-core-tools-4
 
+      - name: Debug func start
+        run: |
+          func --version
+          cd api && npm run build
+          func start &
+          sleep 15
+          curl -v http://localhost:7071/api/ping || true
+          curl -v http://localhost:7071/api/health || true
+        env:
+          MONGODB_CONNECTION_STRING: mongodb://localhost:27017
+          APP_PASSWORD: ci-test-password
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
