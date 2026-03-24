@@ -95,11 +95,11 @@ Plans:
 
 ## Phase 2 — Coach Chat & Plan Generation
 
-**Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view it on a calendar.
+**Goal:** Owner can complete the coaching onboarding, get a training plan generated, view it on a calendar, and import an existing plan from a file. Includes all test coverage for Phase 2 features.
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
-**Plans:** 8/8 plans complete
+**Plans:** 11/11 plans complete (includes former Phase 2.1 test stubs + UAT bug fixes + mobile + app commands)
 
 Plans:
 - [x] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
@@ -109,6 +109,10 @@ Plans:
 - [x] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
 - [x] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
 - [x] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
+- [x] 02-08-PLAN.md — Chat history loading (GET /api/messages, useChat init hydration)
+- [x] 02-09-PLAN.md — Bug fixes: Start Over resets to welcome screen, file upload for plan import, improved error display and Application Insights logging
+- [x] 02-10-PLAN.md — Mobile-responsive coach panel (FAB + full-screen overlay on mobile); test isolation (Anthropic mocked in all test layers)
+- [x] 02-11-PLAN.md — System prompt hardening (role boundary, persona) + app command protocol (navigate, mark session complete via chat)
 
 **Deliverables:**
 - Profile setup: goal type, target date, current fitness, available days, display units (km/miles)
@@ -118,15 +122,63 @@ Plans:
 - Plan stored with session schema: date, distance, duration, avgPace, avgBpm, notes
 - Training calendar view (`react-big-calendar`): weekly view showing planned sessions
 - Chat persistence: messages stored in MongoDB, rolling 20-message window + summary
-- Persistent coach panel visible on every page (not a separate route)
+- Persistent coach panel: right-column on desktop; full-screen overlay (FAB toggle) on mobile
 - Chat history accessible from within coach panel
+- Plan import via file upload (.txt, .md, .json)
+- Start Over returns to welcome screen (mode choice reset)
+- Claude errors shown to user with meaningful messages + logged to Application Insights
+- System prompt: running-only role boundary, persona, training plan format instructions
+- App commands: Claude can navigate pages and mark sessions complete via `<app:*/>` tags in chat
+- Test isolation: `@anthropic-ai/sdk` mocked in all unit/integration tests; `ANTHROPIC_API_KEY=''` in E2E
 
-**UAT:**
+**UAT (outstanding — requires live environment):**
 - Can complete onboarding chat and see a full training plan generated
 - Calendar shows the plan week-by-week with correct session types and distances
 - Coach chat streams responses in real-time (text appears as it's generated)
 - Refresh the page — chat history is preserved
 - Sessions show as "planned" (no completed sessions yet)
+- Import plan via file upload → file contents sent to coach → plan generated
+- Click "Start Over" from any onboarding mode → returns to welcome screen
+- When Claude returns an error → meaningful message shown; full error in Application Insights
+- On mobile: FAB opens coach panel full-screen; X closes it; main content visible underneath
+- Chat "show me my plan" → navigates to /plan; "I did my run" → session marked complete on calendar
+- Off-topic question to coach → politely redirected to running topics
+
+---
+
+## Phase 2.1 — Training Plan Redesign (INSERTED)
+
+**Goal:** Replace the calendar-based plan view with a structured, markdown-rendered training plan. Upgrade the data model from flat sessions to hierarchical phases/weeks/days. Add ChatGPT URL import and an Archive section.
+
+**Requirements covered:** D-01 through D-26 (see 02.1-CONTEXT.md)
+
+**Plans:** 5 plans
+
+Plans:
+- [ ] 02.1-01-PLAN.md — Replace types (PlanDay/PlanWeek/PlanPhase), update generatePlan, remove react-big-calendar
+- [ ] 02.1-02-PLAN.md — New API endpoints (PATCH day, archive, import) + system prompt update
+- [ ] 02.1-03-PLAN.md — Frontend plan view (PlanView, DayRow inline editing, PlanActions, ImportUrlForm)
+- [ ] 02.1-04-PLAN.md — Archive pages + sidebar nav + routing
+- [ ] 02.1-05-PLAN.md — useChat plan:update wiring + chat.ts phases + unit tests
+
+**Deliverables:**
+- Hierarchical plan data model: phases[] -> weeks[] -> days[] (replaces flat sessions[])
+- Plan displayed as structured view with inline click-to-edit on each day
+- Completed/skipped days shown with visual indicators, read-only
+- Four plan actions: Create new, Import from ChatGPT URL, Update via coach, Close & archive
+- ChatGPT share URL import: backend fetches HTML, extracts text, Claude parses into plan structure
+- Archive section: sidebar nav entry, list page, readonly archived plan view
+- `<plan:update>` XML tag protocol for agent-driven day updates
+- System prompt updated for hierarchical plan format
+- Unit tests for planToMarkdown, DayRow, PATCH day endpoint, archive endpoints
+
+**UAT:**
+- Plan page shows phases/weeks/days in structured view (no calendar)
+- Click a day's guidelines → inline edit → save on blur
+- Mark day as completed → checkmark appears, day becomes read-only
+- Import from ChatGPT share URL → plan appears
+- Archive active plan → appears in Archive list → click to view readonly
+- Coach says "let me update your plan" → `<plan:update>` tags applied, plan refreshes
 
 ---
 
