@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { PlanPhase, PlanGoal } from './usePlan';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -9,26 +10,13 @@ export interface Message {
 
 export interface PlanData {
   _id: string;
-  status: 'onboarding' | 'active' | 'completed' | 'discarded';
+  status: 'onboarding' | 'active' | 'archived';
   onboardingMode: 'conversational' | 'paste';
   onboardingStep: number;
-  goal: {
-    eventType: string;
-    targetDate: string;
-    weeklyMileage: number;
-    availableDays: number;
-    units: string;
-  };
-  sessions: Array<{
-    id: string;
-    date: string;
-    distance: number;
-    duration?: number;
-    avgPace?: string;
-    avgBpm?: number;
-    notes: string;
-    completed: boolean;
-  }>;
+  goal: PlanGoal;
+  objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
+  targetDate?: string;
+  phases: PlanPhase[];
 }
 
 interface UseChatReturn {
@@ -39,7 +27,7 @@ interface UseChatReturn {
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
   startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
-  startOver: () => Promise<void>;
+  startOver: () => void;
   clearError: () => void;
 }
 
@@ -217,8 +205,52 @@ export function useChat(): UseChatReturn {
           } else if (payload.done) {
             setIsStreaming(false);
 
-            // Check if the response contains a training plan
+            // Parse app commands Claude may have appended (e.g. <app:navigate page="plan"/>)
+            const cmdRegex = /<app:.*?\/>/g;
+            const cmds = [...accumulatedText.matchAll(cmdRegex)].map(m => m[0]);
+
+            // Strip commands from the displayed assistant message
+            if (cmds.length > 0) {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === 'assistant') {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    content: last.content.replace(cmdRegex, '').trim(),
+                  };
+                }
+                return updated;
+              });
+            }
+
+            // Execute session-complete commands first
+            for (const cmd of cmds) {
+              const m = cmd.match(/<app:complete session_id="([^"]+)"\/>/);
+              if (m) {
+                await fetch(`/api/sessions/${m[1]}`, {
+                  method: 'PATCH',
+                  headers: authHeaders(),
+                  body: JSON.stringify({ completed: true }),
+                });
+              }
+            }
+
+            // Handle training plan generation (takes priority over navigate commands)
             if (accumulatedText.includes('<training_plan>')) {
+              // Strip the raw <training_plan> block from the displayed message
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                if (last?.role === 'assistant') {
+                  updated[updated.length - 1] = {
+                    ...last,
+                    content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
+                  };
+                }
+                return updated;
+              });
+
               const extractedGoal = extractGoalFromText(accumulatedText);
               try {
                 const generateResponse = await fetch('/api/plan/generate', {
@@ -232,11 +264,8 @@ export function useChat(): UseChatReturn {
                 });
 
                 if (generateResponse.ok) {
-                  // Re-fetch plan and navigate to /plan
                   const updatedPlan = await fetchPlan();
-                  if (updatedPlan) {
-                    setPlan(updatedPlan);
-                  }
+                  if (updatedPlan) setPlan(updatedPlan);
                   navigate('/plan');
                 } else {
                   const errData = await generateResponse.json().catch(() => ({ error: 'Plan generation failed' })) as { error?: string };
@@ -246,10 +275,17 @@ export function useChat(): UseChatReturn {
                 setError('Something went wrong generating your plan');
               }
             } else {
-              // Re-fetch plan to get updated onboardingStep or other state changes
+              // Re-fetch plan to pick up any state changes (onboardingStep, completed sessions, etc.)
               const updatedPlan = await fetchPlan();
-              if (updatedPlan) {
-                setPlan(updatedPlan);
+              if (updatedPlan) setPlan(updatedPlan);
+
+              // Execute navigate commands after plan refresh so target page has fresh data
+              for (const cmd of cmds) {
+                const m = cmd.match(/<app:navigate page="([^"]+)"\/>/);
+                if (m) {
+                  navigate(m[1] === 'dashboard' ? '/' : `/${m[1]}`);
+                  break; // only navigate once
+                }
               }
             }
           } else if (payload.error) {
@@ -365,6 +401,19 @@ export function useChat(): UseChatReturn {
               } else if (payload.done) {
                 setIsStreaming(false);
                 if (accumulatedText.includes('<training_plan>')) {
+                  // Strip the raw <training_plan> block from the displayed message
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const last = updated[updated.length - 1];
+                    if (last?.role === 'assistant') {
+                      updated[updated.length - 1] = {
+                        ...last,
+                        content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
+                      };
+                    }
+                    return updated;
+                  });
+
                   const extractedGoal = extractGoalFromText(accumulatedText);
                   try {
                     const generateResponse = await fetch('/api/plan/generate', {
@@ -404,28 +453,12 @@ export function useChat(): UseChatReturn {
     }
   }, [fetchPlan, navigate]);
 
-  const startOver = useCallback(async (): Promise<void> => {
-    try {
-      const response = await fetch('/api/plan', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ mode: plan?.onboardingMode ?? 'conversational' }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({ error: 'Failed to restart plan' })) as { error?: string };
-        setError(errData.error ?? 'Failed to restart plan');
-        return;
-      }
-
-      const data = await response.json() as { plan: PlanData };
-      setPlan(data.plan);
-      setMessages([]);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to restart plan';
-      setError(message);
-    }
-  }, [plan]);
+  // Start over returns to the welcome screen — the orphaned onboarding plan is discarded
+  // automatically when the user starts a new plan via POST /api/plan.
+  const startOver = useCallback((): void => {
+    setPlan(null);
+    setMessages([]);
+  }, []);
 
   const clearError = useCallback(() => {
     setError(null);

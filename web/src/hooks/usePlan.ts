@@ -1,14 +1,24 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export interface PlanSession {
-  id: string;
+export interface PlanDay {
   date: string;
-  distance: number;
-  duration?: number;
-  avgPace?: string;
-  avgBpm?: number;
-  notes: string;
+  type: 'run' | 'rest' | 'cross-train';
+  objective?: { kind: 'distance' | 'time'; value: number; unit: 'km' | 'min'; };
+  guidelines: string;
   completed: boolean;
+  skipped: boolean;
+}
+
+export interface PlanWeek {
+  weekNumber: number;
+  startDate: string;
+  days: PlanDay[];
+}
+
+export interface PlanPhase {
+  name: string;
+  description: string;
+  weeks: PlanWeek[];
 }
 
 export interface PlanGoal {
@@ -21,9 +31,13 @@ export interface PlanGoal {
 
 export interface PlanData {
   _id: string;
-  status: string;
+  status: 'onboarding' | 'active' | 'archived';
+  onboardingMode: 'conversational' | 'paste';
+  onboardingStep: number;
   goal: PlanGoal;
-  sessions: PlanSession[];
+  objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
+  targetDate?: string;
+  phases: PlanPhase[];
 }
 
 interface UsePlanReturn {
@@ -31,7 +45,6 @@ interface UsePlanReturn {
   isLoading: boolean;
   error: string | null;
   refreshPlan: () => Promise<void>;
-  updateSession: (sessionId: string, updates: Partial<PlanSession>) => Promise<void>;
 }
 
 function authHeaders(): Record<string, string> {
@@ -61,16 +74,5 @@ export function usePlan(): UsePlanReturn {
 
   useEffect(() => { refreshPlan(); }, [refreshPlan]);
 
-  const updateSession = useCallback(async (sessionId: string, updates: Partial<PlanSession>) => {
-    const res = await fetch(`/api/sessions/${sessionId}`, {
-      method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify(updates),
-    });
-    if (!res.ok) throw new Error('Failed to update session');
-    // Refresh plan to get updated state
-    await refreshPlan();
-  }, [refreshPlan]);
-
-  return { plan, isLoading, error, refreshPlan, updateSession };
+  return { plan, isLoading, error, refreshPlan };
 }
