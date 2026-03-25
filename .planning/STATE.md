@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: executing
-last_updated: "2026-03-25T11:13:14.166Z"
+status: verifying
+last_updated: "2026-03-25T11:18:22.660Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 22
-  completed_plans: 21
-  percent: 95
+  completed_plans: 22
+  percent: 100
 ---
 
 # State
@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ## Current Phase
 
 **Phase:** 01.2
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 **Plans:** 0/TBD
-**Progress:** [██████████] 95%
+**Progress:** [██████████] 100%
 
 ## Current Position
 
@@ -102,6 +102,9 @@ Plan: 5 of 5
 - [Phase 02.1-02]: arrayFilters with day.date and day.completed false enforces completed-day edit guard at DB level
 - [Phase 02.1-02]: buildSystemPrompt signature changed from PlanSession[] to PlanPhase[] - session-based context replaced by phases-based upcoming days
 - [Phase 02.1-04]: Archive list shows objective label and Archived badge for D-24 completion status; planToMarkdown reused from Plan 03 for readonly view (D-25)
+- [Phase 02.1-05]: parseXmlAttrs exported at module level (outside hook) for direct unit testability
+- [Phase 02.1-05]: planDays completed-day guard verified via DB assertion not 404 (MongoDB findOneAndUpdate returns doc even when arrayFilters match nothing)
+- [Phase 02.1-05]: planImport test uses vi.unstubAllGlobals() not vi.restoreAllMocks() to preserve requirePassword mock while clearing global.fetch stubs
 
 ## Accumulated Context
 
@@ -141,3 +144,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02.1-training-plan-redesign P03 | 8min | 2 tasks | 8 files |
 | Phase 02.1-training-plan-redesign P02 | 3 min | 2 tasks | 6 files |
 | Phase 02.1-training-plan-redesign P04 | 2min | 2 tasks | 4 files |
+| Phase 02.1-training-plan-redesign P05 | 6 min | 2 tasks | 7 files |
