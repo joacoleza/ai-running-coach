@@ -45,6 +45,9 @@ interface UsePlanReturn {
   isLoading: boolean;
   error: string | null;
   refreshPlan: () => Promise<void>;
+  updateDay: (date: string, updates: Record<string, string>) => Promise<void>;
+  archivePlan: () => Promise<void>;
+  importFromUrl: (url: string) => Promise<void>;
 }
 
 function authHeaders(): Record<string, string> {
@@ -72,7 +75,40 @@ export function usePlan(): UsePlanReturn {
     }
   }, []);
 
+  const updateDay = useCallback(async (date: string, updates: Record<string, string>) => {
+    const res = await fetch(`/api/plan/days/${date}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to update day' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to update day');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
+  const archivePlan = useCallback(async () => {
+    const res = await fetch('/api/plan/archive', {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to archive plan');
+    setPlan(null);
+  }, []);
+
+  const importFromUrl = useCallback(async (url: string) => {
+    const res = await fetch('/api/plan/import', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Import failed');
+    await refreshPlan();
+  }, [refreshPlan]);
+
   useEffect(() => { refreshPlan(); }, [refreshPlan]);
 
-  return { plan, isLoading, error, refreshPlan };
+  return { plan, isLoading, error, refreshPlan, updateDay, archivePlan, importFromUrl };
 }
