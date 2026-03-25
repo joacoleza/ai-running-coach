@@ -42,10 +42,11 @@ app.http('chat', {
     const plan = await db.collection<Plan>('plans').findOne({ _id: planId as any });
     const summary = plan?.summary;
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
+    const phases = plan?.phases;
 
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
-    const systemPrompt = buildSystemPrompt(summary, onboardingStep);
+    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases);
 
     // Stream Claude response
     const stream = anthropic.messages.stream({
