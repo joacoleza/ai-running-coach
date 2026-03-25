@@ -16,10 +16,12 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
 - **Onboarding chat** — The coach asks about your current fitness, availability, and history, then generates a personalized training plan
 - **Training calendar** — View your plan week by week with session types, distances, and pace targets
+- **Chat app control** — Tell the coach "show me my plan" or "I did my run today" and it navigates the app / marks sessions complete automatically
 - **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
-- **Plan import** — Paste a training plan from any LLM conversation and the app will parse and load it
+- **Plan import** — Upload a training plan file (.txt/.md/.json) from any LLM conversation and the app will parse and load it
+- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
 
 ## Stack
 
@@ -46,12 +48,29 @@ After 30 consecutive wrong password attempts the app locks itself and shows "Ser
 
 ## Getting started
 
-**Prerequisites:** Node.js 22, Docker Desktop
+**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop
 
 ```bash
 npm install
 cd web && npm install && cd ..
 cd api && npm install && cd ..
+```
+
+**Configure local settings** — create `api/local.settings.json` (gitignored):
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "MONGODB_CONNECTION_STRING": "mongodb://localhost:27017",
+    "APP_PASSWORD": "localdev123",
+    "ANTHROPIC_API_KEY": "sk-ant-..."
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}
 ```
 
 **Check everything compiles:**
@@ -110,6 +129,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 3. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
    - `APP_PASSWORD` — the password used to access the app
    - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
+   - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
@@ -125,6 +145,6 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 - ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
 - ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
-- **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
+- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

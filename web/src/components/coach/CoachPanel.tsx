@@ -3,12 +3,19 @@ import { useChat } from '../../hooks/useChat';
 import { ChatMessage } from './ChatMessage';
 import { ChatHistory } from './ChatHistory';
 
-export function CoachPanel() {
+interface CoachPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
   const { messages, plan, isStreaming, isLoading, error, sendMessage, startPlan, startOver, clearError } =
     useChat();
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [pasteText, setPasteText] = useState('');
+  const [importText, setImportText] = useState('');
+  const [importFileName, setImportFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
@@ -23,10 +30,22 @@ export function CoachPanel() {
     await sendMessage(text);
   };
 
-  const handlePasteSend = async () => {
-    if (!pasteText.trim() || isStreaming) return;
-    const text = `Here is my existing training plan from another conversation:\n\n${pasteText}`;
-    setPasteText('');
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setImportText((ev.target?.result as string) ?? '');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportSend = async () => {
+    if (!importText.trim() || isStreaming) return;
+    const text = `Here is my existing training plan from another conversation:\n\n${importText}`;
+    setImportText('');
+    setImportFileName('');
     await sendMessage(text);
   };
 
@@ -37,26 +56,41 @@ export function CoachPanel() {
     }
   };
 
+  // Mobile: full-screen overlay when open, hidden when closed.
+  // Desktop (md+): always visible as fixed-width right panel.
+  const asideClass = isOpen
+    ? 'flex fixed inset-0 z-50 flex-col bg-white md:relative md:inset-auto md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:min-h-screen'
+    : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:min-h-screen';
+
+  // Determine header title
+  const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
+
   if (showHistory) {
     return (
-      <aside className="flex flex-col w-80 lg:w-96 border-l border-gray-200 bg-white min-h-screen">
+      <aside className={asideClass}>
+        {/* Mobile close button in history view */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 md:hidden">
+          <span className="text-sm font-medium text-gray-500">History</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close coach">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         <ChatHistory messages={messages} onBack={() => setShowHistory(false)} />
       </aside>
     );
   }
 
-  // Determine header title
-  const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
-
   return (
-    <aside className="flex flex-col w-80 lg:w-96 border-l border-gray-200 bg-white min-h-screen">
+    <aside className={asideClass}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">{headerTitle}</h2>
         <div className="flex items-center gap-2">
           {plan?.status === 'onboarding' && (
             <button
-              onClick={() => void startOver()}
+              onClick={startOver}
               className="text-xs text-red-500 hover:text-red-700"
               title="Start over"
             >
@@ -81,6 +115,16 @@ export function CoachPanel() {
                 strokeWidth={2}
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
+            </svg>
+          </button>
+          {/* Close button — mobile only */}
+          <button
+            onClick={onClose}
+            className="md:hidden text-gray-400 hover:text-gray-600"
+            aria-label="Close coach"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -121,27 +165,36 @@ export function CoachPanel() {
           </div>
         ) : (
           <>
-            {/* Paste textarea for paste mode before first message */}
+            {/* File upload for paste mode before first message */}
             {plan.status === 'onboarding' &&
               plan.onboardingMode === 'paste' &&
               messages.length === 0 && (
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-2">
-                    Paste your training plan conversation below:
+                    Upload your training plan conversation:
                   </p>
-                  <textarea
-                    value={pasteText}
-                    onChange={(e) => setPasteText(e.target.value)}
-                    className="w-full h-40 p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Paste your LLM conversation here..."
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".txt,.md,.json"
+                    onChange={handleFileSelect}
+                    className="hidden"
                   />
                   <button
-                    onClick={() => void handlePasteSend()}
-                    disabled={!pasteText.trim() || isStreaming}
-                    className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors"
                   >
-                    Send to Coach
+                    {importFileName ? `📄 ${importFileName}` : 'Choose file (.txt, .md, .json)'}
                   </button>
+                  {importText && (
+                    <button
+                      onClick={() => void handleImportSend()}
+                      disabled={isStreaming}
+                      className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Send to Coach
+                    </button>
+                  )}
                 </div>
               )}
             {messages.map((msg, i) => (
