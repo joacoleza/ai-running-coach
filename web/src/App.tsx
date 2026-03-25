@@ -4,6 +4,8 @@ import { AppShell } from './components/layout/AppShell'
 import { Dashboard } from './pages/Dashboard'
 import { TrainingPlan } from './pages/TrainingPlan'
 import { Runs } from './pages/Runs'
+import { Archive } from './pages/Archive'
+import { ArchivePlan } from './pages/ArchivePlan'
 import { PasswordPage } from './pages/PasswordPage'
 
 export function App() {
@@ -35,6 +37,8 @@ export function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/plan" element={<TrainingPlan />} />
           <Route path="/runs" element={<Runs />} />
+          <Route path="/archive" element={<Archive />} />
+          <Route path="/archive/:id" element={<ArchivePlan />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppShell>
