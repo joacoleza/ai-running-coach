@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DayRow } from '../components/plan/DayRow';
 import type { PlanDay } from '../hooks/usePlan';
@@ -39,10 +39,10 @@ describe('DayRow', () => {
     fireEvent.click(guidelinesSpan);
     const input = screen.getByDisplayValue('Easy Zone 2 run');
     fireEvent.change(input, { target: { value: 'Tempo run' } });
-    fireEvent.blur(input);
-    await vi.waitFor(() => {
-      expect(onUpdate).toHaveBeenCalledWith('2026-04-07', { guidelines: 'Tempo run' });
+    await act(async () => {
+      fireEvent.blur(input);
     });
+    expect(onUpdate).toHaveBeenCalledWith('2026-04-07', { guidelines: 'Tempo run' });
   });
 
   it('completed day does not show edit controls or action buttons', () => {
