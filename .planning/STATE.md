@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-25T11:03:54.868Z"
+last_updated: "2026-03-25T11:09:10.971Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 22
-  completed_plans: 18
-  percent: 82
+  completed_plans: 20
+  percent: 91
 ---
 
 # State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 01.2
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [████████░░] 82%
+**Progress:** [█████████░] 91%
 
 ## Current Position
 
 Phase: 02.1 (training-plan-redesign) — EXECUTING
-Plan: 2 of 5
+Plan: 4 of 5
 
 ## Milestone
 
@@ -96,6 +96,9 @@ Plan: 2 of 5
 - [Phase 02-11]: navigate commands execute after plan refetch so target page has fresh data; training_plan generation takes priority over navigate commands
 - [Phase 02.1]: PlanSession kept as deprecated export for session.ts and prompts.ts transition
 - [Phase 02.1]: getPlan returns null for stale sessions-based plans to prevent UI breakage
+- [Phase 02.1-03]: PlanView renders React components directly (not ReactMarkdown) for active plan so inline editing works; planToMarkdown kept for archive/export
+- [Phase 02.1-03]: open-coach custom window event decouples TrainingPlan from AppShell state without prop drilling
+- [Phase 02.1-03]: DayRow isReadOnly guard: readonly || day.completed || day.skipped collapses three non-editable states
 
 ## Accumulated Context
 
@@ -132,3 +135,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02 P06 | 8min | 2 tasks | 4 files |
 | Phase 02-coach-chat P08 | 3min | 2 tasks | 3 files |
 | Phase 02.1 P01 | 8 min | 2 tasks | 10 files |
+| Phase 02.1-training-plan-redesign P03 | 8min | 2 tasks | 8 files |
