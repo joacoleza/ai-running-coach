@@ -23,6 +23,7 @@ interface UseChatReturn {
   messages: Message[];
   plan: PlanData | null;
   isStreaming: boolean;
+  isGeneratingPlan: boolean;
   isLoading: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
@@ -76,6 +77,7 @@ export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -209,10 +211,9 @@ export function useChat(): UseChatReturn {
               const updated = [...prev];
               const lastIdx = updated.length - 1;
               if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-                const raw = updated[lastIdx].content + payload.text;
                 updated[lastIdx] = {
                   ...updated[lastIdx],
-                  content: raw.replace(/<training_plan>[\s\S]*/g, '').trim(),
+                  content: accumulatedText.replace(/<training_plan>[\s\S]*/g, '').trim(),
                 };
               }
               return updated;
@@ -241,6 +242,7 @@ export function useChat(): UseChatReturn {
 
             // Handle training plan generation (takes priority over navigate commands)
             if (accumulatedText.includes('<training_plan>')) {
+              setIsGeneratingPlan(true);
               // Strip the raw <training_plan> block from the displayed message
               setMessages((prev) => {
                 const updated = [...prev];
@@ -270,12 +272,16 @@ export function useChat(): UseChatReturn {
                 if (generateResponse.ok) {
                   const updatedPlan = await fetchPlan();
                   if (updatedPlan) setPlan(updatedPlan);
+                  window.dispatchEvent(new Event('plan-updated'));
+                  setIsGeneratingPlan(false);
                   navigate('/plan');
                 } else {
                   const errData = await generateResponse.json().catch(() => ({ error: 'Plan generation failed' })) as { error?: string };
+                  setIsGeneratingPlan(false);
                   setError(errData.error ?? 'Something went wrong generating your plan');
                 }
               } catch {
+                setIsGeneratingPlan(false);
                 setError('Something went wrong generating your plan');
               }
             } else {
@@ -434,10 +440,9 @@ export function useChat(): UseChatReturn {
                   const updated = [...prev];
                   const lastIdx = updated.length - 1;
                   if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-                    const raw = updated[lastIdx].content + payload.text;
                     updated[lastIdx] = {
                       ...updated[lastIdx],
-                      content: raw.replace(/<training_plan>[\s\S]*/g, '').trim(),
+                      content: accumulatedText.replace(/<training_plan>[\s\S]*/g, '').trim(),
                     };
                   }
                   return updated;
@@ -445,6 +450,7 @@ export function useChat(): UseChatReturn {
               } else if (payload.done) {
                 setIsStreaming(false);
                 if (accumulatedText.includes('<training_plan>')) {
+                  setIsGeneratingPlan(true);
                   // Strip the raw <training_plan> block from the displayed message
                   setMessages((prev) => {
                     const updated = [...prev];
@@ -473,11 +479,15 @@ export function useChat(): UseChatReturn {
                     if (generateResponse.ok) {
                       const updatedPlan = await fetchPlan();
                       if (updatedPlan) setPlan(updatedPlan);
+                      window.dispatchEvent(new Event('plan-updated'));
+                      setIsGeneratingPlan(false);
                       navigate('/plan');
                     } else {
+                      setIsGeneratingPlan(false);
                       setError('Something went wrong generating your plan');
                     }
                   } catch {
+                    setIsGeneratingPlan(false);
                     setError('Something went wrong generating your plan');
                   }
                 } else {
@@ -556,6 +566,7 @@ export function useChat(): UseChatReturn {
     messages,
     plan,
     isStreaming,
+    isGeneratingPlan,
     isLoading,
     error,
     sendMessage,

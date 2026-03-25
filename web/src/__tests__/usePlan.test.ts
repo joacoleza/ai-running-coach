@@ -140,4 +140,21 @@ describe('usePlan', () => {
       await result.current.importFromUrl('https://chatgpt.com/share/bad');
     })).rejects.toThrow('Invalid URL');
   });
+
+  it('refreshes plan when plan-updated event fires', async () => {
+    const updatedPlan = { ...mockPlan, _id: 'after-event' };
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) });
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.plan?._id).toBe('p1');
+
+    await act(async () => {
+      window.dispatchEvent(new Event('plan-updated'));
+    });
+
+    await waitFor(() => expect(result.current.plan?._id).toBe('after-event'));
+  });
 });

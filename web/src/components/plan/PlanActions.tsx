@@ -24,12 +24,14 @@ export function PlanActions({ hasActivePlan, onCreateNew, onImport, onUpdate, on
         </button>
       )}
 
-      <button
-        onClick={onImport}
-        className="px-4 py-2 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-      >
-        Import from ChatGPT
-      </button>
+      {!hasActivePlan && (
+        <button
+          onClick={onImport}
+          className="px-4 py-2 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+        >
+          Import from ChatGPT
+        </button>
+      )}
 
       {hasActivePlan && (
         <>

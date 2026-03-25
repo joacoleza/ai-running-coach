@@ -110,5 +110,11 @@ export function usePlan(): UsePlanReturn {
 
   useEffect(() => { refreshPlan(); }, [refreshPlan]);
 
+  useEffect(() => {
+    const handler = () => { void refreshPlan(); };
+    window.addEventListener('plan-updated', handler);
+    return () => window.removeEventListener('plan-updated', handler);
+  }, [refreshPlan]);
+
   return { plan, isLoading, error, refreshPlan, updateDay, archivePlan, importFromUrl };
 }

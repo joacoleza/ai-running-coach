@@ -94,7 +94,19 @@ describe('POST /api/plan/archive', () => {
     expect(result.jsonBody.plan.status).toBe('archived');
   });
 
-  it('returns 404 when no active plan to archive', async () => {
+  it('archives onboarding plan and returns 200', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...basePlan,
+      status: 'onboarding',
+    });
+
+    const req = makeReq('POST', 'http://localhost/api/plan/archive');
+    const result = await handlers.get('archivePlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan.status).toBe('archived');
+  });
+
+  it('returns 404 when no active or onboarding plan to archive', async () => {
     const req = makeReq('POST', 'http://localhost/api/plan/archive');
     const result = await handlers.get('archivePlan')!(req, ctx);
     expect(result.status).toBe(404);

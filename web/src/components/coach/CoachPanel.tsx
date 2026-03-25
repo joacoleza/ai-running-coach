@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { ChatMessage } from './ChatMessage';
-import { ChatHistory } from './ChatHistory';
 
 interface CoachPanelProps {
   isOpen: boolean;
@@ -9,16 +8,25 @@ interface CoachPanelProps {
 }
 
 export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
-  const { messages, plan, isStreaming, isLoading, error, sendMessage, startPlan, startOver, clearError } =
+  const { messages, plan, isStreaming, isGeneratingPlan, isLoading, error, sendMessage, startPlan, startOver, clearError } =
     useChat();
   const [input, setInput] = useState('');
-  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Focus input when open-coach event fires (e.g. "Update Plan" button on desktop)
+  useEffect(() => {
+    const handler = () => {
+      setTimeout(() => inputRef.current?.focus(), 50);
+    };
+    window.addEventListener('open-coach', handler);
+    return () => window.removeEventListener('open-coach', handler);
+  }, []);
 
   const handleSend = async () => {
     if (!input.trim() || isStreaming) return;
@@ -43,23 +51,6 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
   // Determine header title
   const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
 
-  if (showHistory) {
-    return (
-      <aside className={asideClass}>
-        {/* Mobile close button in history view */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 md:hidden">
-          <span className="text-sm font-medium text-gray-500">History</span>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600" aria-label="Close coach">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <ChatHistory messages={messages} onBack={() => setShowHistory(false)} />
-      </aside>
-    );
-  }
-
   return (
     <aside className={asideClass}>
       {/* Header */}
@@ -75,26 +66,6 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
               Start Over
             </button>
           )}
-          <button
-            onClick={() => setShowHistory(true)}
-            className="text-gray-400 hover:text-gray-600"
-            title="Message history"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </button>
           {/* Close button — mobile only */}
           <button
             onClick={onClose}
@@ -140,6 +111,15 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             {messages.map((msg, i) => (
               <ChatMessage key={i} role={msg.role} content={msg.content} />
             ))}
+            {isGeneratingPlan && (
+              <div className="flex items-center gap-2 text-sm text-blue-600 animate-pulse mt-2">
+                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+                Creating your plan...
+              </div>
+            )}
             {isStreaming &&
               messages.length > 0 &&
               messages[messages.length - 1].content === '' && (
@@ -155,6 +135,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
         <div className="border-t border-gray-200 p-3">
           <div className="flex gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}

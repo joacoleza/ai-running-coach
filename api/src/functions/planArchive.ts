@@ -17,7 +17,7 @@ app.http('archivePlan', {
       const db = await getDb();
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: 'active' },
+        { status: { $in: ['active', 'onboarding'] } },
         { $set: { status: 'archived', updatedAt: new Date() } },
         { returnDocument: 'after' },
       );

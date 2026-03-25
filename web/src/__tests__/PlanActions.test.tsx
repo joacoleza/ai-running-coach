@@ -54,6 +54,7 @@ describe('PlanActions — with active plan', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: /new plan/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /import from chatgpt/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /update plan/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /close & archive/i })).toBeInTheDocument();
   });
