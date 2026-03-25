@@ -203,14 +203,16 @@ export function useChat(): UseChatReturn {
 
           if (payload.text) {
             accumulatedText += payload.text;
-            // Update last assistant message in state with streaming content
+            // Update last assistant message in state with streaming content.
+            // Strip <training_plan> block from display as it arrives (it's machine data, not user text).
             setMessages((prev) => {
               const updated = [...prev];
               const lastIdx = updated.length - 1;
               if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                const raw = updated[lastIdx].content + payload.text;
                 updated[lastIdx] = {
                   ...updated[lastIdx],
-                  content: updated[lastIdx].content + payload.text,
+                  content: raw.replace(/<training_plan>[\s\S]*/g, '').trim(),
                 };
               }
               return updated;
@@ -432,9 +434,10 @@ export function useChat(): UseChatReturn {
                   const updated = [...prev];
                   const lastIdx = updated.length - 1;
                   if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                    const raw = updated[lastIdx].content + payload.text;
                     updated[lastIdx] = {
                       ...updated[lastIdx],
-                      content: updated[lastIdx].content + payload.text,
+                      content: raw.replace(/<training_plan>[\s\S]*/g, '').trim(),
                     };
                   }
                   return updated;

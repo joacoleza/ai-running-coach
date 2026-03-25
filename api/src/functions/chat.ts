@@ -51,7 +51,7 @@ app.http('chat', {
     // Stream Claude response
     const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
+      max_tokens: 16000,
       system: systemPrompt,
       messages: contextMessages,
     });

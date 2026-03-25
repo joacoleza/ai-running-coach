@@ -37,8 +37,8 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
   // Mobile: full-screen overlay when open, hidden when closed.
   // Desktop (md+): always visible as fixed-width right panel.
   const asideClass = isOpen
-    ? 'flex fixed inset-0 z-50 flex-col bg-white md:relative md:inset-auto md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:min-h-screen'
-    : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:min-h-screen';
+    ? 'flex fixed inset-0 z-50 flex-col bg-white md:relative md:inset-auto md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:h-screen md:sticky md:top-0'
+    : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:h-screen md:sticky md:top-0';
 
   // Determine header title
   const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
