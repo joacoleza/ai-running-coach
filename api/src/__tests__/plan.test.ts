@@ -70,6 +70,29 @@ const validGoal = {
   units: 'km',
 };
 
+const validPhases = [
+  {
+    name: 'Base Building',
+    description: 'Build aerobic base',
+    weeks: [
+      {
+        weekNumber: 1,
+        startDate: '2026-04-01',
+        days: [
+          {
+            date: '2026-04-01',
+            type: 'run',
+            objective: { kind: 'distance', value: 5, unit: 'km' },
+            guidelines: 'Easy run',
+            completed: false,
+            skipped: false,
+          },
+        ],
+      },
+    ],
+  },
+];
+
 async function createTestPlan(mode: 'conversational' | 'paste' = 'conversational') {
   const req = makeReq('POST', { mode });
   const result = await handlers.get('createPlan')!(req, ctx);
@@ -77,20 +100,19 @@ async function createTestPlan(mode: 'conversational' | 'paste' = 'conversational
 }
 
 describe('Plan Generation - JSON extraction (PLAN-01)', () => {
-  it('extracts JSON from <training_plan> XML tags', async () => {
+  it('extracts JSON with phases from <training_plan> XML tags', async () => {
     const planId = await createTestPlan();
-    const sessions = [{ date: '2026-04-01', distance: 5, duration: 30, avgPace: '6:00', notes: 'Easy run' }];
     const req = makeReq('POST', {
       planId,
-      claudeResponseText: `Here is your plan\n<training_plan>${JSON.stringify(sessions)}</training_plan>`,
+      claudeResponseText: `Here is your plan\n<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
       goal: validGoal,
     });
 
     const result = await handlers.get('generatePlan')!(req, ctx);
 
     expect(result.status).toBe(200);
-    expect(result.jsonBody.plan.sessions).toHaveLength(1);
-    expect(result.jsonBody.plan.sessions[0].notes).toBe('Easy run');
+    expect(result.jsonBody.plan.phases).toHaveLength(1);
+    expect(result.jsonBody.plan.phases[0].name).toBe('Base Building');
   });
 
   it('returns 400 when no <training_plan> tags found', async () => {
@@ -121,46 +143,35 @@ describe('Plan Generation - JSON extraction (PLAN-01)', () => {
     expect(result.jsonBody.error).toContain('Failed to parse');
   });
 
-  it('generates UUID id for each session', async () => {
+  it('returns 400 when phases array is empty', async () => {
     const planId = await createTestPlan();
-    const sessions = [
-      { date: '2026-04-01', distance: 5, duration: 30, avgPace: '6:00', notes: 'Run 1' },
-      { date: '2026-04-03', distance: 8, duration: 45, avgPace: '5:30', notes: 'Run 2' },
-    ];
     const req = makeReq('POST', {
       planId,
-      claudeResponseText: `<training_plan>${JSON.stringify(sessions)}</training_plan>`,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: [] })}</training_plan>`,
       goal: validGoal,
     });
 
     const result = await handlers.get('generatePlan')!(req, ctx);
 
-    const savedSessions = result.jsonBody.plan.sessions as Array<{ id: string }>;
-    expect(savedSessions).toHaveLength(2);
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    for (const s of savedSessions) {
-      expect(s.id).toMatch(uuidRegex);
-    }
-    expect(savedSessions[0].id).not.toBe(savedSessions[1].id);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('at least one phase');
   });
 
-  it('sets completed: false on all sessions', async () => {
+  it('stores phases with correct structure', async () => {
     const planId = await createTestPlan();
-    const sessions = [
-      { date: '2026-04-01', distance: 5, duration: 30, avgPace: '6:00', notes: 'Run' },
-      { date: '2026-04-02', distance: 8, duration: 50, avgPace: '5:45', notes: 'Long run' },
-    ];
     const req = makeReq('POST', {
       planId,
-      claudeResponseText: `<training_plan>${JSON.stringify(sessions)}</training_plan>`,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
       goal: validGoal,
     });
 
     const result = await handlers.get('generatePlan')!(req, ctx);
 
-    for (const s of result.jsonBody.plan.sessions as Array<{ completed: boolean }>) {
-      expect(s.completed).toBe(false);
-    }
+    const phase = result.jsonBody.plan.phases[0];
+    expect(phase.name).toBe('Base Building');
+    expect(phase.weeks).toHaveLength(1);
+    expect(phase.weeks[0].days[0].type).toBe('run');
+    expect(phase.weeks[0].days[0].completed).toBe(false);
   });
 });
 
@@ -174,38 +185,29 @@ describe('Plan Schema (PLAN-02)', () => {
     expect(plan.onboardingStep).toBe(0);
     expect(plan.onboardingMode).toBe('conversational');
     expect(plan.goal).toBeDefined();
-    expect(plan.sessions).toEqual([]);
+    expect(plan.phases).toEqual([]);
     expect(plan.createdAt).toBeDefined();
     expect(plan.updatedAt).toBeDefined();
   });
 
-  it('session subdocument matches D-05 schema', async () => {
+  it('PlanDay subdocument matches D-01 schema', async () => {
     const planId = await createTestPlan();
-    const sessions = [{
-      date: '2026-04-01',
-      distance: 10,
-      duration: 60,
-      avgPace: '6:00',
-      avgBpm: 150,
-      notes: 'Long run Sunday',
-    }];
     const req = makeReq('POST', {
       planId,
-      claudeResponseText: `<training_plan>${JSON.stringify(sessions)}</training_plan>`,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
       goal: { eventType: 'marathon', targetDate: '2026-10-01', weeklyMileage: 50, availableDays: 5, units: 'km' },
     });
 
     const result = await handlers.get('generatePlan')!(req, ctx);
-    const s = result.jsonBody.plan.sessions[0];
+    const day = result.jsonBody.plan.phases[0].weeks[0].days[0];
 
-    expect(s.id).toBeDefined();
-    expect(s.date).toBe('2026-04-01');
-    expect(s.distance).toBe(10);
-    expect(s.duration).toBe(60);
-    expect(s.avgPace).toBe('6:00');
-    expect(s.avgBpm).toBe(150);
-    expect(s.notes).toBe('Long run Sunday');
-    expect(s.completed).toBe(false);
+    expect(day.date).toBe('2026-04-01');
+    expect(day.type).toBe('run');
+    expect(day.objective.kind).toBe('distance');
+    expect(day.objective.value).toBe(5);
+    expect(day.guidelines).toBe('Easy run');
+    expect(day.completed).toBe(false);
+    expect(day.skipped).toBe(false);
   });
 });
 
@@ -218,18 +220,18 @@ describe('Plan CRUD', () => {
     expect(result.jsonBody.plan.status).toBe('onboarding');
   });
 
-  it('POST /api/plan discards existing onboarding plan (D-02)', async () => {
+  it('POST /api/plan archives existing onboarding plan (D-02)', async () => {
     // Create first plan
     const firstId = await createTestPlan();
 
-    // Create second plan — first should be discarded
+    // Create second plan — first should be archived
     await createTestPlan();
 
     const firstPlan = await mongoClient
       .db('running-coach')
       .collection('plans')
       .findOne({ _id: new ObjectId(firstId) });
-    expect(firstPlan?.status).toBe('discarded');
+    expect(firstPlan?.status).toBe('archived');
   });
 
   it('GET /api/plan returns active or onboarding plan', async () => {
@@ -242,12 +244,28 @@ describe('Plan CRUD', () => {
     expect(['onboarding', 'active']).toContain(result.jsonBody.plan.status);
   });
 
-  it('GET /api/plan does not return completed plans', async () => {
+  it('GET /api/plan does not return archived plans', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
-      status: 'completed',
+      status: 'archived',
       onboardingStep: 6,
       goal: {},
-      sessions: [],
+      phases: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan).toBeNull();
+  });
+
+  it('GET /api/plan returns null for stale sessions-based plans', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingStep: 6,
+      goal: {},
+      sessions: [{ id: 'abc', date: '2026-01-01', distance: 5, notes: 'Easy run', completed: false }],
       createdAt: new Date(),
       updatedAt: new Date(),
     });

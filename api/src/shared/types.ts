@@ -17,6 +17,7 @@ export interface PlanGoal {
   units: 'km' | 'miles';
 }
 
+/** @deprecated Use PlanDay instead */
 export interface PlanSession {
   id: string;
   date: string; // ISO date YYYY-MM-DD
@@ -28,14 +29,41 @@ export interface PlanSession {
   completed: boolean;
 }
 
+export interface PlanDay {
+  date: string;           // ISO YYYY-MM-DD
+  type: 'run' | 'rest' | 'cross-train';
+  objective?: {
+    kind: 'distance' | 'time';
+    value: number;
+    unit: 'km' | 'min';
+  };
+  guidelines: string;
+  completed: boolean;
+  skipped: boolean;
+}
+
+export interface PlanWeek {
+  weekNumber: number;
+  startDate: string;      // ISO YYYY-MM-DD
+  days: PlanDay[];
+}
+
+export interface PlanPhase {
+  name: string;           // e.g. "Base Building"
+  description: string;
+  weeks: PlanWeek[];
+}
+
 export interface Plan {
   _id?: ObjectId;
-  status: 'onboarding' | 'active' | 'completed' | 'discarded';
+  status: 'onboarding' | 'active' | 'archived';
   onboardingMode: 'conversational' | 'paste';
   onboardingStep: number;
   summary?: string;
   goal: PlanGoal;
-  sessions: PlanSession[];
+  phases: PlanPhase[];
+  objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
+  targetDate?: string;
   createdAt: Date;
   updatedAt: Date;
 }

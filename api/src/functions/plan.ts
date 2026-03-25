@@ -1,8 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { randomUUID } from 'crypto';
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import { Plan, PlanGoal, PlanSession } from '../shared/types.js';
+import { Plan, PlanGoal, PlanPhase } from '../shared/types.js';
 
 app.http('getPlan', {
   methods: ['GET'],
@@ -20,6 +19,11 @@ app.http('getPlan', {
           { status: { $in: ['onboarding', 'active'] } },
           { sort: { createdAt: -1 } },
         );
+
+      // Stale plan migration: old plans have sessions[] but no phases[]
+      if (plan && (!plan.phases || plan.phases.length === 0) && (plan as any).sessions?.length > 0) {
+        return { status: 200, jsonBody: { plan: null } };
+      }
 
       return {
         status: 200,
@@ -52,7 +56,7 @@ app.http('createPlan', {
       // D-02: Discard any existing onboarding plan before creating a new one
       await db.collection<Plan>('plans').updateMany(
         { status: 'onboarding' },
-        { $set: { status: 'discarded', updatedAt: new Date() } },
+        { $set: { status: 'archived', updatedAt: new Date() } },
       );
 
       const now = new Date();
@@ -61,7 +65,7 @@ app.http('createPlan', {
         onboardingMode: mode,
         onboardingStep: 0,
         goal: {} as PlanGoal,
-        sessions: [],
+        phases: [],
         createdAt: now,
         updatedAt: now,
       };
@@ -97,9 +101,11 @@ app.http('generatePlan', {
         planId?: string;
         claudeResponseText?: string;
         goal?: PlanGoal;
+        objective?: string;
       };
 
       const { planId, claudeResponseText, goal } = body;
+      const objective = body.objective as Plan['objective'] | undefined;
 
       if (!planId || !claudeResponseText || !goal) {
         return {
@@ -117,27 +123,18 @@ app.http('generatePlan', {
         };
       }
 
-      let parsedSessions: Array<Omit<PlanSession, 'id' | 'completed'>>;
+      let parsedPlan: { phases: PlanPhase[] };
       try {
-        parsedSessions = JSON.parse(match[1]);
+        parsedPlan = JSON.parse(match[1]);
+        if (!parsedPlan.phases || !Array.isArray(parsedPlan.phases) || parsedPlan.phases.length === 0) {
+          return { status: 400, jsonBody: { error: 'Training plan must contain at least one phase' } };
+        }
       } catch {
         return {
           status: 400,
           jsonBody: { error: 'Failed to parse training plan JSON from response' },
         };
       }
-
-      // Map each session, assigning a UUID and defaulting completed to false
-      const sessions: PlanSession[] = parsedSessions.map((s) => ({
-        id: randomUUID(),
-        date: s.date,
-        distance: s.distance,
-        duration: s.duration,
-        avgPace: s.avgPace,
-        avgBpm: s.avgBpm,
-        notes: s.notes ?? '',
-        completed: false,
-      }));
 
       const db = await getDb();
 
@@ -159,7 +156,9 @@ app.http('generatePlan', {
           $set: {
             status: 'active',
             goal,
-            sessions,
+            phases: parsedPlan.phases,
+            objective,
+            targetDate: goal.targetDate,
             updatedAt: now,
           },
         },

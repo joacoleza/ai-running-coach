@@ -17,6 +17,7 @@ app.http('chat', {
     if (denied) return denied;
 
     if (!process.env.ANTHROPIC_API_KEY) {
+      context.error('ANTHROPIC_API_KEY is not configured');
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
@@ -93,13 +94,15 @@ app.http('chat', {
           });
 
           stream.on('error', (err) => {
-            context.error('Claude stream error:', err);
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream error' })}\n\n`));
+            const msg = err instanceof Error ? err.message : String(err);
+            context.error('Claude stream error:', { message: msg, planId, stack: err instanceof Error ? err.stack : undefined });
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Claude error: ${msg}` })}\n\n`));
             controller.close();
           });
         } catch (err) {
-          context.error('Stream setup error:', err);
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Stream setup failed' })}\n\n`));
+          const msg = err instanceof Error ? err.message : String(err);
+          context.error('Stream setup error:', { message: msg, planId, stack: err instanceof Error ? (err as Error).stack : undefined });
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Stream setup failed: ${msg}` })}\n\n`));
           controller.close();
         }
       }
