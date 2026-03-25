@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-25T11:09:35.166Z"
+last_updated: "2026-03-25T11:13:14.166Z"
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 22
-  completed_plans: 20
-  percent: 91
+  completed_plans: 21
+  percent: 95
 ---
 
 # State
@@ -26,12 +26,12 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 01.2
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [█████████░] 91%
+**Progress:** [██████████] 95%
 
 ## Current Position
 
 Phase: 02.1 (training-plan-redesign) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 
 ## Milestone
 
@@ -101,6 +101,7 @@ Plan: 4 of 5
 - [Phase 02.1-03]: DayRow isReadOnly guard: readonly || day.completed || day.skipped collapses three non-editable states
 - [Phase 02.1-02]: arrayFilters with day.date and day.completed false enforces completed-day edit guard at DB level
 - [Phase 02.1-02]: buildSystemPrompt signature changed from PlanSession[] to PlanPhase[] - session-based context replaced by phases-based upcoming days
+- [Phase 02.1-04]: Archive list shows objective label and Archived badge for D-24 completion status; planToMarkdown reused from Plan 03 for readonly view (D-25)
 
 ## Accumulated Context
 
@@ -139,3 +140,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02.1 P01 | 8 min | 2 tasks | 10 files |
 | Phase 02.1-training-plan-redesign P03 | 8min | 2 tasks | 8 files |
 | Phase 02.1-training-plan-redesign P02 | 3 min | 2 tasks | 6 files |
+| Phase 02.1-training-plan-redesign P04 | 2min | 2 tasks | 4 files |

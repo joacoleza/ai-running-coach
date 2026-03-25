@@ -158,7 +158,7 @@ Plans:
 - [x] 02.1-01-PLAN.md — Replace types (PlanDay/PlanWeek/PlanPhase), update generatePlan, remove react-big-calendar
 - [x] 02.1-02-PLAN.md — New API endpoints (PATCH day, archive, import) + system prompt update
 - [x] 02.1-03-PLAN.md — Frontend plan view (PlanView, DayRow inline editing, PlanActions, ImportUrlForm)
-- [ ] 02.1-04-PLAN.md — Archive pages + sidebar nav + routing
+- [x] 02.1-04-PLAN.md — Archive pages + sidebar nav + routing
 - [ ] 02.1-05-PLAN.md — useChat plan:update wiring + chat.ts phases + unit tests
 
 **Deliverables:**
