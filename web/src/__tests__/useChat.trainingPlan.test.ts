@@ -1,10 +1,39 @@
 import { describe, it, expect } from 'vitest'
 
-// Unit tests for the <training_plan> stripping regex used in useChat.ts.
-// The regex is: /<training_plan>[\s\S]*?<\/training_plan>/g
+// Two regexes used in useChat.ts:
+// 1. Live streaming (no closing tag yet): /<training_plan>[\s\S]*/g
+// 2. End-of-stream cleanup (closing tag present): /<training_plan>[\s\S]*?<\/training_plan>/g
+
+const stripTrainingPlanLive = (content: string): string =>
+  content.replace(/<training_plan>[\s\S]*/g, '').trim()
 
 const stripTrainingPlan = (content: string): string =>
   content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim()
+
+describe('training_plan live-stream stripping (no closing tag)', () => {
+  it('strips everything from <training_plan> to end when tag is open', () => {
+    const partial = 'Great news! Here is your plan.\n\n<training_plan>{"phases":[{"name":"Base"'
+    expect(stripTrainingPlanLive(partial)).toBe('Great news! Here is your plan.')
+  })
+
+  it('preserves text before <training_plan> when tag just opened', () => {
+    const partial = 'Your plan is ready!\n<training_plan>'
+    expect(stripTrainingPlanLive(partial)).toBe('Your plan is ready!')
+  })
+
+  it('returns content unchanged when no <training_plan> tag', () => {
+    const text = 'How many days per week can you train?'
+    expect(stripTrainingPlanLive(text)).toBe(text)
+  })
+
+  it('handles mid-JSON truncation gracefully', () => {
+    const partial =
+      'Here is your 6-month plan.\n\n' +
+      '<training_plan>{"phases":[{"name":"Base Building","weeks":[{"weekNumber":1'
+    expect(stripTrainingPlanLive(partial)).toBe('Here is your 6-month plan.')
+    expect(stripTrainingPlanLive(partial)).not.toContain('<training_plan>')
+  })
+})
 
 describe('training_plan tag stripping', () => {
   it('strips a <training_plan> block leaving only the human-readable text', () => {
