@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-25T11:09:10.971Z"
+last_updated: "2026-03-25T11:09:35.166Z"
 progress:
   total_phases: 5
   completed_phases: 4
@@ -99,6 +99,8 @@ Plan: 4 of 5
 - [Phase 02.1-03]: PlanView renders React components directly (not ReactMarkdown) for active plan so inline editing works; planToMarkdown kept for archive/export
 - [Phase 02.1-03]: open-coach custom window event decouples TrainingPlan from AppShell state without prop drilling
 - [Phase 02.1-03]: DayRow isReadOnly guard: readonly || day.completed || day.skipped collapses three non-editable states
+- [Phase 02.1-02]: arrayFilters with day.date and day.completed false enforces completed-day edit guard at DB level
+- [Phase 02.1-02]: buildSystemPrompt signature changed from PlanSession[] to PlanPhase[] - session-based context replaced by phases-based upcoming days
 
 ## Accumulated Context
 
@@ -136,3 +138,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02-coach-chat P08 | 3min | 2 tasks | 3 files |
 | Phase 02.1 P01 | 8 min | 2 tasks | 10 files |
 | Phase 02.1-training-plan-redesign P03 | 8min | 2 tasks | 8 files |
+| Phase 02.1-training-plan-redesign P02 | 3 min | 2 tasks | 6 files |
