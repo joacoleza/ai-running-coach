@@ -99,7 +99,7 @@ Plans:
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
-**Plans:** 11/11 plans complete (includes former Phase 2.1 test stubs + UAT bug fixes + mobile + app commands)
+**Plans:** 8/8 plans complete
 
 Plans:
 - [x] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-23T20:38:42.039Z"
+last_updated: "2026-03-25T11:03:54.868Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 100
+  total_plans: 22
+  completed_plans: 18
+  percent: 82
 ---
 
 # State
@@ -19,19 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 02 — coach-chat
+**Current focus:** Phase 02.1 — training-plan-redesign
 
 ## Current Phase
 
 **Phase:** 01.2
 **Status:** Ready to execute
 **Plans:** 0/TBD
-**Progress:** [██████████] 100%
+**Progress:** [████████░░] 82%
 
 ## Current Position
 
-Phase: 02 (coach-chat) — EXECUTING
-Plan: 2 of 8
+Phase: 02.1 (training-plan-redesign) — EXECUTING
+Plan: 2 of 5
 
 ## Milestone
 
@@ -85,6 +85,25 @@ Plan: 2 of 8
 - [Phase 02-06]: verbatimModuleSyntax requires import type for View and PlanSession
 - [Phase 02-08]: GET /api/messages uses same requirePassword auth middleware pattern as all other endpoints
 - [Phase 02-08]: useChat history fetch non-fatal: failure leaves messages empty same as before
+- [Phase 02-09]: startOver() resets to null plan state (no API call) — orphaned onboarding plan discarded next POST /api/plan
+- [Phase 02-09]: Import conversation changed from textarea paste to file upload (.txt/.md/.json); FileReader reads content client-side
+- [Phase 02-09]: Claude stream errors now log full message+stack+planId to Application Insights via context.error()
+- [Phase 02-10]: CoachPanel receives isOpen/onClose props from AppShell; mobile=fixed inset-0 z-50 overlay, desktop=static flex column
+- [Phase 02-10]: @anthropic-ai/sdk mocked via vi.mock() in chat.test.ts and chat.integration.test.ts to prevent real API calls in unit tests
+- [Phase 02-10]: playwright.config.ts sets ANTHROPIC_API_KEY='' in webServer env to prevent real API calls in E2E tests
+- [Phase 02-11]: buildSystemPrompt receives optional sessions[] parameter; includes next 14 upcoming sessions with session_id for app:complete commands
+- [Phase 02-11]: App commands use <app:navigate page="X"/> and <app:complete session_id="Y"/> XML tags; frontend strips from display and executes after stream done
+- [Phase 02-11]: navigate commands execute after plan refetch so target page has fresh data; training_plan generation takes priority over navigate commands
+- [Phase 02.1]: PlanSession kept as deprecated export for session.ts and prompts.ts transition
+- [Phase 02.1]: getPlan returns null for stale sessions-based plans to prevent UI breakage
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 2.1 merged into Phase 2 (not a separate phase)
+- Phase 2 extended with UAT fixes, mobile UI, test isolation, system prompt hardening, app commands
+- Phase 2 status: code complete, awaiting human UAT in live environment
 
 ## Performance Metrics
 
@@ -112,3 +131,4 @@ _Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
 | Phase 02-coach-chat P05 | 4min | 2 tasks | 4 files |
 | Phase 02 P06 | 8min | 2 tasks | 4 files |
 | Phase 02-coach-chat P08 | 3min | 2 tasks | 3 files |
+| Phase 02.1 P01 | 8 min | 2 tasks | 10 files |
