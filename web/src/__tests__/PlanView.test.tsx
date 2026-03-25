@@ -41,24 +41,24 @@ const plan: PlanData = {
 
 describe('PlanView', () => {
   it('renders all phase names', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} />);
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Base Phase')).toBeInTheDocument();
     expect(screen.getByText('Peak Phase')).toBeInTheDocument();
   });
 
   it('renders phase description when present', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} />);
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Build your aerobic base')).toBeInTheDocument();
   });
 
   it('renders week headings', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} />);
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Week 1')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
   });
 
   it('renders DayRow for each day', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} />);
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Easy 5k')).toBeInTheDocument();
     expect(screen.getByText('Rest')).toBeInTheDocument(); // rest days render as "Rest" not guidelines
     expect(screen.getByText('Tempo run')).toBeInTheDocument();

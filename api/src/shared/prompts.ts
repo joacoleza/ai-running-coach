@@ -60,9 +60,10 @@ Rules:
 
 When generating a training plan, output it as a JSON object wrapped in \`<training_plan>\` tags. The JSON must have this exact structure:
 
-\`<training_plan>{"phases":[{"name":"Base Building","description":"Build aerobic base with easy running","weeks":[{"weekNumber":1,"startDate":"2026-04-07","days":[{"date":"2026-04-07","type":"run","objective":{"kind":"distance","value":5,"unit":"km"},"guidelines":"Easy Zone 2 run","completed":false,"skipped":false},{"date":"2026-04-08","type":"rest","guidelines":"Rest day","completed":false,"skipped":false}]}]}]}</training_plan>\`
+\`<training_plan>{"goal":{"eventType":"10km","targetDate":"2026-06-27","weeklyMileage":15,"availableDays":3,"units":"km"},"phases":[{"name":"Base Building","description":"Build aerobic base with easy running","weeks":[{"weekNumber":1,"startDate":"2026-04-07","days":[{"date":"2026-04-07","type":"run","objective":{"kind":"distance","value":5,"unit":"km"},"guidelines":"Easy Zone 2 run","completed":false,"skipped":false},{"date":"2026-04-08","type":"rest","guidelines":"Rest day","completed":false,"skipped":false}]}]}]}</training_plan>\`
 
 Rules:
+- The top-level \`goal\` object must include: eventType (e.g. "5km", "10km", "15km", "half-marathon", "marathon"), targetDate (YYYY-MM-DD), weeklyMileage, availableDays, units
 - Each phase has a name (Base Building, Build, Peak, Taper) and description
 - Each week has weekNumber and startDate (Monday of that week)
 - Each day has a date (YYYY-MM-DD), type (run/rest/cross-train), guidelines

@@ -102,9 +102,8 @@ describe('PATCH /api/plan/days/:date', () => {
     expect(result.jsonBody.error).toContain('Invalid date format');
   });
 
-  it('does not update guidelines for a completed day (completed day guard via arrayFilters)', async () => {
-    // Insert an active plan with a completed day
-    const originalGuidelines = 'Original guidelines - must not change';
+  it('can update a completed day (arrayFilters no longer blocks — supports undo)', async () => {
+    const originalGuidelines = 'Original guidelines';
     await mongoClient.db('running-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
@@ -118,7 +117,7 @@ describe('PATCH /api/plan/days/:date', () => {
                   ...validActivePlan.phases[0].weeks[0].days[0],
                   date: '2026-04-07',
                   guidelines: originalGuidelines,
-                  completed: true, // already completed
+                  completed: true,
                 },
               ],
             },
@@ -127,14 +126,15 @@ describe('PATCH /api/plan/days/:date', () => {
       ],
     });
 
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { guidelines: 'New guidelines attempt' });
-    await handlers.get('patchDay')!(req, ctx);
+    // Undo: set completed back to false
+    const req = makeReq('PATCH', { date: '2026-04-07' }, { completed: 'false', skipped: 'false' });
+    const result = await handlers.get('patchDay')!(req, ctx);
+    expect(result.status).toBe(200);
 
-    // Verify the day was NOT actually updated in the DB (arrayFilters guard works)
     const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
     const day = plan?.phases[0]?.weeks[0]?.days[0];
-    expect(day?.guidelines).toBe(originalGuidelines);
-    expect(day?.completed).toBe(true);
+    expect(day?.completed).toBe(false);
+    expect(day?.skipped).toBe(false);
   });
 
   it('updates guidelines for a non-completed day', async () => {
@@ -151,5 +151,62 @@ describe('PATCH /api/plan/days/:date', () => {
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(400);
     expect(result.jsonBody.error).toContain('No valid fields');
+  });
+});
+
+describe('deleteDay handler', () => {
+  let validActivePlan: any;
+
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    validActivePlan = {
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 0,
+      goal: {},
+      phases: [
+        {
+          name: 'Base',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              startDate: '2026-04-07',
+              days: [
+                { date: '2026-04-07', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
+                { date: '2026-04-08', type: 'rest', guidelines: 'Rest', completed: false, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  });
+
+  it('removes the specified day from the plan', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+
+    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const result = await handlers.get('deleteDay')!(req, ctx);
+    expect(result.status).toBe(200);
+
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const dates = plan?.phases[0]?.weeks[0]?.days.map((d: any) => d.date);
+    expect(dates).not.toContain('2026-04-07');
+    expect(dates).toContain('2026-04-08');
+  });
+
+  it('returns 404 when no active plan exists', async () => {
+    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const result = await handlers.get('deleteDay')!(req, ctx);
+    expect(result.status).toBe(404);
+  });
+
+  it('rejects invalid date format (400)', async () => {
+    const req = makeReq('DELETE', { date: 'not-a-date' });
+    const result = await handlers.get('deleteDay')!(req, ctx);
+    expect(result.status).toBe(400);
   });
 });

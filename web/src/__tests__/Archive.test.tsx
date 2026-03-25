@@ -24,7 +24,7 @@ describe('Archive', () => {
     await waitFor(() => expect(screen.getByText('No archived plans yet.')).toBeInTheDocument());
   });
 
-  it('renders plan links for archived plans', async () => {
+  it('renders plan links with title for archived plans', async () => {
     mockFetch.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -38,6 +38,45 @@ describe('Archive', () => {
     await waitFor(() => expect(screen.getByText('marathon')).toBeInTheDocument());
     expect(screen.getByText('10km')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /marathon/i })).toHaveAttribute('href', '/archive/abc123');
+  });
+
+  it('shows target date when available on plan.targetDate', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        plans: [
+          { _id: 'a1', objective: '10km', targetDate: '2026-06-27', createdAt: '2026-01-01', status: 'archived' },
+        ],
+      }),
+    });
+    render(<MemoryRouter><Archive /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText(/target/i)).toBeInTheDocument());
+    expect(screen.getByText(/jun/i)).toBeInTheDocument();
+  });
+
+  it('shows target date from goal.targetDate when plan.targetDate is absent', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        plans: [
+          { _id: 'a2', objective: 'marathon', goal: { eventType: 'marathon', targetDate: '2026-10-01' }, createdAt: '2026-01-01', status: 'archived' },
+        ],
+      }),
+    });
+    render(<MemoryRouter><Archive /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText(/oct/i)).toBeInTheDocument());
+  });
+
+  it('shows no date label when no targetDate present', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        plans: [{ _id: 'a3', objective: 'marathon', createdAt: '2026-01-01', status: 'archived' }],
+      }),
+    });
+    render(<MemoryRouter><Archive /></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText('marathon')).toBeInTheDocument());
+    expect(screen.queryByText(/target/i)).not.toBeInTheDocument();
   });
 
   it('shows fallback name when no objective or goal', async () => {

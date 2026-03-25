@@ -6,14 +6,13 @@ import type { PlanData } from '../hooks/usePlan';
 
 const mockUpdateDay = vi.fn();
 const mockArchivePlan = vi.fn();
-const mockImportFromUrl = vi.fn();
 const mockStartPlan = vi.fn();
 
 vi.mock('../hooks/usePlan', () => ({
   usePlan: vi.fn(),
 }));
-vi.mock('../hooks/useChat', () => ({
-  useChat: () => ({ startPlan: mockStartPlan }),
+vi.mock('../contexts/ChatContext', () => ({
+  useChatContext: () => ({ startPlan: mockStartPlan }),
 }));
 
 import { usePlan } from '../hooks/usePlan';
@@ -28,7 +27,6 @@ function defaultUsePlan(overrides: Partial<ReturnType<typeof usePlan>> = {}) {
     refreshPlan: vi.fn(),
     updateDay: mockUpdateDay,
     archivePlan: mockArchivePlan,
-    importFromUrl: mockImportFromUrl,
     ...overrides,
   });
 }
@@ -61,7 +59,6 @@ const activePlan: PlanData = {
 beforeEach(() => {
   mockUpdateDay.mockReset();
   mockArchivePlan.mockReset();
-  mockImportFromUrl.mockReset();
   mockStartPlan.mockReset();
 });
 
@@ -118,21 +115,6 @@ describe('TrainingPlan', () => {
     window.removeEventListener('open-coach', listener);
   });
 
-  it('clicking Import shows ImportUrlForm', () => {
-    defaultUsePlan({ plan: null });
-    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /import from chatgpt/i }));
-    expect(screen.getByPlaceholderText(/chatgpt.com\/share/i)).toBeInTheDocument();
-  });
-
-  it('cancelling import hides the form', () => {
-    defaultUsePlan({ plan: null });
-    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /import from chatgpt/i }));
-    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
-    expect(screen.queryByPlaceholderText(/chatgpt.com\/share/i)).not.toBeInTheDocument();
-  });
-
   it('archive button triggers confirm and calls archivePlan', async () => {
     vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
     mockArchivePlan.mockResolvedValue(undefined);
@@ -140,5 +122,11 @@ describe('TrainingPlan', () => {
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     fireEvent.click(screen.getByRole('button', { name: /close & archive/i }));
     await waitFor(() => expect(mockArchivePlan).toHaveBeenCalled());
+  });
+
+  it('does not show Import from ChatGPT button', () => {
+    defaultUsePlan({ plan: null });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: /import from chatgpt/i })).not.toBeInTheDocument();
   });
 });

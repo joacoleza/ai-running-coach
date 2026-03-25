@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 interface ArchivedPlanSummary {
   _id: string;
   objective?: string;
-  goal?: { eventType?: string };
+  goal?: { eventType?: string; targetDate?: string };
+  targetDate?: string;
   createdAt: string;
   status: string;
 }
@@ -14,6 +15,15 @@ function authHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
     'x-app-password': localStorage.getItem('app_password') ?? '',
   };
+}
+
+function formatDate(dateStr?: string): string | null {
+  if (!dateStr) return null;
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
 }
 
 export function Archive() {
@@ -47,22 +57,29 @@ export function Archive() {
         <p className="text-gray-600">No archived plans yet.</p>
       ) : (
         <div className="space-y-2">
-          {plans.map(p => (
-            <Link
-              key={p._id}
-              to={`/archive/${p._id}`}
-              className="block p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-gray-900 capitalize">
-                  {(p.objective ?? p.goal?.eventType ?? 'Training Plan').replace('-', ' ')}
-                </span>
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                  Archived
-                </span>
-              </div>
-            </Link>
-          ))}
+          {plans.map(p => {
+            const title = (p.objective ?? p.goal?.eventType ?? 'Training Plan').replace(/-/g, ' ');
+            const targetDate = formatDate(p.targetDate ?? p.goal?.targetDate);
+            return (
+              <Link
+                key={p._id}
+                to={`/archive/${p._id}`}
+                className="block p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold text-gray-900 capitalize">{title}</span>
+                    {targetDate && (
+                      <span className="ml-2 text-sm text-gray-500">· Target: {targetDate}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                    Archived
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,12 +1,11 @@
 interface PlanActionsProps {
   hasActivePlan: boolean;
   onCreateNew: () => void;
-  onImport: () => void;
   onUpdate: () => void;
   onArchive: () => void;
 }
 
-export function PlanActions({ hasActivePlan, onCreateNew, onImport, onUpdate, onArchive }: PlanActionsProps) {
+export function PlanActions({ hasActivePlan, onCreateNew, onUpdate, onArchive }: PlanActionsProps) {
   const handleArchive = () => {
     if (window.confirm('Archive this plan? You can view it later in the Archive section.')) {
       onArchive();
@@ -21,15 +20,6 @@ export function PlanActions({ hasActivePlan, onCreateNew, onImport, onUpdate, on
           className="px-4 py-2 rounded text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
         >
           New Plan
-        </button>
-      )}
-
-      {!hasActivePlan && (
-        <button
-          onClick={onImport}
-          className="px-4 py-2 rounded text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-        >
-          Import from ChatGPT
         </button>
       )}
 

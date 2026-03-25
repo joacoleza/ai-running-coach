@@ -81,10 +81,13 @@ describe('usePlan', () => {
     })).rejects.toThrow('Update failed');
   });
 
-  it('archivePlan POSTs to archive and clears plan', async () => {
+  it('archivePlan POSTs to archive, clears plan, and dispatches plan-archived event', async () => {
     mockFetch
       .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+
+    const listener = vi.fn();
+    window.addEventListener('plan-archived', listener);
 
     const { result } = renderHook(() => usePlan());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -95,6 +98,8 @@ describe('usePlan', () => {
 
     expect(mockFetch).toHaveBeenCalledWith('/api/plan/archive', expect.objectContaining({ method: 'POST' }));
     expect(result.current.plan).toBeNull();
+    expect(listener).toHaveBeenCalled();
+    window.removeEventListener('plan-archived', listener);
   });
 
   it('archivePlan throws when POST fails', async () => {
@@ -110,35 +115,38 @@ describe('usePlan', () => {
     })).rejects.toThrow('Failed to archive plan');
   });
 
-  it('importFromUrl POSTs and refreshes plan', async () => {
-    const importedPlan = { ...mockPlan, _id: 'imported' };
+  it('deleteDay DELETEs and refreshes plan', async () => {
+    const updatedPlan = { ...mockPlan, _id: 'p1-after-delete' };
     mockFetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: importedPlan }) });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })    // initial fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }) // DELETE
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }); // refresh
 
     const { result } = renderHook(() => usePlan());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
-      await result.current.importFromUrl('https://chatgpt.com/share/abc');
+      await result.current.deleteDay('2026-04-07');
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/plan/import', expect.objectContaining({ method: 'POST' }));
-    expect(result.current.plan).toEqual(importedPlan);
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/plan/days/2026-04-07',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(result.current.plan?._id).toBe('p1-after-delete');
   });
 
-  it('importFromUrl throws with API error message', async () => {
+  it('deleteDay throws when DELETE fails', async () => {
     mockFetch
       .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
-      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Invalid URL' }) });
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Delete failed' }) });
 
     const { result } = renderHook(() => usePlan());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(act(async () => {
-      await result.current.importFromUrl('https://chatgpt.com/share/bad');
-    })).rejects.toThrow('Invalid URL');
+      await result.current.deleteDay('2026-04-07');
+    })).rejects.toThrow('Delete failed');
   });
 
   it('refreshes plan when plan-updated event fires', async () => {

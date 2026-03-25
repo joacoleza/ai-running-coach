@@ -4,10 +4,11 @@ import { DayRow } from './DayRow';
 interface PlanViewProps {
   plan: PlanData;
   onUpdateDay: (date: string, updates: Record<string, string>) => Promise<void>;
+  onDeleteDay: (date: string) => Promise<void>;
   readonly?: boolean;
 }
 
-export function PlanView({ plan, onUpdateDay, readonly }: PlanViewProps) {
+export function PlanView({ plan, onUpdateDay, onDeleteDay, readonly }: PlanViewProps) {
   return (
     <div>
       {plan.phases.map(phase => (
@@ -19,7 +20,7 @@ export function PlanView({ plan, onUpdateDay, readonly }: PlanViewProps) {
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
               <div className="space-y-1">
                 {week.days.map(day => (
-                  <DayRow key={day.date} day={day} onUpdate={onUpdateDay} readonly={readonly} />
+                  <DayRow key={day.date} day={day} onUpdate={onUpdateDay} onDelete={onDeleteDay} readonly={readonly} />
                 ))}
               </div>
             </div>

@@ -1,14 +1,11 @@
-import { useState } from 'react';
 import { usePlan } from '../hooks/usePlan';
-import { useChat } from '../hooks/useChat';
+import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
 import { PlanActions } from '../components/plan/PlanActions';
-import { ImportUrlForm } from '../components/plan/ImportUrlForm';
 
 export function TrainingPlan() {
-  const { plan, isLoading, error, updateDay, archivePlan, importFromUrl } = usePlan();
-  const { startPlan } = useChat();
-  const [showImport, setShowImport] = useState(false);
+  const { plan, isLoading, error, updateDay, deleteDay, archivePlan } = usePlan();
+  const { startPlan } = useChatContext();
 
   if (isLoading) {
     return <div className="p-6 text-gray-400">Loading plan...</div>;
@@ -34,19 +31,9 @@ export function TrainingPlan() {
       <PlanActions
         hasActivePlan={hasActivePlan}
         onCreateNew={handleCreateNew}
-        onImport={() => setShowImport(true)}
         onUpdate={handleUpdate}
         onArchive={() => { void archivePlan(); }}
       />
-
-      {showImport && (
-        <div className="my-4">
-          <ImportUrlForm
-            onImport={async (url) => { await importFromUrl(url); setShowImport(false); }}
-            onCancel={() => setShowImport(false)}
-          />
-        </div>
-      )}
 
       {error && (
         <div className="my-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{error}</div>
@@ -60,13 +47,13 @@ export function TrainingPlan() {
               {plan.targetDate && <span className="ml-2 text-gray-600">Target: {plan.targetDate}</span>}
             </div>
           )}
-          <PlanView plan={plan} onUpdateDay={updateDay} />
+          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} />
         </>
       ) : !plan || plan.status === 'onboarding' ? (
         <p className="mt-4 text-gray-600">
           {plan?.status === 'onboarding'
             ? 'Complete the onboarding in the coach panel to generate your training plan.'
-            : 'No active plan. Create a new plan or import one from ChatGPT.'}
+            : 'No active plan. Create a new one using the coach.'}
         </p>
       ) : null}
     </div>

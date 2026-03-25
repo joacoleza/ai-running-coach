@@ -46,8 +46,8 @@ interface UsePlanReturn {
   error: string | null;
   refreshPlan: () => Promise<void>;
   updateDay: (date: string, updates: Record<string, string>) => Promise<void>;
+  deleteDay: (date: string) => Promise<void>;
   archivePlan: () => Promise<void>;
-  importFromUrl: (url: string) => Promise<void>;
 }
 
 function authHeaders(): Record<string, string> {
@@ -88,6 +88,18 @@ export function usePlan(): UsePlanReturn {
     await refreshPlan();
   }, [refreshPlan]);
 
+  const deleteDay = useCallback(async (date: string) => {
+    const res = await fetch(`/api/plan/days/${date}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to delete day' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to delete day');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
   const archivePlan = useCallback(async () => {
     const res = await fetch('/api/plan/archive', {
       method: 'POST',
@@ -95,18 +107,8 @@ export function usePlan(): UsePlanReturn {
     });
     if (!res.ok) throw new Error('Failed to archive plan');
     setPlan(null);
+    window.dispatchEvent(new Event('plan-archived'));
   }, []);
-
-  const importFromUrl = useCallback(async (url: string) => {
-    const res = await fetch('/api/plan/import', {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify({ url }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error((data as { error?: string }).error ?? 'Import failed');
-    await refreshPlan();
-  }, [refreshPlan]);
 
   useEffect(() => { refreshPlan(); }, [refreshPlan]);
 
@@ -116,5 +118,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, isLoading, error, refreshPlan, updateDay, archivePlan, importFromUrl };
+  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, archivePlan };
 }

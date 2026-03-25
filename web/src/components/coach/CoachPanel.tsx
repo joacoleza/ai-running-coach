@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useChat } from '../../hooks/useChat';
+import { useChatContext } from '../../contexts/ChatContext';
 import { ChatMessage } from './ChatMessage';
 
 interface CoachPanelProps {
@@ -8,15 +8,16 @@ interface CoachPanelProps {
 }
 
 export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
-  const { messages, plan, isStreaming, isGeneratingPlan, isLoading, error, sendMessage, startPlan, startOver, clearError } =
-    useChat();
+  const { messages, plan, isStreaming, isGeneratingPlan, isLoading, isBusy, error, sendMessage, startPlan, startOver, clearError } =
+    useChatContext();
   const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll chat container to bottom on new messages — avoids scrolling the whole page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   // Focus input when open-coach event fires (e.g. "Update Plan" button on desktop)
@@ -42,6 +43,8 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     }
   };
 
+  const isActive = isStreaming || isGeneratingPlan || isBusy;
+
   // Mobile: full-screen overlay when open, hidden when closed.
   // Desktop (md+): always visible as fixed-width right panel.
   const asideClass = isOpen
@@ -60,7 +63,8 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
           {plan?.status === 'onboarding' && (
             <button
               onClick={startOver}
-              className="text-xs text-red-500 hover:text-red-700"
+              disabled={isActive}
+              className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Start over"
             >
               Start Over
@@ -90,20 +94,29 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
       )}
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
           <p className="text-center text-gray-400 text-sm mt-8">Loading...</p>
         ) : !plan ? (
-          /* No plan -- show start options (D-01) */
+          /* No plan -- show start options */
           <div className="flex flex-col items-center justify-center h-full gap-4 px-4">
             <p className="text-gray-600 text-sm text-center">
               Welcome! Let&apos;s create your training plan.
             </p>
             <button
               onClick={() => void startPlan('conversational')}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+              disabled={isActive}
+              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Start New Plan
+              {isBusy ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                  </svg>
+                  Starting...
+                </>
+              ) : 'Start New Plan'}
             </button>
           </div>
         ) : (
@@ -113,19 +126,21 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             ))}
             {isGeneratingPlan && (
               <div className="flex items-center gap-2 text-sm text-blue-600 animate-pulse mt-2">
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                 </svg>
-                Creating your plan...
+                Building your training plan...
               </div>
             )}
-            {isStreaming &&
-              messages.length > 0 &&
-              messages[messages.length - 1].content === '' && (
-                <div className="text-gray-400 text-sm animate-pulse">Coach is typing...</div>
-              )}
-            <div ref={messagesEndRef} />
+            {isStreaming && !isGeneratingPlan && (
+              <div className="flex items-center gap-1.5 text-gray-400 text-sm mt-1">
+                <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
+            <div />
           </>
         )}
       </div>
@@ -140,13 +155,13 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isStreaming}
-              placeholder={isStreaming ? 'Coach is responding...' : 'Type a message...'}
+              disabled={isActive}
+              placeholder={isStreaming ? 'Coach is responding...' : isGeneratingPlan ? 'Building your plan...' : 'Type a message...'}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
             />
             <button
               onClick={() => void handleSend()}
-              disabled={!input.trim() || isStreaming}
+              disabled={!input.trim() || isActive}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send

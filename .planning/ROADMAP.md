@@ -172,13 +172,20 @@ Plans:
 - System prompt updated for hierarchical plan format
 - Unit tests for planToMarkdown, DayRow, PATCH day endpoint, archive endpoints
 
-**UAT:**
-- Plan page shows phases/weeks/days in structured view (no calendar)
-- Click a day's guidelines → inline edit → save on blur
-- Mark day as completed → checkmark appears, day becomes read-only
-- Import from ChatGPT share URL → plan appears
-- Archive active plan → appears in Archive list → click to view readonly
-- Coach says "let me update your plan" → `<plan:update>` tags applied, plan refreshes
+**UAT (resolved post-phase):**
+- ✓ Plan page shows phases/weeks/days in structured view (no calendar)
+- ✓ Click a day's guidelines → inline edit → save on blur
+- ✓ Mark day as completed → checkmark appears, day becomes read-only
+- ✓ Mark day as skipped; undo completed or skipped day → reverts to active
+- ✓ Delete a day (run or rest) via the × button (appears on hover)
+- ✓ Rest day shows `+ run` on hover → inline form converts it to a run day
+- ✓ Dates shown as "Monday 2025-04-28"; weeks already start on Monday in Claude's output
+- ✓ Import from ChatGPT share URL → plan appears
+- ✓ Archive active plan → appears in Archive list → click to view readonly
+- ✓ Coach says "update May 12th to 30 min" → `<plan:update>` tag hidden during stream, plan page refreshes automatically (no manual reload)
+- ✓ Refresh page → chat history loads without raw XML tags visible
+- ✓ Coach chat scrolling no longer pulls the whole page
+- ✓ Sidebar stays fixed while plan page scrolls
 
 ---
 

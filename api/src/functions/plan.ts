@@ -53,11 +53,9 @@ app.http('createPlan', {
 
       const db = await getDb();
 
-      // D-02: Discard any existing onboarding plan before creating a new one
-      await db.collection<Plan>('plans').updateMany(
-        { status: 'onboarding' },
-        { $set: { status: 'archived', updatedAt: new Date() } },
-      );
+      // D-02: Delete abandoned onboarding plans — they're empty, not worth archiving.
+      // Archiving them caused empty entries to accumulate when users clicked Start Over repeatedly.
+      await db.collection<Plan>('plans').deleteMany({ status: 'onboarding' });
 
       const now = new Date();
       const newPlan: Omit<Plan, '_id'> = {
@@ -123,7 +121,7 @@ app.http('generatePlan', {
         };
       }
 
-      let parsedPlan: { phases: PlanPhase[] };
+      let parsedPlan: { goal?: PlanGoal; phases: PlanPhase[] };
       try {
         parsedPlan = JSON.parse(match[1]);
         if (!parsedPlan.phases || !Array.isArray(parsedPlan.phases) || parsedPlan.phases.length === 0) {
@@ -135,6 +133,20 @@ app.http('generatePlan', {
           jsonBody: { error: 'Failed to parse training plan JSON from response' },
         };
       }
+
+      // Derive objective from the goal embedded in the training plan JSON (more reliable than client extraction)
+      const resolvedGoal: PlanGoal = parsedPlan.goal ?? goal;
+      function deriveObjective(eventType?: string): Plan['objective'] | undefined {
+        if (!eventType) return undefined;
+        const et = eventType.toLowerCase().replace(/[\s_]+/g, '-');
+        if (et.includes('half')) return 'half-marathon';
+        if (et.includes('marathon')) return 'marathon';
+        if (et.includes('15k')) return '15km';
+        if (et.includes('10k')) return '10km';
+        if (et.includes('5k')) return '5km';
+        return undefined;
+      }
+      const resolvedObjective = deriveObjective(resolvedGoal?.eventType) ?? objective;
 
       const db = await getDb();
 
@@ -155,10 +167,10 @@ app.http('generatePlan', {
         {
           $set: {
             status: 'active',
-            goal,
+            goal: resolvedGoal,
             phases: parsedPlan.phases,
-            objective,
-            targetDate: goal.targetDate,
+            objective: resolvedObjective,
+            targetDate: resolvedGoal?.targetDate ?? goal?.targetDate,
             updatedAt: now,
           },
         },

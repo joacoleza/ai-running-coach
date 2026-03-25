@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PlanPhase, PlanGoal } from './usePlan';
 
@@ -25,6 +25,7 @@ interface UseChatReturn {
   isStreaming: boolean;
   isGeneratingPlan: boolean;
   isLoading: boolean;
+  isBusy: boolean;
   error: string | null;
   sendMessage: (text: string) => Promise<void>;
   startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
@@ -63,9 +64,20 @@ function extractGoalFromText(text: string): Record<string, unknown> {
       // fall through
     }
   }
-  // Fallback: return a minimal goal -- the backend generatePlan will use what's provided
+  // Try to extract goal from the <training_plan> JSON itself
+  const planMatch = text.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
+  if (planMatch) {
+    try {
+      const parsed = JSON.parse(planMatch[1]) as { goal?: Record<string, unknown> };
+      if (parsed.goal && typeof parsed.goal === 'object') {
+        return parsed.goal;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  // Fallback: minimal goal without a default eventType so objective stays undefined
   return {
-    eventType: 'marathon',
     targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     weeklyMileage: 0,
     availableDays: 4,
@@ -79,8 +91,17 @@ export function useChat(): UseChatReturn {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  /**
+   * Session ID pattern: each startPlan/startOver call increments this counter.
+   * Every async continuation captures the ID at start and checks alive() before
+   * applying state updates. This prevents stale in-flight operations from
+   * corrupting state after startOver or a new startPlan call.
+   */
+  const sessionIdRef = useRef(0);
 
   const fetchPlan = useCallback(async (): Promise<PlanData | null> => {
     try {
@@ -95,6 +116,20 @@ export function useChat(): UseChatReturn {
       // Network errors are non-fatal here
     }
     return null;
+  }, []);
+
+  // Listen for plan-archived event to reset state
+  useEffect(() => {
+    const handler = () => {
+      sessionIdRef.current++; // Invalidate any in-flight operations
+      setPlan(null);
+      setMessages([]);
+      setIsStreaming(false);
+      setIsGeneratingPlan(false);
+      setIsBusy(false);
+    };
+    window.addEventListener('plan-archived', handler);
+    return () => window.removeEventListener('plan-archived', handler);
   }, []);
 
   // On mount: fetch existing plan
@@ -118,7 +153,13 @@ export function useChat(): UseChatReturn {
               if (!cancelled && data.messages.length > 0) {
                 setMessages(data.messages.map((m) => ({
                   role: m.role,
-                  content: m.content,
+                  content: m.role === 'assistant'
+                    ? m.content
+                        .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
+                        .replace(/<plan:update[^/]*\/>/g, '')
+                        .replace(/<app:[^/]*\/>/g, '')
+                        .trim()
+                    : m.content,
                   timestamp: typeof m.timestamp === 'string' ? m.timestamp : new Date(m.timestamp).toISOString(),
                 })));
               }
@@ -206,14 +247,17 @@ export function useChat(): UseChatReturn {
           if (payload.text) {
             accumulatedText += payload.text;
             // Update last assistant message in state with streaming content.
-            // Strip <training_plan> block from display as it arrives (it's machine data, not user text).
+            // Strip machine-data tags from display as they arrive.
             setMessages((prev) => {
               const updated = [...prev];
               const lastIdx = updated.length - 1;
               if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
                 updated[lastIdx] = {
                   ...updated[lastIdx],
-                  content: accumulatedText.replace(/<training_plan>[\s\S]*/g, '').trim(),
+                  content: accumulatedText
+                    .replace(/<training_plan>[\s\S]*/g, '')
+                    .replace(/<plan:update[^/]*\/>/g, '')
+                    .trim(),
                 };
               }
               return updated;
@@ -323,9 +367,10 @@ export function useChat(): UseChatReturn {
                   }
                 }
 
-                // Re-fetch plan after all updates applied
+                // Re-fetch plan after all updates applied and notify the plan page
                 const refreshedPlan = await fetchPlan();
                 if (refreshedPlan) setPlan(refreshedPlan);
+                window.dispatchEvent(new Event('plan-updated'));
               }
 
               // Execute navigate commands after plan refresh so target page has fresh data
@@ -359,6 +404,13 @@ export function useChat(): UseChatReturn {
   }, [plan, fetchPlan, navigate]);
 
   const startPlan = useCallback(async (mode: 'conversational' | 'paste'): Promise<void> => {
+    // Capture session ID — startOver increments this, making stale continuations no-ops
+    const sid = ++sessionIdRef.current;
+    const alive = () => sessionIdRef.current === sid;
+
+    setIsBusy(true);
+    setError(null);
+
     try {
       const response = await fetch('/api/plan', {
         method: 'POST',
@@ -366,19 +418,22 @@ export function useChat(): UseChatReturn {
         body: JSON.stringify({ mode }),
       });
 
+      if (!alive()) return;
+
       if (!response.ok) {
         const errData = await response.json().catch(() => ({ error: 'Failed to start plan' })) as { error?: string };
-        setError(errData.error ?? 'Failed to start plan');
+        if (alive()) { setError(errData.error ?? 'Failed to start plan'); setIsBusy(false); }
         return;
       }
 
       const data = await response.json() as { plan: PlanData };
+      if (!alive()) return;
+
       setPlan(data.plan);
       setMessages([]);
 
       if (mode === 'conversational') {
         // Kick off onboarding by sending an initial message
-        // Use a direct send without waiting for plan state to settle
         const initMessage = "I'd like to start a new training plan";
         const userMessage: Message = {
           role: 'user',
@@ -395,6 +450,7 @@ export function useChat(): UseChatReturn {
         };
         setMessages((prev) => [...prev, assistantPlaceholder]);
         setIsStreaming(true);
+        setIsBusy(false);
 
         try {
           const chatResponse = await fetch('/api/chat', {
@@ -403,9 +459,15 @@ export function useChat(): UseChatReturn {
             body: JSON.stringify({ planId: data.plan._id, message: initMessage }),
           });
 
+          if (!alive()) return;
+
           if (!chatResponse.ok) {
-            setIsStreaming(false);
-            setMessages((prev) => prev.slice(0, -1));
+            const errData = await chatResponse.json().catch(() => ({ error: 'Failed to connect to the coach' })) as { error?: string };
+            if (alive()) {
+              setIsStreaming(false);
+              setError(errData.error ?? 'Failed to connect to the coach');
+              setMessages((prev) => prev.slice(0, -1));
+            }
             return;
           }
 
@@ -416,6 +478,7 @@ export function useChat(): UseChatReturn {
 
           while (true) {
             const { value, done } = await reader.read();
+            if (!alive()) { reader.cancel(); return; }
             if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
@@ -423,6 +486,7 @@ export function useChat(): UseChatReturn {
             buffer = lines.pop() ?? '';
 
             for (const line of lines) {
+              if (!alive()) return;
               if (!line.startsWith('data: ')) continue;
               const jsonStr = line.slice(6).trim();
               if (!jsonStr) continue;
@@ -436,22 +500,27 @@ export function useChat(): UseChatReturn {
 
               if (payload.text) {
                 accumulatedText += payload.text;
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastIdx = updated.length - 1;
-                  if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-                    updated[lastIdx] = {
-                      ...updated[lastIdx],
-                      content: accumulatedText.replace(/<training_plan>[\s\S]*/g, '').trim(),
-                    };
-                  }
-                  return updated;
-                });
+                if (alive()) {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const lastIdx = updated.length - 1;
+                    if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                      updated[lastIdx] = {
+                        ...updated[lastIdx],
+                        content: accumulatedText
+                          .replace(/<training_plan>[\s\S]*/g, '')
+                          .replace(/<plan:update[^/]*\/>/g, '')
+                          .trim(),
+                      };
+                    }
+                    return updated;
+                  });
+                }
               } else if (payload.done) {
+                if (!alive()) return;
                 setIsStreaming(false);
                 if (accumulatedText.includes('<training_plan>')) {
                   setIsGeneratingPlan(true);
-                  // Strip the raw <training_plan> block from the displayed message
                   setMessages((prev) => {
                     const updated = [...prev];
                     const last = updated[updated.length - 1];
@@ -476,45 +545,45 @@ export function useChat(): UseChatReturn {
                         objective: (extractedGoal as { eventType?: string }).eventType,
                       }),
                     });
+                    if (!alive()) return;
                     if (generateResponse.ok) {
                       const updatedPlan = await fetchPlan();
+                      if (!alive()) return;
                       if (updatedPlan) setPlan(updatedPlan);
                       window.dispatchEvent(new Event('plan-updated'));
                       setIsGeneratingPlan(false);
                       navigate('/plan');
                     } else {
-                      setIsGeneratingPlan(false);
-                      setError('Something went wrong generating your plan');
+                      if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
                     }
                   } catch {
-                    setIsGeneratingPlan(false);
-                    setError('Something went wrong generating your plan');
+                    if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
                   }
                 } else {
-                  // Re-fetch plan to pick up any state changes
                   const updatedPlan = await fetchPlan();
+                  if (!alive()) return;
                   if (updatedPlan) setPlan(updatedPlan);
 
-                  // Handle <plan:update> tags -- strip from display and apply via PATCH
                   const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
                   const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
 
                   if (planUpdates.length > 0) {
-                    // Strip plan:update tags from displayed message
-                    setMessages((prev) => {
-                      const updated = [...prev];
-                      const last = updated[updated.length - 1];
-                      if (last?.role === 'assistant') {
-                        updated[updated.length - 1] = {
-                          ...last,
-                          content: last.content.replace(planUpdateRegex, '').trim(),
-                        };
-                      }
-                      return updated;
-                    });
+                    if (alive()) {
+                      setMessages((prev) => {
+                        const updated = [...prev];
+                        const last = updated[updated.length - 1];
+                        if (last?.role === 'assistant') {
+                          updated[updated.length - 1] = {
+                            ...last,
+                            content: last.content.replace(planUpdateRegex, '').trim(),
+                          };
+                        }
+                        return updated;
+                      });
+                    }
 
-                    // Apply each update via PATCH
                     for (const match of planUpdates) {
+                      if (!alive()) return;
                       const attrs = parseXmlAttrs(match[1]);
                       if (attrs.date) {
                         try {
@@ -524,38 +593,59 @@ export function useChat(): UseChatReturn {
                             body: JSON.stringify(attrs),
                           });
                         } catch {
-                          // Non-fatal: individual day update failure doesn't block others
+                          // Non-fatal
                         }
                       }
                     }
 
-                    // Re-fetch plan after all updates applied
                     const refreshedPlan = await fetchPlan();
+                    if (!alive()) return;
                     if (refreshedPlan) setPlan(refreshedPlan);
+                    window.dispatchEvent(new Event('plan-updated'));
                   }
                 }
               } else if (payload.error) {
-                setError(payload.error ?? 'An error occurred');
-                setIsStreaming(false);
+                if (alive()) { setError(payload.error ?? 'An error occurred'); setIsStreaming(false); }
               }
             }
           }
-        } catch {
-          setIsStreaming(false);
+        } catch (err) {
+          if (alive()) {
+            const message = err instanceof Error ? err.message : 'Failed to connect to the coach';
+            setError(message);
+            setIsStreaming(false);
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last?.role === 'assistant' && last.content === '') {
+                return prev.slice(0, -1);
+              }
+              return prev;
+            });
+          }
         }
+      } else {
+        // paste mode: just set busy=false, UI handles input
+        setIsBusy(false);
       }
-      // For paste mode: don't auto-send; UI shows textarea for paste input
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to start plan';
-      setError(message);
+      if (alive()) {
+        const message = err instanceof Error ? err.message : 'Failed to start plan';
+        setError(message);
+        setIsBusy(false);
+      }
     }
   }, [fetchPlan, navigate]);
 
   // Start over returns to the welcome screen — the orphaned onboarding plan is discarded
   // automatically when the user starts a new plan via POST /api/plan.
   const startOver = useCallback((): void => {
+    sessionIdRef.current++; // Invalidate any in-flight startPlan operations
     setPlan(null);
     setMessages([]);
+    setIsStreaming(false);
+    setIsGeneratingPlan(false);
+    setIsBusy(false);
+    setError(null);
   }, []);
 
   const clearError = useCallback(() => {
@@ -568,6 +658,7 @@ export function useChat(): UseChatReturn {
     isStreaming,
     isGeneratingPlan,
     isLoading,
+    isBusy,
     error,
     sendMessage,
     startPlan,

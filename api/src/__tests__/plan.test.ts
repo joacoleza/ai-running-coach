@@ -173,6 +173,38 @@ describe('Plan Generation - JSON extraction (PLAN-01)', () => {
     expect(phase.weeks[0].days[0].type).toBe('run');
     expect(phase.weeks[0].days[0].completed).toBe(false);
   });
+
+  it('derives objective from goal embedded in training_plan JSON (fixes wrong title bug)', async () => {
+    const planId = await createTestPlan();
+    const embeddedGoal = { eventType: '10km', targetDate: '2026-06-27', weeklyMileage: 15, availableDays: 2, units: 'km' };
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ goal: embeddedGoal, phases: validPhases })}</training_plan>`,
+      goal: { eventType: 'marathon', targetDate: '2026-10-01', weeklyMileage: 50, availableDays: 5, units: 'km' },
+      objective: 'marathon',
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    // Embedded goal in training_plan JSON takes precedence over client-passed goal/objective
+    expect(result.jsonBody.plan.objective).toBe('10km');
+    expect(result.jsonBody.plan.goal.eventType).toBe('10km');
+  });
+
+  it('falls back to client-passed goal when training_plan has no embedded goal', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: { eventType: 'half-marathon', targetDate: '2026-09-01', weeklyMileage: 30, availableDays: 4, units: 'km' },
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan.objective).toBe('half-marathon');
+  });
 });
 
 describe('Plan Schema (PLAN-02)', () => {
@@ -220,18 +252,18 @@ describe('Plan CRUD', () => {
     expect(result.jsonBody.plan.status).toBe('onboarding');
   });
 
-  it('POST /api/plan archives existing onboarding plan (D-02)', async () => {
-    // Create first plan
+  it('POST /api/plan deletes existing onboarding plan (D-02) — prevents empty archive entries', async () => {
+    // Create first plan (onboarding, no phases — abandoned)
     const firstId = await createTestPlan();
 
-    // Create second plan — first should be archived
+    // Create second plan — first should be DELETED, not archived
     await createTestPlan();
 
     const firstPlan = await mongoClient
       .db('running-coach')
       .collection('plans')
       .findOne({ _id: new ObjectId(firstId) });
-    expect(firstPlan?.status).toBe('archived');
+    expect(firstPlan).toBeNull(); // deleted, not archived
   });
 
   it('GET /api/plan returns active or onboarding plan', async () => {

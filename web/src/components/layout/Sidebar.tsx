@@ -9,7 +9,7 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="flex flex-col bg-gray-900 text-white w-16 md:w-56 min-h-screen transition-all duration-200" data-testid="sidebar">
+    <aside className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-screen sticky top-0 overflow-y-auto transition-all duration-200" data-testid="sidebar">
       <div className="p-4 hidden md:block">
         <h2 className="text-lg font-bold">AI Coach</h2>
       </div>
@@ -41,7 +41,9 @@ export function Sidebar() {
           }}
           className="flex items-center w-full text-left px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors"
         >
-          <span className="text-lg">&#x1F6AA;</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
           <span className="ml-3 hidden md:inline">Logout</span>
         </button>
       </div>

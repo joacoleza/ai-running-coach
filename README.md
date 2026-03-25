@@ -15,12 +15,12 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 - **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
 - **Onboarding chat** — The coach asks about your current fitness, availability, and history, then generates a personalized training plan
-- **Training calendar** — View your plan week by week with session types, distances, and pace targets
-- **Chat app control** — Tell the coach "show me my plan" or "I did my run today" and it navigates the app / marks sessions complete automatically
+- **Training plan view** — View your plan as phases → weeks → days with dates shown as "Monday 2025-04-28"
+- **Inline day editing** — Click any day's objective or guidelines to edit in place; mark days complete or skipped; undo either action; delete days; convert rest days to runs
+- **Chat app control** — Tell the coach to update a day and it applies `<plan:update>` patches live — no page refresh needed
 - **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
-- **Plan import** — Upload a training plan file (.txt/.md/.json) from any LLM conversation and the app will parse and load it
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
 
 ## Stack
@@ -146,5 +146,7 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
 - ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
 - ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
+- ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
+- ~~**Phase 2.1 UAT fixes** — Undo skip/complete, delete day, add run to rest day, day-name dates, chat scroll, plan:update live refresh, XML stripped from history, sidebar fixed height~~ ✓
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

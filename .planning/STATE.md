@@ -105,6 +105,13 @@ Plan: 5 of 5
 - [Phase 02.1-05]: parseXmlAttrs exported at module level (outside hook) for direct unit testability
 - [Phase 02.1-05]: planDays completed-day guard verified via DB assertion not 404 (MongoDB findOneAndUpdate returns doc even when arrayFilters match nothing)
 - [Phase 02.1-05]: planImport test uses vi.unstubAllGlobals() not vi.restoreAllMocks() to preserve requirePassword mock while clearing global.fetch stubs
+- [UAT-fixes-02.1]: arrayFilters no longer include `completed: false` — removed so undo (completed/skipped → false) can update already-completed days
+- [UAT-fixes-02.1]: DELETE /api/plan/days/:date uses `$pull` with `$[]` all-positional operator to remove from triply-nested phases→weeks→days array
+- [UAT-fixes-02.1]: `<plan:update>` stripped live during streaming (same pattern as `<training_plan>`); `plan-updated` window event dispatched after patches so TrainingPlan page refreshes without manual reload
+- [UAT-fixes-02.1]: XML tags (`<training_plan>`, `<plan:update>`, `<app:*/>`) stripped from assistant messages when loaded from MongoDB history on mount
+- [UAT-fixes-02.1]: CoachPanel scroll uses container `scrollTop = scrollHeight` instead of `scrollIntoView` to avoid scrolling the whole page
+- [UAT-fixes-02.1]: Sidebar changed from `min-h-screen` to `h-screen sticky top-0 overflow-y-auto` — stays fixed while main content scrolls
+- [UAT-fixes-02.1]: DayRow date formatted as "Monday 2025-04-28" using `new Date(date + 'T12:00:00')` with noon offset to avoid timezone-shift on date-only strings
 
 ## Accumulated Context
 
