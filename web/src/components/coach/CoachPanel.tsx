@@ -13,9 +13,6 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     useChat();
   const [input, setInput] = useState('');
   const [showHistory, setShowHistory] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importFileName, setImportFileName] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom on new messages
@@ -27,25 +24,6 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     if (!input.trim() || isStreaming) return;
     const text = input;
     setInput('');
-    await sendMessage(text);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImportFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImportText((ev.target?.result as string) ?? '');
-    };
-    reader.readAsText(file);
-  };
-
-  const handleImportSend = async () => {
-    if (!importText.trim() || isStreaming) return;
-    const text = `Here is my existing training plan from another conversation:\n\n${importText}`;
-    setImportText('');
-    setImportFileName('');
     await sendMessage(text);
   };
 
@@ -156,47 +134,9 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             >
               Start New Plan
             </button>
-            <button
-              onClick={() => void startPlan('paste')}
-              className="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200"
-            >
-              Import from Existing Plan
-            </button>
           </div>
         ) : (
           <>
-            {/* File upload for paste mode before first message */}
-            {plan.status === 'onboarding' &&
-              plan.onboardingMode === 'paste' &&
-              messages.length === 0 && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-2">
-                    Upload your training plan conversation:
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".txt,.md,.json"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-500 transition-colors"
-                  >
-                    {importFileName ? `📄 ${importFileName}` : 'Choose file (.txt, .md, .json)'}
-                  </button>
-                  {importText && (
-                    <button
-                      onClick={() => void handleImportSend()}
-                      disabled={isStreaming}
-                      className="mt-2 w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Send to Coach
-                    </button>
-                  )}
-                </div>
-              )}
             {messages.map((msg, i) => (
               <ChatMessage key={i} role={msg.role} content={msg.content} />
             ))}
