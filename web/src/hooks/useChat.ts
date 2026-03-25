@@ -38,6 +38,19 @@ function authHeaders(): Record<string, string> {
   };
 }
 
+/**
+ * Parse key="value" attribute pairs from an XML attribute string.
+ * Exported for unit testing.
+ */
+export function parseXmlAttrs(attrString: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const attrRegex = /(\w+)="([^"]*)"/g;
+  for (const m of attrString.matchAll(attrRegex)) {
+    result[m[1]] = m[2];
+  }
+  return result;
+}
+
 function extractGoalFromText(text: string): Record<string, unknown> {
   // The system prompt instructs Claude to include goal info in the response.
   // Try to find a <goal> block or extract from the conversation.
@@ -224,18 +237,6 @@ export function useChat(): UseChatReturn {
               });
             }
 
-            // Execute session-complete commands first
-            for (const cmd of cmds) {
-              const m = cmd.match(/<app:complete session_id="([^"]+)"\/>/);
-              if (m) {
-                await fetch(`/api/sessions/${m[1]}`, {
-                  method: 'PATCH',
-                  headers: authHeaders(),
-                  body: JSON.stringify({ completed: true }),
-                });
-              }
-            }
-
             // Handle training plan generation (takes priority over navigate commands)
             if (accumulatedText.includes('<training_plan>')) {
               // Strip the raw <training_plan> block from the displayed message
@@ -260,6 +261,7 @@ export function useChat(): UseChatReturn {
                     planId: plan._id,
                     claudeResponseText: accumulatedText,
                     goal: extractedGoal,
+                    objective: (extractedGoal as { eventType?: string }).eventType,
                   }),
                 });
 
@@ -275,9 +277,48 @@ export function useChat(): UseChatReturn {
                 setError('Something went wrong generating your plan');
               }
             } else {
-              // Re-fetch plan to pick up any state changes (onboardingStep, completed sessions, etc.)
+              // Re-fetch plan to pick up any state changes (onboardingStep, etc.)
               const updatedPlan = await fetchPlan();
               if (updatedPlan) setPlan(updatedPlan);
+
+              // Handle <plan:update> tags -- strip from display and apply via PATCH
+              const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
+              const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
+
+              if (planUpdates.length > 0) {
+                // Strip plan:update tags from displayed message
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const last = updated[updated.length - 1];
+                  if (last?.role === 'assistant') {
+                    updated[updated.length - 1] = {
+                      ...last,
+                      content: last.content.replace(planUpdateRegex, '').trim(),
+                    };
+                  }
+                  return updated;
+                });
+
+                // Apply each update via PATCH
+                for (const match of planUpdates) {
+                  const attrs = parseXmlAttrs(match[1]);
+                  if (attrs.date) {
+                    try {
+                      await fetch(`/api/plan/days/${attrs.date}`, {
+                        method: 'PATCH',
+                        headers: authHeaders(),
+                        body: JSON.stringify(attrs),
+                      });
+                    } catch {
+                      // Non-fatal: individual day update failure doesn't block others
+                    }
+                  }
+                }
+
+                // Re-fetch plan after all updates applied
+                const refreshedPlan = await fetchPlan();
+                if (refreshedPlan) setPlan(refreshedPlan);
+              }
 
               // Execute navigate commands after plan refresh so target page has fresh data
               for (const cmd of cmds) {
@@ -423,6 +464,7 @@ export function useChat(): UseChatReturn {
                         planId: data.plan._id,
                         claudeResponseText: accumulatedText,
                         goal: extractedGoal,
+                        objective: (extractedGoal as { eventType?: string }).eventType,
                       }),
                     });
                     if (generateResponse.ok) {
@@ -434,6 +476,49 @@ export function useChat(): UseChatReturn {
                     }
                   } catch {
                     setError('Something went wrong generating your plan');
+                  }
+                } else {
+                  // Re-fetch plan to pick up any state changes
+                  const updatedPlan = await fetchPlan();
+                  if (updatedPlan) setPlan(updatedPlan);
+
+                  // Handle <plan:update> tags -- strip from display and apply via PATCH
+                  const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
+                  const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
+
+                  if (planUpdates.length > 0) {
+                    // Strip plan:update tags from displayed message
+                    setMessages((prev) => {
+                      const updated = [...prev];
+                      const last = updated[updated.length - 1];
+                      if (last?.role === 'assistant') {
+                        updated[updated.length - 1] = {
+                          ...last,
+                          content: last.content.replace(planUpdateRegex, '').trim(),
+                        };
+                      }
+                      return updated;
+                    });
+
+                    // Apply each update via PATCH
+                    for (const match of planUpdates) {
+                      const attrs = parseXmlAttrs(match[1]);
+                      if (attrs.date) {
+                        try {
+                          await fetch(`/api/plan/days/${attrs.date}`, {
+                            method: 'PATCH',
+                            headers: authHeaders(),
+                            body: JSON.stringify(attrs),
+                          });
+                        } catch {
+                          // Non-fatal: individual day update failure doesn't block others
+                        }
+                      }
+                    }
+
+                    // Re-fetch plan after all updates applied
+                    const refreshedPlan = await fetchPlan();
+                    if (refreshedPlan) setPlan(refreshedPlan);
                   }
                 }
               } else if (payload.error) {
