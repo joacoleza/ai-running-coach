@@ -103,7 +103,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
       )}
 
       {/* Messages area */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain p-4">
         {isLoading ? (
           <p className="text-center text-gray-400 text-sm mt-8">Loading...</p>
         ) : !plan ? (

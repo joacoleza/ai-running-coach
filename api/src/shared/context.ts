@@ -13,7 +13,9 @@ export async function buildContextMessages(planId: string, db: Db): Promise<Anth
     .limit(20)
     .toArray();
 
-  return messages.reverse().map(m => ({
+  messages.reverse();
+
+  return messages.map(m => ({
     role: m.role,
     content: m.content,
   }));

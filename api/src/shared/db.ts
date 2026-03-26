@@ -12,6 +12,7 @@ export async function getDb(): Promise<Db> {
   client = new MongoClient(connectionString);
   await client.connect();
   db = client.db('running-coach');
+  await db.collection('messages').createIndex({ planId: 1, timestamp: 1 });
   return db;
 }
 

@@ -22,7 +22,7 @@ function makeMockDb(messages: Msg[], count?: number) {
   const plansUpdateOne = vi.fn().mockResolvedValue({});
   const toArray = vi.fn().mockResolvedValue(messages);
   const limit = vi.fn().mockReturnValue({ toArray });
-  const sort = vi.fn().mockReturnValue({ limit });
+  const sort = vi.fn().mockReturnValue({ limit, toArray });
   const find = vi.fn().mockReturnValue({ sort });
   const countDocuments = vi.fn().mockResolvedValue(count ?? messages.length);
 
