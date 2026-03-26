@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 
 describe('Sidebar', () => {
-  it('renders all four navigation links', () => {
+  it('renders three navigation links (coach is now a persistent panel, not a nav link)', () => {
     render(
       <MemoryRouter>
         <Sidebar />
@@ -12,8 +12,8 @@ describe('Sidebar', () => {
     )
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Training Plan')).toBeInTheDocument()
-    expect(screen.getByText('Coach Chat')).toBeInTheDocument()
     expect(screen.getByText('Runs')).toBeInTheDocument()
+    expect(screen.queryByText('Coach Chat')).not.toBeInTheDocument()
   })
 
   it('has navigation role', () => {

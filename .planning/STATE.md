@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: milestone
-status: completed
-last_updated: "2026-03-22T22:09:43.778Z"
+milestone: v1
+milestone_name: Personal AI Running Coach
+status: complete
+last_updated: "2026-03-26T00:00:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
   percent: 100
 ---
 
@@ -19,33 +19,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 01.2 — testing-strategy
+**Current focus:** Phase 02.1 UAT fixes — complete, pending PR merge to master
 
 ## Current Phase
 
-**Phase:** 01.2
-**Status:** Milestone complete
-**Plans:** 0/TBD
+**Phase:** 02.1 (training-plan-redesign + UAT fixes)
+**Status:** Complete — PR open, awaiting merge
+**Plans:** 5/5
 **Progress:** [██████████] 100%
-
-## Current Position
-
-Phase: 01.2 (testing-strategy) — EXECUTING
-Plan: Not started
 
 ## Milestone
 
 **Milestone:** v1 — Personal AI Running Coach
-**Phases:** 5 total
-**Overall progress:** 20%
+**Phases:** 6 total (1, 1.1, 1.2, 2, 2.1 + UAT fixes)
+**Overall progress:** 100% — all feature phases done; Phase 3 (Run Logging) is next
 
-| Phase | Name                              | Status        | Plans    |
-| ----- | --------------------------------- | ------------- | -------- |
-| 1     | Infrastructure & Auth             | ✓ Complete    | 3/3 done |
-| 1.1   | Replace Auth with Simple Password | ◎ In Progress | TBD      |
-| 2     | Coach Chat & Plan Generation      | ○ Pending     | —        |
-| 3     | Run Logging & Feedback            | ○ Pending     | —        |
-| 4     | Dashboard & Plan Import           | ○ Pending     | —        |
+| Phase | Name                              | Status        | Plans     |
+| ----- | --------------------------------- | ------------- | --------- |
+| 1     | Infrastructure & Auth             | ✓ Complete    | 3/3 done  |
+| 1.1   | Replace Auth with Simple Password | ✓ Complete    | 2/2 done  |
+| 1.2   | Testing Strategy & CI             | ✓ Complete    | 4/4 done  |
+| 2     | Coach Chat & Plan Generation      | ✓ Complete    | 8/8 done  |
+| 2.1   | Training Plan Redesign            | ✓ Complete    | 5/5 done  |
+| 2.1†  | UAT Fixes (post-phase)            | ✓ Complete    | —         |
+| 3     | Run Logging & Feedback            | ○ Pending     | —         |
+| 4     | Dashboard & Plan Import           | ○ Pending     | —         |
 
 ## Decisions
 
@@ -70,6 +68,59 @@ Plan: Not started
 - [Phase 01.2-03]: Coverage badges use no-commit: true + manual orphan branch push to unprotected badges branch (avoids master branch protection)
 - [Phase 01.2-03]: Single CI test job runs all three test layers sequentially to share one MongoDB instance
 - [Phase 01.2-04]: TEST-01 through TEST-06 registered in REQUIREMENTS.md under Testing Infrastructure section with traceability to Phase 1.2 Complete
+- [Phase 02-00]: Use it.todo() for all Phase 2 stub tests
+- [Phase 02-02]: CoachPanel uses fixed width (w-80/w-96) in three-column flex layout; flex-1 main fills remaining space without explicit percentages
+- [Phase 02-02]: /coach route removed; coach embedded as persistent panel in AppShell per D-10/D-13
+- [Phase 02-01]: auth.ts keeps its own getDb() to avoid breaking existing tests; new functions import from shared/db.ts
+- [Phase 02-01]: app.setup({ enableHttpStream: true }) placed before all function imports in index.ts per Azure Functions streaming requirement
+- [Phase 02-03]: maybeSummarize is fire-and-forget after stream closes to avoid delaying SSE done event
+- [Phase 02-03]: ANTHROPIC_API_KEY validated at handler start with 500 error for clear diagnostic feedback
+- [Phase 02-04]: updateMany used to discard existing onboarding plans to handle edge case of multiple stale onboarding docs
+- [Phase 02-04]: delete (updates as Record<string, unknown>).id pattern prevents session id overwrite in PATCH handler
+- [Phase 02-05]: type-only import required for Message in ChatHistory.tsx due to verbatimModuleSyntax tsconfig
+- [Phase 02-05]: extractGoalFromText parses <goal> XML block or returns sensible defaults for plan generation
+- [Phase 02-05]: startPlan('conversational') auto-sends initial message to kick off onboarding immediately
+- [Phase 02-06]: verbatimModuleSyntax requires import type for View and PlanSession
+- [Phase 02-08]: GET /api/messages uses same requirePassword auth middleware pattern as all other endpoints
+- [Phase 02-08]: useChat history fetch non-fatal: failure leaves messages empty same as before
+- [Phase 02-09]: startOver() resets to null plan state (no API call) — orphaned onboarding plan discarded next POST /api/plan
+- [Phase 02-09]: Import conversation changed from textarea paste to file upload (.txt/.md/.json); FileReader reads content client-side
+- [Phase 02-09]: Claude stream errors now log full message+stack+planId to Application Insights via context.error()
+- [Phase 02-10]: CoachPanel receives isOpen/onClose props from AppShell; mobile=fixed inset-0 z-50 overlay, desktop=static flex column
+- [Phase 02-10]: @anthropic-ai/sdk mocked via vi.mock() in chat.test.ts and chat.integration.test.ts to prevent real API calls in unit tests
+- [Phase 02-10]: playwright.config.ts sets ANTHROPIC_API_KEY='' in webServer env to prevent real API calls in E2E tests
+- [Phase 02-11]: buildSystemPrompt receives optional sessions[] parameter; includes next 14 upcoming sessions with session_id for app:complete commands
+- [Phase 02-11]: App commands use <app:navigate page="X"/> and <app:complete session_id="Y"/> XML tags; frontend strips from display and executes after stream done
+- [Phase 02-11]: navigate commands execute after plan refetch so target page has fresh data; training_plan generation takes priority over navigate commands
+- [Phase 02.1]: PlanSession kept as deprecated export for session.ts and prompts.ts transition
+- [Phase 02.1]: getPlan returns null for stale sessions-based plans to prevent UI breakage
+- [Phase 02.1-03]: PlanView renders React components directly (not ReactMarkdown) for active plan so inline editing works; planToMarkdown kept for archive/export
+- [Phase 02.1-03]: open-coach custom window event decouples TrainingPlan from AppShell state without prop drilling
+- [Phase 02.1-03]: DayRow isReadOnly guard: readonly || day.completed || day.skipped collapses three non-editable states
+- [Phase 02.1-02]: arrayFilters with day.date and day.completed false enforces completed-day edit guard at DB level
+- [Phase 02.1-02]: buildSystemPrompt signature changed from PlanSession[] to PlanPhase[] - session-based context replaced by phases-based upcoming days
+- [Phase 02.1-04]: Archive list shows objective label and Archived badge for D-24 completion status; planToMarkdown reused from Plan 03 for readonly view (D-25)
+- [Phase 02.1-05]: parseXmlAttrs exported at module level (outside hook) for direct unit testability
+- [Phase 02.1-05]: planDays completed-day guard verified via DB assertion not 404 (MongoDB findOneAndUpdate returns doc even when arrayFilters match nothing)
+- [Phase 02.1-05]: planImport test uses vi.unstubAllGlobals() not vi.restoreAllMocks() to preserve requirePassword mock while clearing global.fetch stubs
+- [UAT-fixes-02.1]: arrayFilters no longer include `completed: false` — removed so undo (completed/skipped → false) can update already-completed days
+- [UAT-fixes-02.1]: DELETE /api/plan/days/:date uses `$pull` with `$[]` all-positional operator to remove from triply-nested phases→weeks→days array
+- [UAT-fixes-02.1]: `<plan:update>` stripped live during streaming (same pattern as `<training_plan>`); `plan-updated` window event dispatched after patches so TrainingPlan page refreshes without manual reload
+- [UAT-fixes-02.1]: XML tags (`<training_plan>`, `<plan:update>`, `<app:*/>`) stripped from assistant messages when loaded from MongoDB history on mount
+- [UAT-fixes-02.1]: CoachPanel scroll uses container `scrollTop = scrollHeight` instead of `scrollIntoView` to avoid scrolling the whole page
+- [UAT-fixes-02.1]: Sidebar changed from `min-h-screen` to `h-screen sticky top-0 overflow-y-auto` — stays fixed while main content scrolls
+- [UAT-fixes-02.1]: DayRow date formatted as "Monday 2025-04-28" using `new Date(date + 'T12:00:00')` with noon offset to avoid timezone-shift on date-only strings
+- [UAT-fixes-02.1]: Import from Existing Plan (file upload onboarding) and Import from ChatGPT URL removed entirely — frontend buttons and backend planImport.ts deleted, dead import removed from index.ts
+- [CI-badges]: vitest runs with `--reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json` to produce JSON counts alongside coverage. playwright.config.ts emits `playwright-results.json` when CI=true. coverage-badge job uses `if: always()` so badges update even on test failure.
+
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 2.1 inserted between Phase 2 and Phase 3 — replaced calendar/sessions model with hierarchical phases/weeks/days
+- Phase 2 extended with UAT fixes, mobile UI, test isolation, system prompt hardening, app commands
+- Import from Existing Plan and Import from ChatGPT URL removed from frontend during UAT — API endpoint preserved
+- Phase 3 (Run Logging) is the active next phase
 
 ## Performance Metrics
 
@@ -82,10 +133,23 @@ Plan: Not started
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
+_Last updated: 2026-03-26 — Phase 2.1 + UAT fixes complete; PR open against master_
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.2-testing-strategy P01 | 4 min | 2 tasks | 6 files |
 | Phase 01.2-testing-strategy P03 | 3 min | 2 tasks | 6 files |
 | Phase 01.2-testing-strategy P04 | 3min | 1 tasks | 1 files |
+| Phase 02-coach-chat P00 | 3 min | 2 tasks | 6 files |
+| Phase 02-coach-chat P02 | 2min | 2 tasks | 5 files |
+| Phase 02-coach-chat P01 | 3min | 2 tasks | 5 files |
+| Phase 02-coach-chat P03 | 2min | 2 tasks | 4 files |
+| Phase 02-coach-chat P04 | 2min | 2 tasks | 3 files |
+| Phase 02-coach-chat P05 | 4min | 2 tasks | 4 files |
+| Phase 02 P06 | 8min | 2 tasks | 4 files |
+| Phase 02-coach-chat P08 | 3min | 2 tasks | 3 files |
+| Phase 02.1 P01 | 8 min | 2 tasks | 10 files |
+| Phase 02.1-training-plan-redesign P03 | 8min | 2 tasks | 8 files |
+| Phase 02.1-training-plan-redesign P02 | 3 min | 2 tasks | 6 files |
+| Phase 02.1-training-plan-redesign P04 | 2min | 2 tasks | 4 files |
+| Phase 02.1-training-plan-redesign P05 | 6 min | 2 tasks | 7 files |

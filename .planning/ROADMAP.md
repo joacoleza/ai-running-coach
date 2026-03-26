@@ -95,20 +95,24 @@ Plans:
 
 ## Phase 2 — Coach Chat & Plan Generation
 
-**Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view it on a calendar.
+**Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view/manage it through the coach panel. Includes all test coverage for Phase 2 features.
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
-**Plans:** 7 plans
+**Plans:** 8/8 plans complete
 
 Plans:
-- [ ] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
-- [ ] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
-- [ ] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
-- [ ] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
-- [ ] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
-- [ ] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
-- [ ] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
+- [x] 02-00-PLAN.md — Wave 0 test stubs for all Phase 2 test requirements
+- [x] 02-01-PLAN.md — Shared types, DB module, dependency installation, HTTP streaming setup
+- [x] 02-02-PLAN.md — Three-column layout with persistent coach panel, remove /coach route
+- [x] 02-03-PLAN.md — Chat API endpoint with SSE streaming, message persistence, rolling context window
+- [x] 02-04-PLAN.md — Plan CRUD API endpoints (create, get, generate) + session PATCH
+- [x] 02-05-PLAN.md — Coach panel UI: chat interface, onboarding flow, history toggle, plan generation trigger
+- [x] 02-06-PLAN.md — Training plan calendar (react-big-calendar) + session modal with inline editing
+- [x] 02-08-PLAN.md — Chat history loading (GET /api/messages, useChat init hydration)
+- [x] 02-09-PLAN.md — Bug fixes: Start Over resets to welcome screen, file upload for plan import, improved error display and Application Insights logging
+- [x] 02-10-PLAN.md — Mobile-responsive coach panel (FAB + full-screen overlay on mobile); test isolation (Anthropic mocked in all test layers)
+- [x] 02-11-PLAN.md — System prompt hardening (role boundary, persona) + app command protocol (navigate, mark session complete via chat)
 
 **Deliverables:**
 - Profile setup: goal type, target date, current fitness, available days, display units (km/miles)
@@ -116,17 +120,78 @@ Plans:
 - Claude API integration with SSE streaming (Functions → frontend via `ReadableStream`)
 - Training plan generation: Claude outputs structured JSON plan stored in MongoDB
 - Plan stored with session schema: date, distance, duration, avgPace, avgBpm, notes
-- Training calendar view (`react-big-calendar`): weekly view showing planned sessions
+- Training calendar view (`react-big-calendar`): weekly view showing planned sessions (replaced in Phase 2.1)
 - Chat persistence: messages stored in MongoDB, rolling 20-message window + summary
-- Persistent coach panel visible on every page (not a separate route)
+- Persistent coach panel: right-column on desktop; full-screen overlay (FAB toggle) on mobile
 - Chat history accessible from within coach panel
+- Start Over returns to welcome screen (mode choice reset)
+- Claude errors shown to user with meaningful messages + logged to Application Insights
+- System prompt: running-only role boundary, persona, training plan format instructions
+- App commands: Claude can navigate pages and mark sessions complete via `<app:*/>` tags in chat
+- Test isolation: `@anthropic-ai/sdk` mocked in all unit/integration tests; `ANTHROPIC_API_KEY=''` in E2E
 
-**UAT:**
+**UAT (outstanding — requires live environment):**
 - Can complete onboarding chat and see a full training plan generated
 - Calendar shows the plan week-by-week with correct session types and distances
 - Coach chat streams responses in real-time (text appears as it's generated)
 - Refresh the page — chat history is preserved
 - Sessions show as "planned" (no completed sessions yet)
+- Click "Start Over" from onboarding → returns to welcome screen
+- When Claude returns an error → meaningful message shown; full error in Application Insights
+- On mobile: FAB opens coach panel full-screen; X closes it; main content visible underneath
+- Chat "show me my plan" → navigates to /plan; "I did my run" → session marked complete on calendar
+- Off-topic question to coach → politely redirected to running topics
+
+---
+
+## Phase 2.1 — Training Plan Redesign (INSERTED)
+
+**Goal:** Replace the calendar-based plan view with a structured, interactive training plan. Upgrade the data model from flat sessions to hierarchical phases/weeks/days. Add inline day editing, plan:update protocol, and an Archive section.
+
+**Requirements covered:** D-01 through D-26 (see 02.1-CONTEXT.md)
+
+**Plans:** 5/5 plans complete
+
+Plans:
+- [x] 02.1-01-PLAN.md — Replace types (PlanDay/PlanWeek/PlanPhase), update generatePlan, remove react-big-calendar
+- [x] 02.1-02-PLAN.md — New API endpoints (PATCH day, archive, import) + system prompt update
+- [x] 02.1-03-PLAN.md — Frontend plan view (PlanView, DayRow inline editing, PlanActions, ImportUrlForm)
+- [x] 02.1-04-PLAN.md — Archive pages + sidebar nav + routing
+- [x] 02.1-05-PLAN.md — useChat plan:update wiring + chat.ts phases + unit tests
+
+**Deliverables:**
+- Hierarchical plan data model: phases[] → weeks[] → days[] (replaces flat sessions[])
+- Plan displayed as interactive structured view: phases → weeks → days, sorted by date
+- Inline click-to-edit on objective and guidelines; click date label to reschedule within the week
+- Mark days complete or skipped; undo either; delete days; convert rest days to runs; add new days per week
+- Completed/skipped days shown with visual indicators, read-only
+- Two plan actions: Update via coach, Close & archive
+- Empty-plan archive guard: plans with no non-rest days are deleted rather than archived
+- Archive section: sidebar nav entry, list page, readonly archived plan view
+- `<plan:update>` XML tag protocol for agent-driven day updates — stripped from display, applied via PATCH, page refreshes automatically
+- Shared chat state via ChatContext — single useChat instance shared across CoachPanel and TrainingPlan
+- Training Plan as home: / → /plan; Dashboard moved to /dashboard; sidebar order: Plan → Runs → Archive → Dashboard
+- XML tags stripped from chat history on mount (training_plan, plan:update, app:*)
+- System prompt updated for hierarchical plan format
+- Full unit + integration + E2E test coverage for all day operations, plan view, coach panel, archive, and plan:update flow
+- _Note: Import from Existing Plan (file upload) and Import from ChatGPT URL removed entirely — frontend and backend deleted_
+
+**UAT (resolved post-phase):**
+- ✓ Plan page shows phases/weeks/days in structured view (no calendar)
+- ✓ Click a day's guidelines → inline edit → save on blur
+- ✓ Click a day's objective → inline edit with value + unit selector
+- ✓ Click date label → week day-picker → select new date → day rescheduled
+- ✓ + Add day button per week → select date and type → day added
+- ✓ Mark day as completed → checkmark appears, day becomes read-only
+- ✓ Mark day as skipped; undo completed or skipped day → reverts to active
+- ✓ Delete a day via the × button with inline Yes/No confirmation
+- ✓ Dates shown as "Monday 2025-04-28"
+- ✓ Archive active plan → appears in Archive list → click to view readonly
+- ✓ Empty plan (rest-days only) archived → plan deleted rather than archived
+- ✓ Coach says "update May 12th to 30 min" → `<plan:update>` tag hidden during stream, plan page refreshes automatically (no manual reload)
+- ✓ Refresh page → chat history loads without raw XML tags visible
+- ✓ Coach chat scrolling no longer pulls the whole page
+- ✓ Sidebar stays fixed while plan page scrolls
 
 ---
 
