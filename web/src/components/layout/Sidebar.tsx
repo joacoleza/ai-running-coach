@@ -9,7 +9,7 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-screen sticky top-0 overflow-y-auto transition-all duration-200" data-testid="sidebar">
+    <aside className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-full sticky top-0 overflow-y-auto transition-all duration-200" data-testid="sidebar">
       <div className="p-4 hidden md:block">
         <h2 className="text-lg font-bold">AI Coach</h2>
       </div>

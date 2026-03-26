@@ -17,12 +17,7 @@ app.http('getMessages', {
     }
 
     const db = await getDb();
-    const results = await db
-      .collection<ChatMessage>('messages')
-      .find({ planId })
-      .toArray();
-
-    results.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    const results = await db.collection<ChatMessage>('messages').find({ planId }).sort({ timestamp: 1 }).toArray();
 
     return { status: 200, jsonBody: { messages: results } };
   },
