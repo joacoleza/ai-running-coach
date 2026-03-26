@@ -1,6 +1,8 @@
 # AI Running Coach
 
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
+
+
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-81.5%25-brightgreen)
 ![API Tests](https://img.shields.io/badge/api_tests-90%2F90-brightgreen)
