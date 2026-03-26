@@ -174,7 +174,7 @@ Plans:
 - XML tags stripped from chat history on mount (training_plan, plan:update, app:*)
 - System prompt updated for hierarchical plan format
 - Full unit + integration + E2E test coverage for all day operations, plan view, coach panel, archive, and plan:update flow
-- _Note: Import from Existing Plan (file upload) and Import from ChatGPT URL removed from frontend UI during UAT; API endpoint preserved_
+- _Note: Import from Existing Plan (file upload) and Import from ChatGPT URL removed entirely — frontend and backend deleted_
 
 **UAT (resolved post-phase):**
 - ✓ Plan page shows phases/weeks/days in structured view (no calendar)
@@ -192,7 +192,6 @@ Plans:
 - ✓ Refresh page → chat history loads without raw XML tags visible
 - ✓ Coach chat scrolling no longer pulls the whole page
 - ✓ Sidebar stays fixed while plan page scrolls
-- ✗ Import from ChatGPT URL — removed from frontend (button hidden)
 
 ---
 

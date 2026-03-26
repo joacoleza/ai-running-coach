@@ -9,5 +9,4 @@ import './functions/messages.js';
 import './functions/plan.js';
 import './functions/planDays.js';
 import './functions/planArchive.js';
-import './functions/planImport.js';
 import './functions/sessions.js';

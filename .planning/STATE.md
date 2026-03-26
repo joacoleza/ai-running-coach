@@ -110,7 +110,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [UAT-fixes-02.1]: CoachPanel scroll uses container `scrollTop = scrollHeight` instead of `scrollIntoView` to avoid scrolling the whole page
 - [UAT-fixes-02.1]: Sidebar changed from `min-h-screen` to `h-screen sticky top-0 overflow-y-auto` — stays fixed while main content scrolls
 - [UAT-fixes-02.1]: DayRow date formatted as "Monday 2025-04-28" using `new Date(date + 'T12:00:00')` with noon offset to avoid timezone-shift on date-only strings
-- [UAT-fixes-02.1]: Import from Existing Plan (file upload onboarding) and Import from ChatGPT URL removed from frontend UI — API endpoint (planImport.ts) kept but unexposed
+- [UAT-fixes-02.1]: Import from Existing Plan (file upload onboarding) and Import from ChatGPT URL removed entirely — frontend buttons and backend planImport.ts deleted, dead import removed from index.ts
 - [CI-badges]: vitest runs with `--reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json` to produce JSON counts alongside coverage. playwright.config.ts emits `playwright-results.json` when CI=true. coverage-badge job uses `if: always()` so badges update even on test failure.
 
 ## Accumulated Context

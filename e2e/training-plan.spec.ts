@@ -92,9 +92,6 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   await page.route('**/api/plan/archive', async (route: any) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
   })
-  await page.route('**/api/plan/import', async (route: any) => {
-    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: { ...mockActivePlan, objective: 'Imported plan' } }) })
-  })
   await page.route('**/api/messages**', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
   })
@@ -171,14 +168,12 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await expect(editTextarea).not.toBeVisible({ timeout: 5_000 })
   })
 
-  test('plan action buttons — Update Plan and Close & Archive visible; no Import button', async ({ page }) => {
+  test('plan action buttons — only Update Plan and Close & Archive are shown', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
 
     await expect(page.getByRole('button', { name: 'Update Plan' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Close & Archive' })).toBeVisible()
-    // Import from ChatGPT was removed
-    await expect(page.getByRole('button', { name: 'Import from ChatGPT' })).not.toBeVisible()
     // "New Plan" is hidden when active plan exists
     await expect(page.getByRole('button', { name: 'New Plan' })).not.toBeVisible()
   })

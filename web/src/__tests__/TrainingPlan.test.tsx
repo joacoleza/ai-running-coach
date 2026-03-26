@@ -124,12 +124,6 @@ describe('TrainingPlan', () => {
     await waitFor(() => expect(mockArchivePlan).toHaveBeenCalled());
   });
 
-  it('does not show Import from ChatGPT button', () => {
-    defaultUsePlan({ plan: null });
-    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    expect(screen.queryByRole('button', { name: /import from chatgpt/i })).not.toBeInTheDocument();
-  });
-
   it('goal banner shows objective and target date', () => {
     defaultUsePlan({ plan: activePlan });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
