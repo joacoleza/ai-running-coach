@@ -13,6 +13,7 @@ export async function getDb(): Promise<Db> {
   await client.connect();
   db = client.db('running-coach');
   await db.collection('messages').createIndex({ planId: 1, timestamp: 1 });
+  await db.collection('plans').createIndex({ status: 1, createdAt: -1 });
   return db;
 }
 
