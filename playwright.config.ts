@@ -6,6 +6,9 @@ export default defineConfig({
   workers: 1,
   timeout: 60_000,
   retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI
+    ? [['line'], ['json', { outputFile: 'playwright-results.json' }]]
+    : 'line',
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,
