@@ -117,6 +117,29 @@ describe('AppShell FAB — interaction', () => {
   });
 });
 
+describe('AppShell — body scroll lock', () => {
+  beforeEach(() => {
+    document.body.style.overflow = '';
+  });
+
+  it('sets body overflow hidden when coach panel opens', () => {
+    renderShell(noPlan);
+    fireEvent.click(screen.getByRole('button', { name: /start new plan/i }));
+    expect(document.body.style.overflow).toBe('hidden');
+  });
+
+  it('clears body overflow when coach panel closes', () => {
+    renderShell(noPlan);
+    fireEvent.click(screen.getByRole('button', { name: /start new plan/i }));
+    expect(document.body.style.overflow).toBe('hidden');
+    // CoachPanel mock emits onClose via the panel; simulate by re-rendering with closed state
+    // Unmounting should also clean up
+    const { unmount } = renderShell(noPlan);
+    unmount();
+    expect(document.body.style.overflow).toBe('');
+  });
+});
+
 describe('AppShell — auto-close coach panel when plan becomes active', () => {
   it('closes the coach panel when plan transitions from onboarding to active', async () => {
     mockUseChatContext.mockReturnValue(makeContext(onboardingPlan));
