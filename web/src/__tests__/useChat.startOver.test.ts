@@ -85,16 +85,6 @@ describe('useChat — startPlan error handling', () => {
     goal: {},
   };
 
-  function makeSseStream(events: string[]): ReadableStream<Uint8Array> {
-    return new ReadableStream({
-      start(controller) {
-        const enc = new TextEncoder();
-        for (const e of events) controller.enqueue(enc.encode(e));
-        controller.close();
-      },
-    });
-  }
-
   it('shows error and removes placeholder when chat response is not ok', async () => {
     mockFetch
       .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: null }) }) // mount
