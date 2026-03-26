@@ -16,6 +16,7 @@ function makeChatContext(overrides: Partial<{
   isLoading: boolean;
   isBusy: boolean;
   error: string | null;
+  startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
 }> = {}) {
   return {
     messages: [],
