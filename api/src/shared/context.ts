@@ -9,11 +9,12 @@ import { ChatMessage } from './types.js';
 export async function buildContextMessages(planId: string, db: Db): Promise<Anthropic.MessageParam[]> {
   const messages = await db.collection<ChatMessage>('messages')
     .find({ planId })
-    .sort({ timestamp: -1 })
     .limit(20)
     .toArray();
 
-  return messages.reverse().map(m => ({
+  messages.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+  return messages.map(m => ({
     role: m.role,
     content: m.content,
   }));
@@ -29,9 +30,10 @@ export async function maybeSummarize(planId: string, db: Db, client: Anthropic):
 
   const allMessages = await db.collection<ChatMessage>('messages')
     .find({ planId })
-    .sort({ timestamp: 1 })
     .limit(count - 10)
     .toArray();
+
+  allMessages.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
   const summaryResponse = await client.messages.create({
     model: 'claude-3-5-haiku-20241022',

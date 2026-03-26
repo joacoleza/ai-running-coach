@@ -79,9 +79,10 @@ app.http('listArchivedPlans', {
       const results = await db
         .collection<Plan>('plans')
         .find({ status: 'archived' })
-        .sort({ createdAt: -1 })
         .project({ _id: 1, objective: 1, goal: 1, createdAt: 1, targetDate: 1 })
         .toArray();
+
+      results.sort((a, b) => (b.createdAt as Date).getTime() - (a.createdAt as Date).getTime());
 
       return { status: 200, jsonBody: { plans: results } };
     } catch (err) {

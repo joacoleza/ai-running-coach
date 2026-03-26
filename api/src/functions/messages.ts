@@ -20,8 +20,9 @@ app.http('getMessages', {
     const results = await db
       .collection<ChatMessage>('messages')
       .find({ planId })
-      .sort({ timestamp: 1 })
       .toArray();
+
+    results.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
     return { status: 200, jsonBody: { messages: results } };
   },
