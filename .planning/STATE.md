@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: milestone
-status: verifying
-last_updated: "2026-03-25T11:18:22.660Z"
+milestone: v1
+milestone_name: Personal AI Running Coach
+status: complete
+last_updated: "2026-03-26T00:00:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
+  total_phases: 6
+  completed_phases: 6
   total_plans: 22
   completed_plans: 22
   percent: 100
@@ -19,33 +19,31 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 02.1 — training-plan-redesign
+**Current focus:** Phase 02.1 UAT fixes — complete, pending PR merge to master
 
 ## Current Phase
 
-**Phase:** 01.2
-**Status:** Phase complete — ready for verification
-**Plans:** 0/TBD
+**Phase:** 02.1 (training-plan-redesign + UAT fixes)
+**Status:** Complete — PR open, awaiting merge
+**Plans:** 5/5
 **Progress:** [██████████] 100%
-
-## Current Position
-
-Phase: 02.1 (training-plan-redesign) — EXECUTING
-Plan: 5 of 5
 
 ## Milestone
 
 **Milestone:** v1 — Personal AI Running Coach
-**Phases:** 5 total
-**Overall progress:** 20%
+**Phases:** 6 total (1, 1.1, 1.2, 2, 2.1 + UAT fixes)
+**Overall progress:** 100% — all feature phases done; Phase 3 (Run Logging) is next
 
-| Phase | Name                              | Status        | Plans    |
-| ----- | --------------------------------- | ------------- | -------- |
-| 1     | Infrastructure & Auth             | ✓ Complete    | 3/3 done |
-| 1.1   | Replace Auth with Simple Password | ◎ In Progress | TBD      |
-| 2     | Coach Chat & Plan Generation      | ○ Pending     | —        |
-| 3     | Run Logging & Feedback            | ○ Pending     | —        |
-| 4     | Dashboard & Plan Import           | ○ Pending     | —        |
+| Phase | Name                              | Status        | Plans     |
+| ----- | --------------------------------- | ------------- | --------- |
+| 1     | Infrastructure & Auth             | ✓ Complete    | 3/3 done  |
+| 1.1   | Replace Auth with Simple Password | ✓ Complete    | 2/2 done  |
+| 1.2   | Testing Strategy & CI             | ✓ Complete    | 4/4 done  |
+| 2     | Coach Chat & Plan Generation      | ✓ Complete    | 8/8 done  |
+| 2.1   | Training Plan Redesign            | ✓ Complete    | 5/5 done  |
+| 2.1†  | UAT Fixes (post-phase)            | ✓ Complete    | —         |
+| 3     | Run Logging & Feedback            | ○ Pending     | —         |
+| 4     | Dashboard & Plan Import           | ○ Pending     | —         |
 
 ## Decisions
 
@@ -112,14 +110,17 @@ Plan: 5 of 5
 - [UAT-fixes-02.1]: CoachPanel scroll uses container `scrollTop = scrollHeight` instead of `scrollIntoView` to avoid scrolling the whole page
 - [UAT-fixes-02.1]: Sidebar changed from `min-h-screen` to `h-screen sticky top-0 overflow-y-auto` — stays fixed while main content scrolls
 - [UAT-fixes-02.1]: DayRow date formatted as "Monday 2025-04-28" using `new Date(date + 'T12:00:00')` with noon offset to avoid timezone-shift on date-only strings
+- [UAT-fixes-02.1]: Import from Existing Plan (file upload onboarding) and Import from ChatGPT URL removed from frontend UI — API endpoint (planImport.ts) kept but unexposed
+- [CI-badges]: vitest runs with `--reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json` to produce JSON counts alongside coverage. playwright.config.ts emits `playwright-results.json` when CI=true. coverage-badge job uses `if: always()` so badges update even on test failure.
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-- Phase 2.1 merged into Phase 2 (not a separate phase)
+- Phase 2.1 inserted between Phase 2 and Phase 3 — replaced calendar/sessions model with hierarchical phases/weeks/days
 - Phase 2 extended with UAT fixes, mobile UI, test isolation, system prompt hardening, app commands
-- Phase 2 status: code complete, awaiting human UAT in live environment
+- Import from Existing Plan and Import from ChatGPT URL removed from frontend during UAT — API endpoint preserved
+- Phase 3 (Run Logging) is the active next phase
 
 ## Performance Metrics
 
@@ -132,7 +133,7 @@ Plan: 5 of 5
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-22 — completed plan 01-03 (Phase 01 complete)_
+_Last updated: 2026-03-26 — Phase 2.1 + UAT fixes complete; PR open against master_
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |

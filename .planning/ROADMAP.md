@@ -95,7 +95,7 @@ Plans:
 
 ## Phase 2 — Coach Chat & Plan Generation
 
-**Goal:** Owner can complete the coaching onboarding, get a training plan generated, view it on a calendar, and import an existing plan from a file. Includes all test coverage for Phase 2 features.
+**Goal:** Owner can complete the coaching onboarding, get a training plan generated, and view/manage it through the coach panel. Includes all test coverage for Phase 2 features.
 
 **Requirements covered:** GOAL-01, GOAL-02, GOAL-03, PLAN-01, PLAN-02, PLAN-03, PLAN-04, COACH-01, COACH-02, COACH-05, COACH-06
 
@@ -120,11 +120,10 @@ Plans:
 - Claude API integration with SSE streaming (Functions → frontend via `ReadableStream`)
 - Training plan generation: Claude outputs structured JSON plan stored in MongoDB
 - Plan stored with session schema: date, distance, duration, avgPace, avgBpm, notes
-- Training calendar view (`react-big-calendar`): weekly view showing planned sessions
+- Training calendar view (`react-big-calendar`): weekly view showing planned sessions (replaced in Phase 2.1)
 - Chat persistence: messages stored in MongoDB, rolling 20-message window + summary
 - Persistent coach panel: right-column on desktop; full-screen overlay (FAB toggle) on mobile
 - Chat history accessible from within coach panel
-- Plan import via file upload (.txt, .md, .json)
 - Start Over returns to welcome screen (mode choice reset)
 - Claude errors shown to user with meaningful messages + logged to Application Insights
 - System prompt: running-only role boundary, persona, training plan format instructions
@@ -137,8 +136,7 @@ Plans:
 - Coach chat streams responses in real-time (text appears as it's generated)
 - Refresh the page — chat history is preserved
 - Sessions show as "planned" (no completed sessions yet)
-- Import plan via file upload → file contents sent to coach → plan generated
-- Click "Start Over" from any onboarding mode → returns to welcome screen
+- Click "Start Over" from onboarding → returns to welcome screen
 - When Claude returns an error → meaningful message shown; full error in Application Insights
 - On mobile: FAB opens coach panel full-screen; X closes it; main content visible underneath
 - Chat "show me my plan" → navigates to /plan; "I did my run" → session marked complete on calendar
@@ -148,7 +146,7 @@ Plans:
 
 ## Phase 2.1 — Training Plan Redesign (INSERTED)
 
-**Goal:** Replace the calendar-based plan view with a structured, markdown-rendered training plan. Upgrade the data model from flat sessions to hierarchical phases/weeks/days. Add ChatGPT URL import and an Archive section.
+**Goal:** Replace the calendar-based plan view with a structured, interactive training plan. Upgrade the data model from flat sessions to hierarchical phases/weeks/days. Add inline day editing, plan:update protocol, and an Archive section.
 
 **Requirements covered:** D-01 through D-26 (see 02.1-CONTEXT.md)
 
@@ -162,30 +160,39 @@ Plans:
 - [x] 02.1-05-PLAN.md — useChat plan:update wiring + chat.ts phases + unit tests
 
 **Deliverables:**
-- Hierarchical plan data model: phases[] -> weeks[] -> days[] (replaces flat sessions[])
-- Plan displayed as structured view with inline click-to-edit on each day
+- Hierarchical plan data model: phases[] → weeks[] → days[] (replaces flat sessions[])
+- Plan displayed as interactive structured view: phases → weeks → days, sorted by date
+- Inline click-to-edit on objective and guidelines; click date label to reschedule within the week
+- Mark days complete or skipped; undo either; delete days; convert rest days to runs; add new days per week
 - Completed/skipped days shown with visual indicators, read-only
-- Four plan actions: Create new, Import from ChatGPT URL, Update via coach, Close & archive
-- ChatGPT share URL import: backend fetches HTML, extracts text, Claude parses into plan structure
+- Two plan actions: Update via coach, Close & archive
+- Empty-plan archive guard: plans with no non-rest days are deleted rather than archived
 - Archive section: sidebar nav entry, list page, readonly archived plan view
-- `<plan:update>` XML tag protocol for agent-driven day updates
+- `<plan:update>` XML tag protocol for agent-driven day updates — stripped from display, applied via PATCH, page refreshes automatically
+- Shared chat state via ChatContext — single useChat instance shared across CoachPanel and TrainingPlan
+- Training Plan as home: / → /plan; Dashboard moved to /dashboard; sidebar order: Plan → Runs → Archive → Dashboard
+- XML tags stripped from chat history on mount (training_plan, plan:update, app:*)
 - System prompt updated for hierarchical plan format
-- Unit tests for planToMarkdown, DayRow, PATCH day endpoint, archive endpoints
+- Full unit + integration + E2E test coverage for all day operations, plan view, coach panel, archive, and plan:update flow
+- _Note: Import from Existing Plan (file upload) and Import from ChatGPT URL removed from frontend UI during UAT; API endpoint preserved_
 
 **UAT (resolved post-phase):**
 - ✓ Plan page shows phases/weeks/days in structured view (no calendar)
 - ✓ Click a day's guidelines → inline edit → save on blur
+- ✓ Click a day's objective → inline edit with value + unit selector
+- ✓ Click date label → week day-picker → select new date → day rescheduled
+- ✓ + Add day button per week → select date and type → day added
 - ✓ Mark day as completed → checkmark appears, day becomes read-only
 - ✓ Mark day as skipped; undo completed or skipped day → reverts to active
-- ✓ Delete a day (run or rest) via the × button (appears on hover)
-- ✓ Rest day shows `+ run` on hover → inline form converts it to a run day
-- ✓ Dates shown as "Monday 2025-04-28"; weeks already start on Monday in Claude's output
-- ✓ Import from ChatGPT share URL → plan appears
+- ✓ Delete a day via the × button with inline Yes/No confirmation
+- ✓ Dates shown as "Monday 2025-04-28"
 - ✓ Archive active plan → appears in Archive list → click to view readonly
+- ✓ Empty plan (rest-days only) archived → plan deleted rather than archived
 - ✓ Coach says "update May 12th to 30 min" → `<plan:update>` tag hidden during stream, plan page refreshes automatically (no manual reload)
 - ✓ Refresh page → chat history loads without raw XML tags visible
 - ✓ Coach chat scrolling no longer pulls the whole page
 - ✓ Sidebar stays fixed while plan page scrolls
+- ✗ Import from ChatGPT URL — removed from frontend (button hidden)
 
 ---
 
