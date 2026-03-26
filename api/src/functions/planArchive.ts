@@ -16,8 +16,32 @@ app.http('archivePlan', {
     try {
       const db = await getDb();
 
-      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+      const planToArchive = await db.collection<Plan>('plans').findOne(
         { status: { $in: ['active', 'onboarding'] } },
+        { sort: { createdAt: -1 } },
+      );
+
+      if (!planToArchive) {
+        return {
+          status: 404,
+          jsonBody: { error: 'No active plan to archive' },
+        };
+      }
+
+      // If plan has no workout days (empty/abandoned), delete it to avoid empty archive entries.
+      // This covers: no phases at all, OR phases with only rest days / empty weeks.
+      const hasWorkoutDays = planToArchive.phases?.some(phase =>
+        phase.weeks?.some(week =>
+          week.days?.some(day => day.type !== 'rest')
+        )
+      );
+      if (!planToArchive.phases || planToArchive.phases.length === 0 || !hasWorkoutDays) {
+        await db.collection<Plan>('plans').deleteOne({ _id: planToArchive._id });
+        return { status: 200, jsonBody: { plan: planToArchive } };
+      }
+
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { _id: planToArchive._id },
         { $set: { status: 'archived', updatedAt: new Date() } },
         { returnDocument: 'after' },
       );

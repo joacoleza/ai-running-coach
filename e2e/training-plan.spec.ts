@@ -73,7 +73,15 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
     }
   })
   await page.route('**/api/plan/days/**', async (route: any) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    const method = route.request().method()
+    if (method === 'DELETE' || method === 'PATCH') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    } else {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    }
+  })
+  await page.route('**/api/plan/days', async (route: any) => {
+    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
   })
   await page.route('**/api/plans/archived', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: mockArchivedPlans }) })
@@ -101,7 +109,8 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+  // Home redirects to /plan — wait for Training Plan heading
+  await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('Training Plan view (Phase 2.1)', () => {
@@ -133,17 +142,17 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await expect(page.getByTitle('Mark as skipped')).toHaveCount(1)
   })
 
-  test('clicking guidelines enters inline edit mode with input', async ({ page }) => {
+  test('clicking guidelines enters inline edit mode with textarea', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
     await page.getByText('Easy Zone 2 run').click()
 
-    // Input should appear
-    const input = page.locator('input[type="text"]').first()
-    await expect(input).toBeVisible()
-    await expect(input).toHaveValue('Easy Zone 2 run')
+    // Textarea should appear (guidelines uses a textarea, not an input)
+    const textarea = page.locator('textarea').first()
+    await expect(textarea).toBeVisible()
+    await expect(textarea).toHaveValue('Easy Zone 2 run')
   })
 
   test('editing guidelines and pressing Enter saves the update', async ({ page }) => {
@@ -152,33 +161,26 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
     await page.getByText('Easy Zone 2 run').click()
-    // The edit input has a blue border — distinct from the chat input
-    const editInput = page.locator('input.border-blue-400')
-    await expect(editInput).toBeVisible()
-    await editInput.fill('Easy Zone 2 run — 45 min')
-    await editInput.press('Enter')
+    // Guidelines editor is a textarea with blue border
+    const editTextarea = page.locator('textarea.border-blue-400')
+    await expect(editTextarea).toBeVisible()
+    await editTextarea.fill('Easy Zone 2 run — 45 min')
+    await editTextarea.press('Enter')
 
-    // Edit mode exits — blue-border input disappears
-    await expect(editInput).not.toBeVisible({ timeout: 5_000 })
+    // Edit mode exits — blue-border textarea disappears
+    await expect(editTextarea).not.toBeVisible({ timeout: 5_000 })
   })
 
-  test('plan action buttons are visible — Import, Update Plan, Close & Archive', async ({ page }) => {
+  test('plan action buttons — Update Plan and Close & Archive visible; no Import button', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
 
-    await expect(page.getByRole('button', { name: 'Import from ChatGPT' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Update Plan' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Update Plan' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Close & Archive' })).toBeVisible()
+    // Import from ChatGPT was removed
+    await expect(page.getByRole('button', { name: 'Import from ChatGPT' })).not.toBeVisible()
     // "New Plan" is hidden when active plan exists
     await expect(page.getByRole('button', { name: 'New Plan' })).not.toBeVisible()
-  })
-
-  test('Import from ChatGPT shows URL input form', async ({ page }) => {
-    await loginWithPlan(page)
-    await page.getByRole('link', { name: 'Plan' }).click()
-    await page.getByRole('button', { name: 'Import from ChatGPT' }).click()
-
-    await expect(page.getByPlaceholder('https://chatgpt.com/share/...')).toBeVisible({ timeout: 5_000 })
   })
 
   test('Update Plan button opens coach panel', async ({ page }) => {
@@ -204,6 +206,125 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await page.getByRole('button', { name: 'Close & Archive' }).click()
     // No error shown after archiving
     await expect(page.locator('[role="alert"]')).not.toBeVisible({ timeout: 5_000 })
+  })
+})
+
+test.describe('Day row actions (Phase 2.1)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('undo button appears on completed day and sends PATCH with completed=false', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Tempo run at 5:30/km')).toBeVisible({ timeout: 10_000 })
+
+    // The completed day (Tempo run) should show Undo button
+    await expect(page.getByTitle('Undo')).toBeVisible()
+
+    // Capture the PATCH request body when Undo is clicked
+    let patchBody: any = null
+    await page.route('**/api/plan/days/2026-04-09', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        patchBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByTitle('Undo').click()
+
+    // Verify the PATCH was sent with completed: 'false'
+    await page.waitForFunction(() => true) // allow microtasks to flush
+    expect(patchBody).toMatchObject({ completed: 'false', skipped: 'false' })
+  })
+
+  test('delete button shows confirmation then sends DELETE request', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
+
+    // Capture DELETE request
+    let deleteUrl = ''
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteUrl = route.request().url()
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Click delete on the first run day — shows confirmation
+    await page.getByTitle('Delete day').first().click()
+    await expect(page.getByText('Remove?')).toBeVisible({ timeout: 3_000 })
+
+    // Confirm deletion
+    await page.getByText('Yes').click()
+
+    await expect(async () => {
+      expect(deleteUrl).toContain('/api/plan/days/')
+      expect(deleteUrl).toMatch(/2026-04-07|2026-04-09/)
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('delete confirmation can be cancelled with No', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
+
+    let deleteWasCalled = false
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteWasCalled = true
+        await route.continue()
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByTitle('Delete day').first().click()
+    await expect(page.getByText('Remove?')).toBeVisible({ timeout: 3_000 })
+    await page.getByText('No').click()
+
+    // Confirmation dismissed, no DELETE request sent
+    await expect(page.getByText('Remove?')).not.toBeVisible()
+    expect(deleteWasCalled).toBe(false)
+  })
+
+  test('Add day form day-selector: rest-day slots are NOT disabled', async ({ page }) => {
+    // Plan with Week 1: Tue (run) + Wed (rest) + startDate '2026-04-07'
+    const planWithRestDays = {
+      ...mockActivePlan,
+      phases: [
+        {
+          name: 'Base Building',
+          weeks: [
+            {
+              weekNumber: 1,
+              startDate: '2026-04-07',
+              days: [
+                { date: '2026-04-07', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
+                { date: '2026-04-08', type: 'rest', guidelines: '', completed: false, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    await loginWithPlan(page, planWithRestDays)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByTitle('Add a day to this week')).toBeVisible({ timeout: 10_000 })
+
+    await page.getByTitle('Add a day to this week').click()
+
+    // Tue (2026-04-07, run day) should be disabled in the AddDayForm day selector
+    await expect(page.getByRole('button', { name: 'Tue' })).toBeDisabled()
+
+    // Wed (2026-04-08, rest day) should NOT be disabled — rest is not a real workout
+    await expect(page.getByRole('button', { name: 'Wed' })).not.toBeDisabled()
   })
 })
 

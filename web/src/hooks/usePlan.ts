@@ -47,6 +47,7 @@ interface UsePlanReturn {
   refreshPlan: () => Promise<void>;
   updateDay: (date: string, updates: Record<string, string>) => Promise<void>;
   deleteDay: (date: string) => Promise<void>;
+  addDay: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
   archivePlan: () => Promise<void>;
 }
 
@@ -94,8 +95,21 @@ export function usePlan(): UsePlanReturn {
       headers: authHeaders(),
     });
     if (!res.ok) {
-      const errData = await res.json().catch(() => ({ error: 'Failed to delete day' }));
-      throw new Error((errData as { error?: string }).error ?? 'Failed to delete day');
+      const errData = await res.json().catch(() => ({ error: 'Failed to remove day' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to remove day');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
+  const addDay = useCallback(async (phaseName: string, weekNumber: number, fields: Record<string, string>) => {
+    const res = await fetch('/api/plan/days', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ phaseName, weekNumber, ...fields }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to add day' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to add day');
     }
     await refreshPlan();
   }, [refreshPlan]);
@@ -118,5 +132,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, archivePlan };
+  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan };
 }

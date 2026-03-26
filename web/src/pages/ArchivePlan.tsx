@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import type { PlanData } from '../hooks/usePlan';
 import { planToMarkdown } from '../utils/planToMarkdown';
@@ -16,11 +17,11 @@ const mdComponents: Components = {
   h1: ({ children }) => <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-2">{children}</h1>,
   h2: ({ children }) => <h2 className="text-xl font-semibold text-gray-800 mt-5 mb-1">{children}</h2>,
   h3: ({ children }) => <h3 className="text-lg font-medium text-gray-700 mt-4 mb-1">{children}</h3>,
-  p: ({ children }) => <p className="text-gray-600 text-sm mb-2 italic">{children}</p>,
-  ul: ({ children }) => <ul className="space-y-1 mb-3">{children}</ul>,
-  li: ({ children }) => <li className="text-sm text-gray-700 pl-2">{children}</li>,
+  p: ({ children }) => <p className="text-gray-600 text-sm mb-2">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-3">{children}</ul>,
+  li: ({ children }) => <li className="text-sm text-gray-700">{children}</li>,
   strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-  em: ({ children }) => <em className="text-gray-500 not-italic">{children}</em>,
+  em: ({ children }) => <em className="text-gray-500 italic">{children}</em>,
 };
 
 export function ArchivePlan() {
@@ -52,10 +53,10 @@ export function ArchivePlan() {
   const markdown = planToMarkdown(plan);
 
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6 w-full">
       <Link to="/archive" className="text-blue-600 hover:underline text-sm mb-4 inline-block">&larr; Back to Archive</Link>
-      <div>
-        <ReactMarkdown components={mdComponents}>{markdown}</ReactMarkdown>
+      <div className="w-full">
+        <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
       </div>
     </div>
   );

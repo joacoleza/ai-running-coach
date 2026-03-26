@@ -170,8 +170,10 @@ describe('Plan Generation - JSON extraction (PLAN-01)', () => {
     const phase = result.jsonBody.plan.phases[0];
     expect(phase.name).toBe('Base Building');
     expect(phase.weeks).toHaveLength(1);
-    expect(phase.weeks[0].days[0].type).toBe('run');
-    expect(phase.weeks[0].days[0].completed).toBe(false);
+    expect(phase.weeks[0].days).toHaveLength(7); // normalized to 7 days
+    const runDay = phase.weeks[0].days.find((d: any) => d.type === 'run');
+    expect(runDay).toBeDefined();
+    expect(runDay.completed).toBe(false);
   });
 
   it('derives objective from goal embedded in training_plan JSON (fixes wrong title bug)', async () => {
@@ -231,7 +233,9 @@ describe('Plan Schema (PLAN-02)', () => {
     });
 
     const result = await handlers.get('generatePlan')!(req, ctx);
-    const day = result.jsonBody.plan.phases[0].weeks[0].days[0];
+    const days = result.jsonBody.plan.phases[0].weeks[0].days;
+    // After normalization, week has 7 days — find run day by date
+    const day = days.find((d: any) => d.date === '2026-04-01');
 
     expect(day.date).toBe('2026-04-01');
     expect(day.type).toBe('run');

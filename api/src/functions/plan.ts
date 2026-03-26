@@ -2,6 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { Plan, PlanGoal, PlanPhase } from '../shared/types.js';
+import { normalizeWeekDays } from '../shared/planUtils.js';
 
 app.http('getPlan', {
   methods: ['GET'],
@@ -53,9 +54,17 @@ app.http('createPlan', {
 
       const db = await getDb();
 
-      // D-02: Delete abandoned onboarding plans — they're empty, not worth archiving.
-      // Archiving them caused empty entries to accumulate when users clicked Start Over repeatedly.
-      await db.collection<Plan>('plans').deleteMany({ status: 'onboarding' });
+      // D-02: Delete abandoned/legacy plans on every new start to keep the DB clean:
+      // - 'onboarding': empty abandoned plans from previous starts
+      // - 'discarded': legacy status from an old schema, no longer used
+      // - plans with a 'sessions' array but no 'phases': old schema format, fully superseded
+      await db.collection<Plan>('plans').deleteMany({
+        $or: [
+          { status: 'onboarding' },
+          { status: 'discarded' },
+          { sessions: { $exists: true }, phases: { $exists: false } },
+        ],
+      } as any);
 
       const now = new Date();
       const newPlan: Omit<Plan, '_id'> = {
@@ -148,6 +157,12 @@ app.http('generatePlan', {
       }
       const resolvedObjective = deriveObjective(resolvedGoal?.eventType) ?? objective;
 
+      // Normalize every week to exactly 7 days (Mon–Sun), filling gaps with rest days
+      const normalizedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
+        ...phase,
+        weeks: phase.weeks.map(normalizeWeekDays),
+      }));
+
       const db = await getDb();
 
       const { ObjectId } = await import('mongodb');
@@ -168,7 +183,7 @@ app.http('generatePlan', {
           $set: {
             status: 'active',
             goal: resolvedGoal,
-            phases: parsedPlan.phases,
+            phases: normalizedPhases,
             objective: resolvedObjective,
             targetDate: resolvedGoal?.targetDate ?? goal?.targetDate,
             updatedAt: now,

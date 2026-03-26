@@ -7,8 +7,12 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 vi.mock('react-markdown', () => ({
-  default: ({ children }: { children: string }) => <div data-testid="markdown">{children}</div>,
+  default: ({ children, remarkPlugins }: { children: string; remarkPlugins?: unknown[] }) => (
+    <div data-testid="markdown" data-plugins={remarkPlugins?.length ?? 0}>{children}</div>
+  ),
 }));
+
+vi.mock('remark-gfm', () => ({ default: () => {} }));
 
 beforeEach(() => {
   mockFetch.mockReset();
@@ -62,6 +66,15 @@ describe('ArchivePlan', () => {
     renderWithId('plan1');
     await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
     expect(screen.getByRole('link', { name: /back to archive/i })).toHaveAttribute('href', '/archive');
+  });
+
+  it('passes remark-gfm plugin to ReactMarkdown (enables strikethrough for completed days)', async () => {
+    mockFetch.mockResolvedValue({ ok: true, json: async () => ({ plan: mockPlan }) });
+    renderWithId('plan1');
+    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
+    const md = screen.getByTestId('markdown');
+    // data-plugins counts the remarkPlugins array length — should be 1 (remark-gfm)
+    expect(md.getAttribute('data-plugins')).toBe('1');
   });
 
   it('shows error when fetch fails', async () => {

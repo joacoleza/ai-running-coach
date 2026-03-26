@@ -81,14 +81,15 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
     // Wait for the main app shell to load
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
   }
 
   test('shows welcome screen with Start New Plan button when no plan exists', async ({ page }) => {
     await loginWithMocks(page, { initialPlan: null })
 
     await expect(page.getByRole('button', { name: 'Start New Plan' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Import from Existing Plan' })).toBeVisible()
+    // Import from Existing Plan was removed — only conversational onboarding is supported
+    await expect(page.getByRole('button', { name: 'Import from Existing Plan' })).not.toBeVisible()
   })
 
   test('starts plan and displays streaming coach response', async ({ page }) => {
@@ -131,7 +132,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     await expect(page.getByRole('button', { name: 'Start New Plan' })).toBeVisible({ timeout: 10_000 })
   })
 
-  test('history view shows past messages when history button clicked', async ({ page }) => {
+  test('past messages are visible in coach panel when plan is active', async ({ page }) => {
     const pastMessages = [
       { role: 'user', content: 'Hello coach', timestamp: new Date().toISOString() },
       { role: 'assistant', content: 'Hello! How can I help you today?', timestamp: new Date().toISOString() },
@@ -141,9 +142,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
       messages: pastMessages,
     })
 
-    // Click the history (clock) button
-    await page.getByTitle('Message history').click()
-
+    // Messages are loaded directly into the panel — no history button needed
     await expect(page.getByText('Hello coach')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByText('Hello! How can I help you today?')).toBeVisible()
   })
@@ -152,27 +151,27 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     await page.setViewportSize({ width: 375, height: 812 })
     await loginWithMocks(page, { initialPlan: null })
 
-    // FAB should be visible at mobile viewport
-    const fab = page.getByRole('button', { name: 'Open coach' })
+    // When no plan, FAB label is "Start New Plan"
+    const fab = page.getByRole('button', { name: 'Start New Plan' }).first()
     await expect(fab).toBeVisible({ timeout: 10_000 })
 
-    // Tapping FAB opens the coach panel (shows welcome options)
+    // Tapping FAB opens the coach panel (welcome screen inside the panel)
     await fab.click()
-    await expect(page.getByRole('button', { name: 'Start New Plan' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: 'Close coach' })).toBeVisible({ timeout: 10_000 })
   })
 
   test('mobile: close button hides coach panel', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await loginWithMocks(page, { initialPlan: null })
 
-    // Open the coach panel
-    await page.getByRole('button', { name: 'Open coach' }).click()
-    await expect(page.getByRole('button', { name: 'Start New Plan' })).toBeVisible({ timeout: 10_000 })
+    // Open the coach panel via FAB
+    await page.getByRole('button', { name: 'Start New Plan' }).first().click()
+    await expect(page.getByRole('button', { name: 'Close coach' })).toBeVisible({ timeout: 10_000 })
 
     // Close via the X button inside the panel
     await page.getByRole('button', { name: 'Close coach' }).click()
 
-    // Main content (Dashboard) should be visible again, coach panel hidden
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+    // Main content (Training Plan) should be visible again
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 10_000 })
   })
 })

@@ -1,10 +1,10 @@
 import { NavLink } from 'react-router-dom'
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/plan', label: 'Training Plan', icon: '📅' },
   { path: '/runs', label: 'Runs', icon: '🏃' },
   { path: '/archive', label: 'Archive', icon: '🗄️' },
+  { path: '/dashboard', label: 'Dashboard', icon: '📊' },
 ]
 
 export function Sidebar() {
@@ -18,7 +18,7 @@ export function Sidebar() {
           <NavLink
             key={item.path}
             to={item.path}
-            end={item.path === '/'}
+            end={true}
             className={({ isActive }) =>
               `flex items-center px-4 py-3 text-sm transition-colors ${
                 isActive

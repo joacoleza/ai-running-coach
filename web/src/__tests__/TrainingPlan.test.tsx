@@ -6,13 +6,9 @@ import type { PlanData } from '../hooks/usePlan';
 
 const mockUpdateDay = vi.fn();
 const mockArchivePlan = vi.fn();
-const mockStartPlan = vi.fn();
 
 vi.mock('../hooks/usePlan', () => ({
   usePlan: vi.fn(),
-}));
-vi.mock('../contexts/ChatContext', () => ({
-  useChatContext: () => ({ startPlan: mockStartPlan }),
 }));
 
 import { usePlan } from '../hooks/usePlan';
@@ -24,8 +20,10 @@ function defaultUsePlan(overrides: Partial<ReturnType<typeof usePlan>> = {}) {
     plan: null,
     isLoading: false,
     error: null,
-    refreshPlan: vi.fn(),
+    refreshPlan: vi.fn().mockResolvedValue(undefined),
     updateDay: mockUpdateDay,
+    deleteDay: vi.fn(),
+    addDay: vi.fn(),
     archivePlan: mockArchivePlan,
     ...overrides,
   });
@@ -59,7 +57,6 @@ const activePlan: PlanData = {
 beforeEach(() => {
   mockUpdateDay.mockReset();
   mockArchivePlan.mockReset();
-  mockStartPlan.mockReset();
 });
 
 describe('TrainingPlan', () => {
@@ -75,10 +72,24 @@ describe('TrainingPlan', () => {
     expect(screen.getByText(/no active plan/i)).toBeInTheDocument();
   });
 
+  it('shows no New Plan button — that action lives in the coach chat', () => {
+    defaultUsePlan({ plan: null });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: /new plan/i })).not.toBeInTheDocument();
+  });
+
   it('shows onboarding message when plan status is onboarding', () => {
     defaultUsePlan({ plan: { ...activePlan, status: 'onboarding', phases: [] } });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     expect(screen.getByText(/complete the onboarding/i)).toBeInTheDocument();
+  });
+
+  it('shows no buttons when plan is onboarding', () => {
+    defaultUsePlan({ plan: { ...activePlan, status: 'onboarding', phases: [] } });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: /new plan/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /continue planning/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /update plan/i })).not.toBeInTheDocument();
   });
 
   it('renders plan view with active plan', () => {
@@ -92,17 +103,6 @@ describe('TrainingPlan', () => {
     defaultUsePlan({ plan: null, error: 'Something went wrong' });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
-  });
-
-  it('clicking New Plan dispatches open-coach event and calls startPlan', () => {
-    defaultUsePlan({ plan: null });
-    const listener = vi.fn();
-    window.addEventListener('open-coach', listener);
-    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /new plan/i }));
-    expect(mockStartPlan).toHaveBeenCalledWith('conversational');
-    expect(listener).toHaveBeenCalled();
-    window.removeEventListener('open-coach', listener);
   });
 
   it('clicking Update Plan dispatches open-coach event', () => {
@@ -128,5 +128,41 @@ describe('TrainingPlan', () => {
     defaultUsePlan({ plan: null });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     expect(screen.queryByRole('button', { name: /import from chatgpt/i })).not.toBeInTheDocument();
+  });
+
+  it('goal banner shows objective and target date', () => {
+    defaultUsePlan({ plan: activePlan });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.getByText('marathon')).toBeInTheDocument();
+    expect(screen.getByText('Target: 2026-10-01')).toBeInTheDocument();
+  });
+
+  it('goal banner container uses flex-wrap so target can break to second line', () => {
+    defaultUsePlan({ plan: activePlan });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    const objectiveEl = screen.getByText('marathon');
+    const targetEl = screen.getByText('Target: 2026-10-01');
+    // Both are direct children of the same flex-wrap container
+    const container = objectiveEl.parentElement!;
+    expect(container).toBe(targetEl.parentElement);
+    expect(container.className).toContain('flex');
+    expect(container.className).toContain('flex-wrap');
+  });
+
+  it('goal banner objective and target are sibling elements, not nested', () => {
+    defaultUsePlan({ plan: activePlan });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    const objectiveEl = screen.getByText('marathon');
+    const targetEl = screen.getByText('Target: 2026-10-01');
+    // Neither is a descendant of the other
+    expect(objectiveEl.contains(targetEl)).toBe(false);
+    expect(targetEl.contains(objectiveEl)).toBe(false);
+  });
+
+  it('goal banner does not render target when targetDate is absent', () => {
+    const planNoTarget = { ...activePlan, targetDate: undefined };
+    defaultUsePlan({ plan: planNoTarget });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.queryByText(/Target:/)).not.toBeInTheDocument();
   });
 });

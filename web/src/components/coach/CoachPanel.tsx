@@ -45,17 +45,26 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
 
   const isActive = isStreaming || isGeneratingPlan || isBusy;
 
-  // Mobile: full-screen overlay when open, hidden when closed.
+  // Mobile: bottom sheet overlay (partial height) so the app is visible behind it.
   // Desktop (md+): always visible as fixed-width right panel.
   const asideClass = isOpen
-    ? 'flex fixed inset-0 z-50 flex-col bg-white md:relative md:inset-auto md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:h-screen md:sticky md:top-0'
+    ? 'flex fixed inset-x-0 bottom-0 h-[85vh] z-50 flex-col bg-white rounded-t-2xl shadow-xl md:relative md:inset-auto md:h-auto md:rounded-none md:shadow-none md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:h-screen md:sticky md:top-0'
     : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:h-screen md:sticky md:top-0';
 
   // Determine header title
   const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
 
   return (
-    <aside className={asideClass}>
+    <>
+    {/* Mobile backdrop — dims app content behind the bottom sheet */}
+    {isOpen && (
+      <div
+        className="fixed inset-0 bg-black/40 z-40 md:hidden"
+        aria-hidden="true"
+        onClick={onClose}
+      />
+    )}
+    <aside className={asideClass} data-testid="coach-panel">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">{headerTitle}</h2>
@@ -64,7 +73,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             <button
               onClick={startOver}
               disabled={isActive}
-              className="text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="cursor-pointer text-xs text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
               title="Start over"
             >
               Start Over
@@ -73,7 +82,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
           {/* Close button — mobile only */}
           <button
             onClick={onClose}
-            className="md:hidden text-gray-400 hover:text-gray-600"
+            className="cursor-pointer md:hidden text-gray-400 hover:text-gray-600"
             aria-label="Close coach"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +96,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
       {error && (
         <div className="px-4 py-2 bg-red-50 border-b border-red-200 text-sm text-red-700 flex justify-between items-center">
           <span>{error}</span>
-          <button onClick={clearError} className="text-red-500 hover:text-red-700 text-xs ml-2">
+          <button onClick={clearError} className="cursor-pointer text-red-500 hover:text-red-700 text-xs ml-2">
             Dismiss
           </button>
         </div>
@@ -106,7 +115,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             <button
               onClick={() => void startPlan('conversational')}
               disabled={isActive}
-              className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="cursor-pointer w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isBusy ? (
                 <>
@@ -162,7 +171,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
             <button
               onClick={() => void handleSend()}
               disabled={!input.trim() || isActive}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send
             </button>
@@ -170,5 +179,6 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
         </div>
       )}
     </aside>
+    </>
   );
 }

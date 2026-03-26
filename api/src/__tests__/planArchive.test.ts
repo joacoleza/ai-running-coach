@@ -81,8 +81,40 @@ const basePlan = {
   updatedAt: new Date(),
 };
 
+const planWithPhases = {
+  ...basePlan,
+  phases: [
+    {
+      name: 'Base Building',
+      description: '',
+      weeks: [
+        {
+          weekNumber: 1,
+          startDate: '2026-04-07',
+          days: [{ date: '2026-04-07', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
+        },
+      ],
+    },
+  ],
+};
+
 describe('POST /api/plan/archive', () => {
-  it('archives active plan and returns 200', async () => {
+  it('archives active plan with phases and returns 200 with archived status', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...planWithPhases,
+      status: 'active',
+    });
+
+    const req = makeReq('POST', 'http://localhost/api/plan/archive');
+    const result = await handlers.get('archivePlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan.status).toBe('archived');
+
+    const inDb = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'archived' });
+    expect(inDb).not.toBeNull();
+  });
+
+  it('deletes (not archives) active plan with no phases to prevent empty archive entries', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'active',
@@ -91,10 +123,15 @@ describe('POST /api/plan/archive', () => {
     const req = makeReq('POST', 'http://localhost/api/plan/archive');
     const result = await handlers.get('archivePlan')!(req, ctx);
     expect(result.status).toBe(200);
-    expect(result.jsonBody.plan.status).toBe('archived');
+
+    // Plan should be deleted, not in archived collection
+    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    expect(archived).toHaveLength(0);
+    const remaining = await mongoClient.db('running-coach').collection('plans').countDocuments();
+    expect(remaining).toBe(0);
   });
 
-  it('archives onboarding plan and returns 200', async () => {
+  it('deletes (not archives) onboarding plan with no phases', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'onboarding',
@@ -103,7 +140,42 @@ describe('POST /api/plan/archive', () => {
     const req = makeReq('POST', 'http://localhost/api/plan/archive');
     const result = await handlers.get('archivePlan')!(req, ctx);
     expect(result.status).toBe(200);
-    expect(result.jsonBody.plan.status).toBe('archived');
+
+    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    expect(archived).toHaveLength(0);
+  });
+
+  it('deletes (not archives) plan with phases but only rest days — no actual workouts', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...basePlan,
+      status: 'active',
+      phases: [
+        {
+          name: 'Base',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              startDate: '2026-04-07',
+              days: [
+                { date: '2026-04-07', type: 'rest', guidelines: 'Rest', completed: false, skipped: false },
+                { date: '2026-04-08', type: 'rest', guidelines: 'Rest', completed: false, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const req = makeReq('POST', 'http://localhost/api/plan/archive');
+    const result = await handlers.get('archivePlan')!(req, ctx);
+    expect(result.status).toBe(200);
+
+    // Plan with only rest days should be deleted, not archived
+    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    expect(archived).toHaveLength(0);
+    const remaining = await mongoClient.db('running-coach').collection('plans').countDocuments();
+    expect(remaining).toBe(0);
   });
 
   it('returns 404 when no active or onboarding plan to archive', async () => {

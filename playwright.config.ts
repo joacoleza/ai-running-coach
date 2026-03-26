@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   workers: 1,
   timeout: 60_000,
   retries: process.env.CI ? 1 : 0,
@@ -11,7 +12,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'cd api && npm run build && func start',
+      command: 'cd api && npm start',
       url: 'http://localhost:7071/api/ping',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
