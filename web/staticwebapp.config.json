@@ -17,11 +17,6 @@
     ".mjs": "application/javascript",
     ".css": "text/css"
   },
-  "mimeTypes": {
-    ".js": "text/javascript",
-    ".mjs": "text/javascript",
-    ".css": "text/css"
-  },
   "platform": {
     "apiRuntime": "node:22"
   }
