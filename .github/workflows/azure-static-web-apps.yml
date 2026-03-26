@@ -20,6 +20,12 @@ jobs:
       - name: Build web app
         run: cd web && npm run build
 
+      - name: Copy staticwebapp.config.json into dist
+        run: cp web/staticwebapp.config.json web/dist/
+
+      - name: Remove web node_modules before deploy
+        run: rm -rf web/node_modules
+
       - name: Install API dependencies
         run: cd api && npm ci
 
