@@ -1,0 +1,10 @@
+.git*
+.vscode
+node_modules
+src/
+tsconfig.json
+local.settings.json
+test/
+*.test.js
+*.spec.js
+coverage/
