@@ -31,21 +31,24 @@ jobs:
         run: cd api && npm ci
 
       - name: Run API tests with coverage
-        run: cd api && npx vitest run --coverage
+        run: cd api && npx vitest run --coverage --reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json
         env:
           MONGODB_CONNECTION_STRING: mongodb://localhost:27017
           APP_PASSWORD: ci-test-password
 
       - name: Run web tests with coverage
-        run: cd web && npx vitest run --coverage
+        run: cd web && npx vitest run --coverage --reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json
 
-      - name: Upload coverage artifacts
+      - name: Upload coverage and test-result artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: |
             api/coverage/coverage-summary.json
+            api/coverage/test-results.json
             web/coverage/coverage-summary.json
+            web/coverage/test-results.json
 
       - name: Install Azure Functions Core Tools
         run: |
@@ -64,10 +67,17 @@ jobs:
           APP_PASSWORD: ci-test-password
           CI: true
 
+      - name: Upload E2E results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: playwright-results.json
+
   coverage-badge:
     runs-on: ubuntu-latest
     needs: test
-    if: github.event_name == 'pull_request'
+    if: always() && github.event_name == 'pull_request'
     permissions:
       contents: write
     steps:
@@ -78,25 +88,74 @@ jobs:
         with:
           name: coverage
 
-      - name: Update coverage badge in README
+      - name: Download E2E results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-results
+        continue-on-error: true
+
+      - name: Update badges in README
         run: |
           node -e "
             const fs = require('fs');
+
+            // ── Coverage badge ──────────────────────────────────────────────
             const api = JSON.parse(fs.readFileSync('api/coverage/coverage-summary.json'));
             const web = JSON.parse(fs.readFileSync('web/coverage/coverage-summary.json'));
-            const metrics = ['lines', 'statements', 'functions', 'branches'];
             let totalLines = 0, coveredLines = 0;
-            for (const m of ['lines']) {
-              totalLines += api.total[m].total + web.total[m].total;
-              coveredLines += api.total[m].covered + web.total[m].covered;
+            for (const src of [api, web]) {
+              totalLines  += src.total.lines.total;
+              coveredLines += src.total.lines.covered;
             }
             const pct = totalLines > 0 ? +((coveredLines / totalLines) * 100).toFixed(1) : 0;
-            const color = pct >= 80 ? 'brightgreen' : pct >= 60 ? 'yellow' : pct >= 40 ? 'orange' : 'red';
-            const url = \`https://img.shields.io/badge/coverage-\${pct}%25-\${color}\`;
+            const covColor = pct >= 80 ? 'brightgreen' : pct >= 60 ? 'yellow' : pct >= 40 ? 'orange' : 'red';
+            const covUrl = \`https://img.shields.io/badge/coverage-\${pct}%25-\${covColor}\`;
+
+            // ── Test-count badge helper ─────────────────────────────────────
+            function testBadge(label, jsonPath, parseResult) {
+              try {
+                const data = JSON.parse(fs.readFileSync(jsonPath));
+                const { passed, total } = parseResult(data);
+                const allPass = passed === total && total > 0;
+                const color = allPass ? 'brightgreen' : 'red';
+                const msg = \`\${passed}%2F\${total}\`;
+                return { url: \`https://img.shields.io/badge/\${label}-\${msg}-\${color}\`, passed, total };
+              } catch {
+                return { url: \`https://img.shields.io/badge/\${label}-unknown-lightgrey\`, passed: 0, total: 0 };
+              }
+            }
+
+            const apiTests = testBadge(
+              'api_tests',
+              'api/coverage/test-results.json',
+              d => ({ passed: d.numPassedTests ?? 0, total: d.numTotalTests ?? 0 })
+            );
+            const webTests = testBadge(
+              'web_tests',
+              'web/coverage/test-results.json',
+              d => ({ passed: d.numPassedTests ?? 0, total: d.numTotalTests ?? 0 })
+            );
+            const e2eTests = testBadge(
+              'e2e_tests',
+              'playwright-results.json',
+              d => ({
+                passed: (d.stats?.expected ?? 0),
+                total:  (d.stats?.expected ?? 0) + (d.stats?.unexpected ?? 0) + (d.stats?.flaky ?? 0)
+              })
+            );
+
+            // ── Patch README ────────────────────────────────────────────────
             let readme = fs.readFileSync('README.md', 'utf8');
-            readme = readme.replace(/!\[Coverage\]\([^)]*\)/, \`![Coverage](\${url})\`);
+            readme = readme.replace(/!\[Coverage\]\([^)]*\)/,    \`![Coverage](\${covUrl})\`);
+            readme = readme.replace(/!\[API Tests\]\([^)]*\)/,   \`![API Tests](\${apiTests.url})\`);
+            readme = readme.replace(/!\[Web Tests\]\([^)]*\)/,   \`![Web Tests](\${webTests.url})\`);
+            readme = readme.replace(/!\[E2E Tests\]\([^)]*\)/,   \`![E2E Tests](\${e2eTests.url})\`);
             fs.writeFileSync('README.md', readme);
-            console.log(\`Coverage: \${pct}% (\${color})\`);
+
+            console.log(\`Coverage: \${pct}% (\${covColor})\`);
+            console.log(\`API tests: \${apiTests.passed}/\${apiTests.total}\`);
+            console.log(\`Web tests: \${webTests.passed}/\${webTests.total}\`);
+            console.log(\`E2E tests: \${e2eTests.passed}/\${e2eTests.total}\`);
           "
 
       - name: Commit and push updated README
@@ -105,6 +164,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README.md
           git diff --staged --quiet && echo "No change" && exit 0
-          git commit -m "chore: update coverage badge [skip ci]"
+          git commit -m "chore: update test badges [skip ci]"
           git pull --rebase origin ${{ github.head_ref }}
           git push origin HEAD:${{ github.head_ref }}

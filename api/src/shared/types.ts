@@ -1,0 +1,69 @@
+import { ObjectId } from 'mongodb';
+
+export interface ChatMessage {
+  _id?: ObjectId;
+  planId: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  threadId: string;
+}
+
+export interface PlanGoal {
+  eventType: '5K' | '10K' | 'half-marathon' | 'marathon';
+  targetDate: string; // ISO date
+  weeklyMileage: number;
+  availableDays: number;
+  units: 'km' | 'miles';
+}
+
+/** @deprecated Use PlanDay instead */
+export interface PlanSession {
+  id: string;
+  date: string; // ISO date YYYY-MM-DD
+  distance: number;
+  duration?: number; // minutes
+  avgPace?: string; // "mm:ss"
+  avgBpm?: number;
+  notes: string;
+  completed: boolean;
+}
+
+export interface PlanDay {
+  date: string;           // ISO YYYY-MM-DD
+  type: 'run' | 'rest' | 'cross-train';
+  objective?: {
+    kind: 'distance' | 'time';
+    value: number;
+    unit: 'km' | 'min';
+  };
+  guidelines: string;
+  completed: boolean;
+  skipped: boolean;
+}
+
+export interface PlanWeek {
+  weekNumber: number;
+  startDate: string;      // ISO YYYY-MM-DD
+  days: PlanDay[];
+}
+
+export interface PlanPhase {
+  name: string;           // e.g. "Base Building"
+  description: string;
+  weeks: PlanWeek[];
+}
+
+export interface Plan {
+  _id?: ObjectId;
+  status: 'onboarding' | 'active' | 'archived';
+  onboardingMode: 'conversational' | 'paste';
+  onboardingStep: number;
+  summary?: string;
+  goal: PlanGoal;
+  phases: PlanPhase[];
+  objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
+  targetDate?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

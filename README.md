@@ -1,7 +1,10 @@
 # AI Running Coach
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-79.3%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-81.5%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-90%2F90-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-187%2F187-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-37%2F37-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -15,11 +18,15 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 - **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
 - **Onboarding chat** — The coach asks about your current fitness, availability, and history, then generates a personalized training plan
-- **Training calendar** — View your plan week by week with session types, distances, and pace targets
+- **Training plan view** — View your plan as phases → weeks → days with dates shown as "Monday 2025-04-28"
+- **Inline day editing** — Click any day's objective or guidelines to edit in place; click the date label to reschedule; add new days to any week
+- **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
+- **Chat app control** — Tell the coach to update a day and it applies `<plan:update>` patches live — no page refresh needed
+- **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
-- **Plan import** — Paste a training plan from any LLM conversation and the app will parse and load it
+- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
 
 ## Stack
 
@@ -46,12 +53,29 @@ After 30 consecutive wrong password attempts the app locks itself and shows "Ser
 
 ## Getting started
 
-**Prerequisites:** Node.js 22, Docker Desktop
+**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop
 
 ```bash
 npm install
 cd web && npm install && cd ..
 cd api && npm install && cd ..
+```
+
+**Configure local settings** — create `api/local.settings.json` (gitignored):
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "MONGODB_CONNECTION_STRING": "mongodb://localhost:27017",
+    "APP_PASSWORD": "localdev123",
+    "ANTHROPIC_API_KEY": "sk-ant-..."
+  },
+  "Host": {
+    "CORS": "*"
+  }
+}
 ```
 
 **Check everything compiles:**
@@ -110,6 +134,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 3. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
    - `APP_PASSWORD` — the password used to access the app
    - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
+   - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
 4. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
    ```bash
@@ -125,6 +150,8 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 - ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
 - ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
-- **Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar)
+- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
+- ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
+- ~~**Phase 2.1 UAT fixes** — Undo skip/complete, delete day, add run to rest day, day-name dates, chat scroll, plan:update live refresh, XML stripped from history, sidebar fixed height~~ ✓
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

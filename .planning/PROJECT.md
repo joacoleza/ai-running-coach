@@ -18,9 +18,9 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 ### Active
 
-- [ ] User can set a running goal (event type, target date, current fitness level)
-- [ ] Coach asks onboarding questions via chat and generates a training plan
-- [ ] User can view the training plan as a weekly calendar
+- [x] User can set a running goal (event type, target date, current fitness level) — Validated in Phase 2: Coach Chat
+- [x] Coach asks onboarding questions via chat and generates a training plan — Validated in Phase 2: Coach Chat
+- [x] User can view the training plan as a structured hierarchical view (phases/weeks/days) — Validated in Phase 2.1: Training Plan Redesign
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses run data and provides feedback via chat
 - [ ] Coach adjusts the training plan based on run history
@@ -66,6 +66,8 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
+
+Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason

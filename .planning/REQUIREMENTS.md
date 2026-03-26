@@ -22,16 +22,16 @@
 
 ### Goal & Profile
 
-- [ ] **GOAL-01**: User can set a running goal (event type: 5K/10K/half marathon/marathon, target date)
-- [ ] **GOAL-02**: User can set profile preferences (current weekly mileage, available days per week, display units: km/miles)
-- [ ] **GOAL-03**: Coach conducts an onboarding chat session to gather context before generating the first plan
+- [x] **GOAL-01**: User can set a running goal (event type: 5K/10K/half marathon/marathon, target date)
+- [x] **GOAL-02**: User can set profile preferences (current weekly mileage, available days per week, display units: km/miles)
+- [x] **GOAL-03**: Coach conducts an onboarding chat session to gather context before generating the first plan
 
 ### Training Plan
 
-- [ ] **PLAN-01**: Coach generates a structured training plan from goal and onboarding context
-- [ ] **PLAN-02**: Training plan is stored with sessions: week, day, type (EASY/LONG/TEMPO/INTERVAL/RECOVERY/REST/XT), distance, pace target, HR zone
-- [ ] **PLAN-03**: User can view the training plan as a weekly calendar
-- [ ] **PLAN-04**: Plan sessions can be marked complete (automatically when a matched run is logged)
+- [x] **PLAN-01**: Coach generates a structured training plan from goal and onboarding context
+- [x] **PLAN-02**: Training plan is stored with sessions: week, day, type (EASY/LONG/TEMPO/INTERVAL/RECOVERY/REST/XT), distance, pace target, HR zone
+- [x] **PLAN-03**: User can view the training plan as a weekly calendar
+- [x] **PLAN-04**: Plan sessions can be marked complete (automatically when a matched run is logged)
 
 ### Run Logging
 
@@ -43,12 +43,12 @@
 
 ### AI Coaching Chat
 
-- [ ] **COACH-01**: Chat interface for back-and-forth conversation with the AI coach
-- [ ] **COACH-02**: Coach responses stream to the UI in real-time (no waiting for full response)
+- [x] **COACH-01**: Chat interface for back-and-forth conversation with the AI coach
+- [x] **COACH-02**: Coach responses stream to the UI in real-time (no waiting for full response)
 - [ ] **COACH-03**: Post-run: coach provides feedback (run summary vs plan, one insight, any plan adjustment)
 - [ ] **COACH-04**: Coach can adjust the training plan based on run history and conversation
-- [ ] **COACH-05**: Chat history persists across sessions (user can review past coaching conversations)
-- [ ] **COACH-06**: Claude context uses rolling 20-message window + condensed memory summary
+- [x] **COACH-05**: Chat history persists across sessions (user can review past coaching conversations)
+- [x] **COACH-06**: Claude context uses rolling 20-message window + condensed memory summary
 
 ### Dashboard
 
@@ -107,24 +107,24 @@
 | TEST-04 | Phase 1.2 | Complete |
 | TEST-05 | Phase 1.2 | Complete |
 | TEST-06 | Phase 1.2 | Complete |
-| GOAL-01 | Phase 2 | Pending |
-| GOAL-02 | Phase 2 | Pending |
-| GOAL-03 | Phase 2 | Pending |
-| PLAN-01 | Phase 2 | Pending |
-| PLAN-02 | Phase 2 | Pending |
-| PLAN-03 | Phase 2 | Pending |
-| PLAN-04 | Phase 2 | Pending |
+| GOAL-01 | Phase 2 | Complete |
+| GOAL-02 | Phase 2 | Complete |
+| GOAL-03 | Phase 2 | Complete |
+| PLAN-01 | Phase 2 | Complete |
+| PLAN-02 | Phase 2 | Complete |
+| PLAN-03 | Phase 2 | Complete |
+| PLAN-04 | Phase 2 | Complete |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
 | RUN-03 | Phase 3 | Pending |
 | RUN-04 | Phase 3 | Pending |
 | RUN-05 | Phase 3 | Pending |
-| COACH-01 | Phase 2 | Pending |
-| COACH-02 | Phase 2 | Pending |
+| COACH-01 | Phase 2 | Complete |
+| COACH-02 | Phase 2 | Complete |
 | COACH-03 | Phase 3 | Pending |
 | COACH-04 | Phase 3 | Pending |
-| COACH-05 | Phase 2 | Pending |
-| COACH-06 | Phase 2 | Pending |
+| COACH-05 | Phase 2 | Complete |
+| COACH-06 | Phase 2 | Complete |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | DASH-03 | Phase 4 | Pending |

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
+import { ChatProvider } from './contexts/ChatContext'
 import { Dashboard } from './pages/Dashboard'
 import { TrainingPlan } from './pages/TrainingPlan'
-import { Coach } from './pages/Coach'
 import { Runs } from './pages/Runs'
+import { Archive } from './pages/Archive'
+import { ArchivePlan } from './pages/ArchivePlan'
 import { PasswordPage } from './pages/PasswordPage'
 
 export function App() {
@@ -31,15 +33,19 @@ export function App() {
 
   return (
     <BrowserRouter>
+      <ChatProvider>
       <AppShell>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Navigate to="/plan" replace />} />
           <Route path="/plan" element={<TrainingPlan />} />
-          <Route path="/coach" element={<Coach />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/runs" element={<Runs />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/archive" element={<Archive />} />
+          <Route path="/archive/:id" element={<ArchivePlan />} />
+          <Route path="*" element={<Navigate to="/plan" replace />} />
         </Routes>
       </AppShell>
+      </ChatProvider>
     </BrowserRouter>
   )
 }
