@@ -31,7 +31,8 @@
 - **Training Plan as home** — `"/"` route redirects to `"/plan"`. Dashboard moved to `"/dashboard"`. Sidebar order: Training Plan → Runs → Archive → Dashboard.
 - **Chat scroll** — `CoachPanel` uses a ref on the messages container div and sets `scrollTop = scrollHeight` instead of `scrollIntoView` — prevents the whole page from scrolling when new messages arrive.
 - **XML stripped from chat history** — On mount, `useChat` strips `<training_plan>`, `<plan:update>`, `<plan:add>`, and `<app:*/>` tags from assistant messages loaded from MongoDB, since they were stored raw and must not be re-displayed.
-- **Sidebar layout** — Sidebar uses `h-screen sticky top-0 overflow-y-auto` so it stays fixed as the main content scrolls. Previously `min-h-screen` caused the sidebar to stretch with page content.
+- **Sidebar layout** — Sidebar uses `h-full sticky top-0 overflow-y-auto` so it stays fixed as the main content scrolls. `AppShell` uses `h-[100dvh]` (dynamic viewport height) rather than `h-screen` (`100vh`) so Safari's bottom browser chrome does not clip the sidebar logout button.
+- **System prompt date anchoring** — `buildSystemPrompt` in `api/src/shared/prompts.ts` injects both the current week calendar AND the next 5 weeks (Mon–Sun with exact ISO dates) so Claude never has to compute day-of-week independently. Claude is explicitly instructed not to calculate dates itself. When a user asks to "remove" a day, Claude must use `<plan:update skipped="true">` (deletion is not supported) and be transparent about it.
 
 ## Testing & Documentation
 
