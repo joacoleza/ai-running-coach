@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CoachPanel } from '../components/coach/CoachPanel';
 import type { PlanData } from '../hooks/useChat';
 
