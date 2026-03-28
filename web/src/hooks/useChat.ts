@@ -358,16 +358,21 @@ export function useChat(): UseChatReturn {
                   return updated;
                 });
 
-                // Apply each update via PATCH
+                // Apply each update via PATCH — collect errors to surface in chat
+                const updateErrors: string[] = [];
                 for (const match of planUpdates) {
                   const attrs = parseXmlAttrs(match[1]);
                   if (attrs.date) {
                     try {
-                      await fetch(`/api/plan/days/${attrs.date}`, {
+                      const res = await fetch(`/api/plan/days/${attrs.date}`, {
                         method: 'PATCH',
                         headers: authHeaders(),
                         body: JSON.stringify(attrs),
                       });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        updateErrors.push(body.error ?? `Could not update day ${attrs.date}`);
+                      }
                     } catch {
                       // Non-fatal: individual day update failure doesn't block others
                     }
@@ -394,12 +399,13 @@ export function useChat(): UseChatReturn {
                     }
                   }
                 }
-                if (addErrors.length > 0) {
+                const allErrors = [...updateErrors, ...addErrors];
+                if (allErrors.length > 0) {
                   setMessages((prev) => {
                     const updated = [...prev];
                     const last = updated[updated.length - 1];
                     if (last?.role === 'assistant') {
-                      updated[updated.length - 1] = { ...last, content: last.content + `\n\nNote: ${addErrors.join('; ')}` };
+                      updated[updated.length - 1] = { ...last, content: last.content + `\n\n⚠️ ${allErrors.join('; ')}` };
                     }
                     return updated;
                   });
@@ -626,16 +632,21 @@ export function useChat(): UseChatReturn {
                       });
                     }
 
+                    const updateErrors2: string[] = [];
                     for (const match of planUpdates) {
                       if (!alive()) return;
                       const attrs = parseXmlAttrs(match[1]);
                       if (attrs.date) {
                         try {
-                          await fetch(`/api/plan/days/${attrs.date}`, {
+                          const res = await fetch(`/api/plan/days/${attrs.date}`, {
                             method: 'PATCH',
                             headers: authHeaders(),
                             body: JSON.stringify(attrs),
                           });
+                          if (!res.ok) {
+                            const body = await res.json().catch(() => ({}));
+                            updateErrors2.push(body.error ?? `Could not update day ${attrs.date}`);
+                          }
                         } catch {
                           // Non-fatal
                         }
@@ -662,12 +673,13 @@ export function useChat(): UseChatReturn {
                         }
                       }
                     }
-                    if (addErrors2.length > 0 && alive()) {
+                    const allErrors2 = [...updateErrors2, ...addErrors2];
+                    if (allErrors2.length > 0 && alive()) {
                       setMessages((prev) => {
                         const updated = [...prev];
                         const last = updated[updated.length - 1];
                         if (last?.role === 'assistant') {
-                          updated[updated.length - 1] = { ...last, content: last.content + `\n\nNote: ${addErrors2.join('; ')}` };
+                          updated[updated.length - 1] = { ...last, content: last.content + `\n\n⚠️ ${allErrors2.join('; ')}` };
                         }
                         return updated;
                       });
