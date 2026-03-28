@@ -12,19 +12,33 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
   const todayDt = new Date(today + 'T12:00:00');
   const todayDayOfWeek = todayDt.toLocaleDateString('en-US', { weekday: 'long' });
 
-  // Build the full Mon–Sun dates for the current week so Claude has an unambiguous calendar anchor
+  // Build Mon–Sun dates for the current week + next 5 weeks so Claude never has to compute future dates
   const todayDow = todayDt.getDay(); // 0=Sun … 6=Sat
   const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
+  const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   const weekCalendar = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
     const d = new Date(todayDt);
     d.setDate(todayDt.getDate() - daysFromMon + i);
-    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const iso = isoDate(d);
     return `${label} ${iso}${iso === today ? ' ← today' : ''}`;
   }).join(', ');
 
+  // Upcoming weeks calendar — explicit dates for the next 5 weeks (Mon–Sun each)
+  const upcomingWeeks = Array.from({ length: 5 }, (_, wi) => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
+      const d = new Date(todayDt);
+      d.setDate(todayDt.getDate() - daysFromMon + 7 * (wi + 1) + i);
+      return `${label} ${isoDate(d)}`;
+    });
+    return `Week +${wi + 1}: ${days.join(', ')}`;
+  }).join('\n');
+
   let prompt = `You are an AI running coach. Your sole purpose is to help with running training, race preparation, injury prevention, and fitness coaching.
 
-**Today is ${todayDayOfWeek}, ${today}.** Current week: ${weekCalendar}. Use these exact dates — do not compute day-of-week yourself.
+**Today is ${todayDayOfWeek}, ${today}.** Current week: ${weekCalendar}.
+
+Upcoming weeks (use these exact dates — do not compute day-of-week yourself):
+${upcomingWeeks}
 
 **Stay on topic.** If the user asks about anything unrelated to running, fitness, or training, politely decline and redirect them back to their running goals. Example: "I'm here to help with your running training — let me know if you have any questions about your plan or upcoming sessions!"
 
@@ -79,6 +93,8 @@ Rules:
 - Use \`<plan:add>\` only for dates that do not already have a training session. Use \`<plan:update>\` for dates that already exist in the plan.
 - **Never use \`<plan:add>\` on a date that is before today (${today}).** Past dates cannot be trained on.
 - **Never use \`<plan:update>\` to remove or downgrade a completed day.** Completed days are locked.
+- **You cannot delete training days.** When a user asks to "remove" or "delete" a day, mark it as skipped with \`<plan:update date="..." skipped="true" />\` and be transparent: tell the user the day has been marked as skipped (it will appear crossed out in the plan). Do not describe the plan as if the day was deleted — skipped days still appear in the training plan view. When summarising the remaining sessions after a skip, count only non-skipped, non-completed run days.
+- **Always use the exact dates from the calendar tables above when referencing days.** Never compute day-of-week independently. When describing a date in your response text, always verify the weekday name against the provided calendar (e.g. say "Tuesday 2026-04-28", not "Monday 2026-04-28" if the calendar shows April 28 is a Tuesday).
 
 ---
 

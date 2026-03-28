@@ -140,6 +140,20 @@ describe('AppShell — body scroll lock', () => {
   });
 });
 
+describe('AppShell — mobile viewport height', () => {
+  it('root container uses h-[100dvh] so Safari bottom chrome does not clip the sidebar', () => {
+    mockUseChatContext.mockReturnValue(makeContext(noPlan));
+    const { container } = render(
+      <MemoryRouter>
+        <AppShell><div>content</div></AppShell>
+      </MemoryRouter>
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('h-[100dvh]');
+    expect(root.className).not.toContain('h-screen');
+  });
+});
+
 describe('AppShell — auto-close coach panel when plan becomes active', () => {
   it('closes the coach panel when plan transitions from onboarding to active', async () => {
     mockUseChatContext.mockReturnValue(makeContext(onboardingPlan));
