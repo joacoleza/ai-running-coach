@@ -390,8 +390,8 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
   });
 });
 
-describe('Plan Generation - completed-day guard', () => {
-  it('returns 409 when plan already has a completed day', async () => {
+describe('Plan Generation - completed-day guard removed', () => {
+  it('allows generating plan even when plan has completed days', async () => {
     const planId = await createTestPlan();
 
     // Mark the day as completed directly in DB
@@ -408,11 +408,10 @@ describe('Plan Generation - completed-day guard', () => {
 
     const result = await handlers.get('generatePlan')!(req, ctx);
 
-    expect(result.status).toBe(409);
-    expect(result.jsonBody.error).toContain('Cannot replace a plan that has completed days');
+    expect(result.status).toBe(200);
   });
 
-  it('returns 409 when a different active plan has completed days (stale planId exploit)', async () => {
+  it('allows generating plan even when another active plan has completed days', async () => {
     // Active plan with history — simulates a scenario where the client has stale state
     await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',
@@ -444,8 +443,7 @@ describe('Plan Generation - completed-day guard', () => {
 
     const result = await handlers.get('generatePlan')!(req, ctx);
 
-    expect(result.status).toBe(409);
-    expect(result.jsonBody.error).toContain('Cannot replace a plan that has completed days');
+    expect(result.status).toBe(200);
   });
 
   it('allows generating plan when no days are completed', async () => {
@@ -462,8 +460,8 @@ describe('Plan Generation - completed-day guard', () => {
   });
 });
 
-describe('createPlan - training history guard', () => {
-  it('returns 409 when active plan with completed days exists', async () => {
+describe('createPlan - no completed-day guard', () => {
+  it('allows creating a new plan even when active plan has completed days', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
@@ -477,8 +475,7 @@ describe('createPlan - training history guard', () => {
     const req = makeReq('POST', { mode: 'conversational' });
     const result = await handlers.get('createPlan')!(req, ctx);
 
-    expect(result.status).toBe(409);
-    expect(result.jsonBody.error).toContain('Archive your current plan first');
+    expect(result.status).toBe(201);
   });
 
   it('allows creating a new plan when active plan has no completed days', async () => {

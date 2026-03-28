@@ -188,6 +188,8 @@ app.http('addDay', {
       objective_kind?: string;
       objective_value?: string;
       objective_unit?: string;
+      completed?: string | boolean;
+      skipped?: string | boolean;
       // phaseName and weekNumber accepted but not used for DB lookup (date is unique within plan)
       phaseName?: string;
       weekNumber?: number;
@@ -211,17 +213,24 @@ app.http('addDay', {
       return { status: 400, jsonBody: { error: 'type must be run or cross-train' } };
     }
 
-    // Refuse to add a day on a past date
+    // Refuse to add a pending day on a past date; allow past dates with completed/skipped flags
     const today = new Date().toISOString().split('T')[0];
     if (date < today) {
-      return { status: 400, jsonBody: { error: `Cannot add a training day in the past (${date} is before today ${today})` } };
+      const completed = body.completed === 'true' || (body.completed as unknown) === true;
+      const skipped = body.skipped === 'true' || (body.skipped as unknown) === true;
+      if (!completed && !skipped) {
+        return { status: 400, jsonBody: { error: `Cannot add a pending training day in the past (${date} is before today ${today}). Past dates require completed or skipped status.` } };
+      }
     }
+
+    const completedVal = body.completed === 'true' || (body.completed as unknown) === true ? true : false;
+    const skippedVal = body.skipped === 'true' || (body.skipped as unknown) === true ? true : false;
 
     const $set: Record<string, unknown> = {
       'phases.$[].weeks.$[].days.$[day].type': type,
       'phases.$[].weeks.$[].days.$[day].guidelines': guidelines ?? '',
-      'phases.$[].weeks.$[].days.$[day].completed': false,
-      'phases.$[].weeks.$[].days.$[day].skipped': false,
+      'phases.$[].weeks.$[].days.$[day].completed': completedVal,
+      'phases.$[].weeks.$[].days.$[day].skipped': skippedVal,
     };
 
     if (body.objective_kind && body.objective_value && body.objective_unit) {

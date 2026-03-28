@@ -317,11 +317,27 @@ describe('POST /api/plan/days', () => {
     expect(result.status).toBe(404);
   });
 
-  it('returns 400 when adding a day in the past', async () => {
+  it('returns 400 when adding a pending day in the past', async () => {
     const pastDate = '2020-01-01';
     const req = makePostReq({ date: pastDate, type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(400);
-    expect(result.jsonBody.error).toContain('Cannot add a training day in the past');
+    expect(result.jsonBody.error).toContain('pending training day');
+  });
+
+  it('allows adding a past day with completed=true', async () => {
+    const pastDate = '2020-01-01';
+    const req = makePostReq({ date: pastDate, type: 'run', completed: 'true' });
+    const result = await handlers.get('addDay')!(req, ctx);
+    // Past-date guard passes — result is 404 (no day slot exists in test plan) or 201 if slot exists
+    expect([201, 404]).toContain(result.status);
+  });
+
+  it('allows adding a past day with skipped=true', async () => {
+    const pastDate = '2020-01-01';
+    const req = makePostReq({ date: pastDate, type: 'run', skipped: 'true' });
+    const result = await handlers.get('addDay')!(req, ctx);
+    // Past-date guard passes — result is 404 (no day slot exists in test plan) or 201 if slot exists
+    expect([201, 404]).toContain(result.status);
   });
 });
