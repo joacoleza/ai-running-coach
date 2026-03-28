@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 02.1 UAT fixes — complete, pending PR merge to master
+**Current focus:** plan-day-management — `<plan:add>` tag, plan-replace guard, saving spinners, date fixes; PR open against master
 
 ## Current Phase
 
@@ -111,6 +111,15 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [UAT-fixes-02.1]: Sidebar changed from `min-h-screen` to `h-screen sticky top-0 overflow-y-auto` — stays fixed while main content scrolls
 - [UAT-fixes-02.1]: DayRow date formatted as "Monday 2025-04-28" using `new Date(date + 'T12:00:00')` with noon offset to avoid timezone-shift on date-only strings
 - [UAT-fixes-02.1]: Import from Existing Plan (file upload onboarding) and Import from ChatGPT URL removed entirely — frontend buttons and backend planImport.ts deleted, dead import removed from index.ts
+- [plan-day-management]: `<plan:add>` tag added — coach emits `<plan:add date="..." .../>` to create new training days; `useChat.ts` parses and POSTs to `/api/plan/days`; tag stripped from display like `<plan:update>`
+- [plan-day-management]: Plan replace guard — `generatePlan` returns 409 if the target plan OR any other active plan has completed days (second check prevents stale-client planId exploit); `createPlan` returns 409 if any active plan has completed days
+- [plan-day-management]: `DELETE /api/plan/days/:date` returns 409 for completed days — training history is locked and cannot be removed via UI or API
+- [plan-day-management]: `POST /api/plan/days` (addDay) returns 400 for past dates — enforced at API level; UI also disables past days in AddDayForm picker
+- [plan-day-management]: `currentDate` sent from client as local ISO date string in chat API request body — avoids UTC-offset causing the wrong date in system prompt (e.g. late-night sessions rolling to tomorrow)
+- [plan-day-management]: System prompt includes full Mon–Sun week calendar with day-of-week labels and a `← today` marker so Claude doesn't recompute day-of-week incorrectly
+- [plan-day-management]: All training days (not just upcoming) shown in system prompt with `[COMPLETED]`/`[SKIPPED]` status labels — gives Claude full plan state for targeted `<plan:add>`/`<plan:update>` decisions
+- [plan-day-management]: DayRow `isSaving` state — spinner shown, action buttons hidden while update/delete is in-flight; prevents double-clicks and gives visual feedback
+- [plan-day-management]: AddDayForm day picker uses local date (not `new Date().toISOString()`) to determine "today" — same UTC-offset fix as chat currentDate
 - [CI-badges]: vitest runs with `--reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json` to produce JSON counts alongside coverage. playwright.config.ts emits `playwright-results.json` when CI=true. coverage-badge job uses `if: always()` so badges update even on test failure.
 
 ## Accumulated Context
@@ -133,7 +142,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-26 — Phase 2.1 + UAT fixes complete; PR open against master_
+_Last updated: 2026-03-26 — plan-day-management complete; PR open against master_
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |

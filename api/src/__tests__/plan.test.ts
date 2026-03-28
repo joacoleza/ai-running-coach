@@ -247,6 +247,115 @@ describe('Plan Schema (PLAN-02)', () => {
   });
 });
 
+describe('Plan Generation - completed-day guard', () => {
+  it('returns 409 when plan already has a completed day', async () => {
+    const planId = await createTestPlan();
+
+    // Mark the day as completed directly in DB
+    await mongoClient.db('running-coach').collection('plans').updateOne(
+      {},
+      { $set: { phases: [{ ...validPhases[0], weeks: [{ ...validPhases[0].weeks[0], days: [{ ...validPhases[0].weeks[0].days[0], completed: true }] }] } ] } }
+    );
+
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('Cannot replace a plan that has completed days');
+  });
+
+  it('returns 409 when a different active plan has completed days (stale planId exploit)', async () => {
+    // Active plan with history — simulates a scenario where the client has stale state
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: validGoal,
+      phases: [{ ...validPhases[0], weeks: [{ ...validPhases[0].weeks[0], days: [{ ...validPhases[0].weeks[0].days[0], completed: true }] }] }],
+      createdAt: new Date(Date.now() - 60_000),
+      updatedAt: new Date(),
+    });
+
+    // A newer onboarding plan with no completed days — the client sends this planId
+    const newPlan = await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'onboarding',
+      onboardingMode: 'conversational',
+      onboardingStep: 0,
+      goal: {},
+      phases: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const newPlanId = newPlan.insertedId.toString();
+
+    const req = makeReq('POST', {
+      planId: newPlanId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('Cannot replace a plan that has completed days');
+  });
+
+  it('allows generating plan when no days are completed', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+  });
+});
+
+describe('createPlan - training history guard', () => {
+  it('returns 409 when active plan with completed days exists', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: validGoal,
+      phases: [{ ...validPhases[0], weeks: [{ ...validPhases[0].weeks[0], days: [{ ...validPhases[0].weeks[0].days[0], completed: true }] }] }],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeReq('POST', { mode: 'conversational' });
+    const result = await handlers.get('createPlan')!(req, ctx);
+
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('Archive your current plan first');
+  });
+
+  it('allows creating a new plan when active plan has no completed days', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: validGoal,
+      phases: validPhases, // no completed days
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeReq('POST', { mode: 'conversational' });
+    const result = await handlers.get('createPlan')!(req, ctx);
+
+    expect(result.status).toBe(201);
+  });
+});
+
 describe('Plan CRUD', () => {
   it('POST /api/plan creates plan with status onboarding', async () => {
     const req = makeReq('POST', { mode: 'conversational' });

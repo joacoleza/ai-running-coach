@@ -494,6 +494,56 @@ test.describe('plan:update streaming (Phase 2.1)', () => {
   })
 })
 
+test.describe('plan:add streaming', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('coach response with <plan:add> tag triggers POST to /api/plan/days and tag is stripped from display', async ({ page }) => {
+    const planAddTag = '<plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy recovery run" />'
+    const replyWithAdd = `I've added a Friday run for you! ${planAddTag}`
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: `data: ${JSON.stringify({ text: replyWithAdd })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`,
+      })
+    })
+
+    let postCalled = false
+    let postBody: any = null
+    await page.route('**/api/plan/days', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        postCalled = true
+        postBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    const input = page.getByPlaceholder('Type a message...')
+    await expect(input).toBeVisible({ timeout: 10_000 })
+    await input.fill('Add a run on Friday')
+    await page.getByRole('button', { name: 'Send' }).click()
+
+    // Tag should be stripped from the displayed message
+    await expect(page.getByText(planAddTag)).not.toBeVisible({ timeout: 10_000 })
+    // Readable part of reply is shown
+    await expect(page.getByText("I've added a Friday run for you!")).toBeVisible({ timeout: 10_000 })
+
+    // POST was called with the correct date
+    await expect(async () => {
+      expect(postCalled).toBe(true)
+      expect(postBody).toMatchObject({ date: '2026-04-10', type: 'run' })
+    }).toPass({ timeout: 8_000 })
+  })
+})
+
 test.describe('Sidebar navigation order (Phase 2.1)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')

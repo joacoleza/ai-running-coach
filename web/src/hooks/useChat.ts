@@ -157,6 +157,7 @@ export function useChat(): UseChatReturn {
                     ? m.content
                         .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
                         .replace(/<plan:update[^/]*\/>/g, '')
+                        .replace(/<plan:add[^/]*\/>/g, '')
                         .replace(/<app:[^/]*\/>/g, '')
                         .trim()
                     : m.content,
@@ -200,10 +201,11 @@ export function useChat(): UseChatReturn {
     setIsStreaming(true);
 
     try {
+      const localDate = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ planId: plan._id, message: text }),
+        body: JSON.stringify({ planId: plan._id, message: text, currentDate: localDate }),
       });
 
       if (!response.ok) {
@@ -333,19 +335,24 @@ export function useChat(): UseChatReturn {
               const updatedPlan = await fetchPlan();
               if (updatedPlan) setPlan(updatedPlan);
 
-              // Handle <plan:update> tags -- strip from display and apply via PATCH
+              // Handle <plan:update> and <plan:add> tags -- strip from display and apply via API
               const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
+              const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
               const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
+              const planAdds = [...accumulatedText.matchAll(planAddRegex)];
 
-              if (planUpdates.length > 0) {
-                // Strip plan:update tags from displayed message
+              if (planUpdates.length > 0 || planAdds.length > 0) {
+                // Strip tags from displayed message
                 setMessages((prev) => {
                   const updated = [...prev];
                   const last = updated[updated.length - 1];
                   if (last?.role === 'assistant') {
                     updated[updated.length - 1] = {
                       ...last,
-                      content: last.content.replace(planUpdateRegex, '').trim(),
+                      content: last.content
+                        .replace(planUpdateRegex, '')
+                        .replace(planAddRegex, '')
+                        .trim(),
                     };
                   }
                   return updated;
@@ -365,6 +372,37 @@ export function useChat(): UseChatReturn {
                       // Non-fatal: individual day update failure doesn't block others
                     }
                   }
+                }
+
+                // Apply each add via POST — collect errors to surface in chat
+                const addErrors: string[] = [];
+                for (const match of planAdds) {
+                  const attrs = parseXmlAttrs(match[1]);
+                  if (attrs.date) {
+                    try {
+                      const res = await fetch('/api/plan/days', {
+                        method: 'POST',
+                        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'run', ...attrs }),
+                      });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        addErrors.push(body.error ?? `Could not add day ${attrs.date}`);
+                      }
+                    } catch {
+                      // Network error — non-fatal
+                    }
+                  }
+                }
+                if (addErrors.length > 0) {
+                  setMessages((prev) => {
+                    const updated = [...prev];
+                    const last = updated[updated.length - 1];
+                    if (last?.role === 'assistant') {
+                      updated[updated.length - 1] = { ...last, content: last.content + `\n\nNote: ${addErrors.join('; ')}` };
+                    }
+                    return updated;
+                  });
                 }
 
                 // Re-fetch plan after all updates applied and notify the plan page
@@ -453,10 +491,11 @@ export function useChat(): UseChatReturn {
         setIsBusy(false);
 
         try {
+          const localDate2 = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
           const chatResponse = await fetch('/api/chat', {
             method: 'POST',
             headers: authHeaders(),
-            body: JSON.stringify({ planId: data.plan._id, message: initMessage }),
+            body: JSON.stringify({ planId: data.plan._id, message: initMessage, currentDate: localDate2 }),
           });
 
           if (!alive()) return;
@@ -565,9 +604,11 @@ export function useChat(): UseChatReturn {
                   if (updatedPlan) setPlan(updatedPlan);
 
                   const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
+                  const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
                   const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
+                  const planAdds = [...accumulatedText.matchAll(planAddRegex)];
 
-                  if (planUpdates.length > 0) {
+                  if (planUpdates.length > 0 || planAdds.length > 0) {
                     if (alive()) {
                       setMessages((prev) => {
                         const updated = [...prev];
@@ -575,7 +616,10 @@ export function useChat(): UseChatReturn {
                         if (last?.role === 'assistant') {
                           updated[updated.length - 1] = {
                             ...last,
-                            content: last.content.replace(planUpdateRegex, '').trim(),
+                            content: last.content
+                              .replace(planUpdateRegex, '')
+                              .replace(planAddRegex, '')
+                              .trim(),
                           };
                         }
                         return updated;
@@ -596,6 +640,37 @@ export function useChat(): UseChatReturn {
                           // Non-fatal
                         }
                       }
+                    }
+
+                    const addErrors2: string[] = [];
+                    for (const match of planAdds) {
+                      if (!alive()) return;
+                      const attrs = parseXmlAttrs(match[1]);
+                      if (attrs.date) {
+                        try {
+                          const res = await fetch('/api/plan/days', {
+                            method: 'POST',
+                            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ type: 'run', ...attrs }),
+                          });
+                          if (!res.ok) {
+                            const body = await res.json().catch(() => ({}));
+                            addErrors2.push(body.error ?? `Could not add day ${attrs.date}`);
+                          }
+                        } catch {
+                          // Network error — non-fatal
+                        }
+                      }
+                    }
+                    if (addErrors2.length > 0 && alive()) {
+                      setMessages((prev) => {
+                        const updated = [...prev];
+                        const last = updated[updated.length - 1];
+                        if (last?.role === 'assistant') {
+                          updated[updated.length - 1] = { ...last, content: last.content + `\n\nNote: ${addErrors2.join('; ')}` };
+                        }
+                        return updated;
+                      });
                     }
 
                     const refreshedPlan = await fetchPlan();

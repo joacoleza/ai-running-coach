@@ -32,13 +32,16 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
   const [objectiveValue, setObjectiveValue] = useState('');
   const [objectiveUnit, setObjectiveUnit] = useState<'km' | 'min'>('km');
   const [guidelines, setGuidelines] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const weekDays = getWeekDays(weekStartDate);
+  // Use local date to avoid UTC offset pushing "today" to tomorrow on the client
+  const todayLocal = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
   const hasValidObjective = objectiveValue.trim() !== '' && !isNaN(Number(objectiveValue)) && Number(objectiveValue) > 0;
 
   const handleSave = async () => {
-    if (!selectedDate || !hasValidObjective) return;
+    if (!selectedDate || !hasValidObjective || isSaving) return;
     const fields: Record<string, string> = {
       date: selectedDate,
       type: 'run',
@@ -47,29 +50,35 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
       objective_value: objectiveValue,
       objective_unit: objectiveUnit,
     };
-    await onSave(fields);
+    setIsSaving(true);
+    try {
+      await onSave(fields);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-1 px-2 text-sm bg-blue-50 rounded mt-1">
-      {/* Day-of-week selector — disabled for days that already have a workout */}
+      {/* Day-of-week selector — disabled for days that already have a workout or are in the past */}
       <div className="flex gap-1">
         {weekDays.map(({ date, label }) => {
           const taken = existingDates.includes(date);
+          const isPast = date < todayLocal;
           const selected = selectedDate === date;
           return (
             <button
               key={date}
-              disabled={taken}
+              disabled={taken || isPast}
               onClick={() => setSelectedDate(date)}
               className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                taken
+                taken || isPast
                   ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                   : selected
                   ? 'cursor-pointer bg-blue-600 text-white'
                   : 'cursor-pointer bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
               }`}
-              title={taken ? `${date} already has a workout` : date}
+              title={taken ? `${date} already has a workout` : isPast ? `${date} is in the past` : date}
             >
               {label}
             </button>
@@ -101,14 +110,21 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
       />
       <button
         onClick={() => void handleSave()}
-        disabled={!selectedDate || !hasValidObjective}
-        className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={!selectedDate || !hasValidObjective || isSaving}
+        className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
       >
-        Add
+        {isSaving && (
+          <svg className="h-3 w-3 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+          </svg>
+        )}
+        {isSaving ? 'Adding…' : 'Add'}
       </button>
       <button
         onClick={onCancel}
-        className="cursor-pointer text-gray-400 hover:text-gray-600 text-xs"
+        disabled={isSaving}
+        className="cursor-pointer text-gray-400 hover:text-gray-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Cancel
       </button>

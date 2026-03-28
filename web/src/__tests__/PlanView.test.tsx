@@ -231,4 +231,25 @@ describe('PlanView', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} readonly={true} />);
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
+
+  it('Add button shows spinner and "Adding…" text while save is in flight', async () => {
+    let resolveAdd!: () => void;
+    const onAddDay = vi.fn().mockImplementation(
+      () => new Promise<void>((resolve) => { resolveAdd = resolve; })
+    );
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
+    fireEvent.click(screen.getAllByText('Thu')[0]);
+    fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '5' } });
+
+    fireEvent.click(screen.getByText('Add'));
+
+    expect(await screen.findByText('Adding…')).toBeInTheDocument();
+    expect(screen.getByText('Adding…')).toBeDisabled();
+    expect(screen.getByText('Cancel')).toBeDisabled();
+
+    await act(async () => { resolveAdd(); });
+
+    expect(screen.queryByText('Adding…')).not.toBeInTheDocument();
+  });
 });

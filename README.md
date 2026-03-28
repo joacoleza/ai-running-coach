@@ -24,7 +24,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Training plan view** — View your plan as phases → weeks → days with dates shown as "Monday 2025-04-28"
 - **Inline day editing** — Click any day's objective or guidelines to edit in place; click the date label to reschedule; add new days to any week
 - **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
-- **Chat app control** — Tell the coach to update a day and it applies `<plan:update>` patches live — no page refresh needed
+- **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go

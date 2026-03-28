@@ -140,6 +140,14 @@ app.http('deleteDay', {
 
     try {
       const db = await getDb();
+
+      // Refuse to delete a completed day
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const targetDay = plan?.phases.flatMap(p => p.weeks.flatMap(w => w.days)).find(d => d.date === date);
+      if (targetDay?.completed) {
+        return { status: 409, jsonBody: { error: 'Cannot remove a completed day' } };
+      }
+
       // Convert to rest day rather than removing — weeks always keep 7 days
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] } },
@@ -201,6 +209,12 @@ app.http('addDay', {
     }
     if (type !== 'run' && type !== 'cross-train') {
       return { status: 400, jsonBody: { error: 'type must be run or cross-train' } };
+    }
+
+    // Refuse to add a day on a past date
+    const today = new Date().toISOString().split('T')[0];
+    if (date < today) {
+      return { status: 400, jsonBody: { error: `Cannot add a training day in the past (${date} is before today ${today})` } };
     }
 
     const $set: Record<string, unknown> = {
