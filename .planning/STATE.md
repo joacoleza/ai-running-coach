@@ -146,7 +146,13 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-26 — plan-day-management complete; PR open against master_
+_Last updated: 2026-03-28 — quick task 260328-uuj: fix plan adjustment restrictions (409 guards, past date flags, silent error surfacing)_
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260328-uuj | fix plan adjustment 409 conflict completed dates and silent errors | 2026-03-28 | 808bd73 | [260328-uuj-fix-plan-adjustment-409-conflict-complet](./quick/260328-uuj-fix-plan-adjustment-409-conflict-complet/) |
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
