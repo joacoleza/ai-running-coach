@@ -33,6 +33,7 @@
 - **XML stripped from chat history** — On mount, `useChat` strips `<training_plan>`, `<plan:update>`, `<plan:add>`, and `<app:*/>` tags from assistant messages loaded from MongoDB, since they were stored raw and must not be re-displayed.
 - **Sidebar layout** — Sidebar uses `h-full sticky top-0 overflow-y-auto` so it stays fixed as the main content scrolls. `AppShell` uses `h-[100dvh]` (dynamic viewport height) rather than `h-screen` (`100vh`) so Safari's bottom browser chrome does not clip the sidebar logout button.
 - **System prompt date anchoring** — `buildSystemPrompt` in `api/src/shared/prompts.ts` injects both the current week calendar AND the next 5 weeks (Mon–Sun with exact ISO dates) so Claude never has to compute day-of-week independently. Claude is explicitly instructed not to calculate dates itself. When a user asks to "remove" a day, Claude must use `<plan:update skipped="true">` (deletion is not supported) and be transparent about it.
+- **Past dates in initial plan generation** — `POST /api/plan/generate` preserves past-dated run/cross-train days as-is (not stripped to rest). This lets Claude include recent training history when creating the first plan — past days with `completed: true` (ran it) or `skipped: true` (missed it). The `<plan:add>` command still rejects past dates — only the initial `<training_plan>` block may contain them.
 
 ## Testing & Documentation
 

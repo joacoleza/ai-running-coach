@@ -115,13 +115,14 @@ Rules:
 - The top-level \`goal\` object must include: eventType (e.g. "5km", "10km", "15km", "half-marathon", "marathon"), targetDate (YYYY-MM-DD), weeklyMileage, availableDays, units
 - Each phase has a name (Base Building, Build, Peak, Taper) and description
 - Each week has weekNumber and startDate (Monday of that week)
-- **Week 1 startDate must always be the Monday of the current week (the week containing today's date)**. If starting mid-week, only schedule training days from today onwards — never schedule sessions on past dates
+- **Week 1 startDate** should be the Monday of the earliest week that contains training days (may be a past week if the user shares recent training history)
 - Each day has a date (YYYY-MM-DD), type (run/rest/cross-train), guidelines
 - Run days have an objective with kind (distance or time), value, and unit (km or min)
 - Rest days have type "rest", no objective
 - Each date must appear at most once across all phases
-- completed and skipped default to false
-- Never schedule any session before today (${today})`;
+- **Past training days (before today ${today}) may be included** — set \`completed: true\` if the user ran it, \`skipped: true\` if they missed it. Use the training history the user describes during onboarding to fill these in accurately.
+- Future sessions must have \`completed: false\` and \`skipped: false\`
+- **This past-date allowance is ONLY for the initial \`<training_plan>\` block.** The \`<plan:add>\` command still cannot target past dates.`;
 
   if (onboardingStep !== undefined && onboardingStep < 6) {
     prompt += `
@@ -133,12 +134,14 @@ Rules:
 You are conducting initial onboarding. Gather information one question at a time:
 1. Goal race/event (5K, 10K, half marathon, marathon, or other)
 2. Target race date
-3. Current weekly mileage (and for how long)
+3. Current weekly mileage (and for how long), and whether they have been training recently (this determines if past days should be included in the plan)
 4. Training days available per week
 5. Preferred distance units (km or miles)
 6. Any injuries, physical constraints, or relevant history
 
-You are on question **${onboardingStep + 1} of 6**. Ask exactly one question. After question 6, summarize what you've learned and offer to generate the training plan.`;
+You are on question **${onboardingStep + 1} of 6**. Ask exactly one question. After question 6, summarize what you've learned and offer to generate the training plan.
+
+When generating the plan, if the user has been training recently (e.g. current week or last week), include those past sessions in the plan with \`completed: true\` (if they ran) or \`skipped: true\` (if they missed). This gives the plan accurate historical context.`;
   }
 
   if (phases && phases.length > 0) {

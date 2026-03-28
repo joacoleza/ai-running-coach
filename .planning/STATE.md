@@ -115,6 +115,10 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [plan-day-management]: Plan replace guard — `generatePlan` returns 409 if the target plan OR any other active plan has completed days (second check prevents stale-client planId exploit); `createPlan` returns 409 if any active plan has completed days
 - [plan-day-management]: `DELETE /api/plan/days/:date` returns 409 for completed days — training history is locked and cannot be removed via UI or API
 - [plan-day-management]: `POST /api/plan/days` (addDay) returns 400 for past dates — enforced at API level; UI also disables past days in AddDayForm picker
+- [UAT-fixes-02.1-r2]: AppShell uses `h-[100dvh]` instead of `h-screen` — Safari bottom browser chrome was clipping sidebar logout button; dvh is the visible viewport height
+- [UAT-fixes-02.1-r2]: System prompt injects next 5 upcoming weeks (Mon–Sun, exact ISO dates) so Claude never computes day-of-week independently — was producing Tue/Thu/Sat when user asked for Mon/Wed/Fri
+- [UAT-fixes-02.1-r2]: Claude instructed to use `<plan:update skipped="true">` when asked to remove a day, be transparent that it's a skip not a delete, and count only non-skipped runs when summarising
+- [UAT-fixes-02.1-r2]: `generatePlan` no longer strips past-dated run days to rest — preserves them with `completed`/`skipped` flags so training history from before the plan start can be included; `<plan:add>` still rejects past dates
 - [plan-day-management]: `currentDate` sent from client as local ISO date string in chat API request body — avoids UTC-offset causing the wrong date in system prompt (e.g. late-night sessions rolling to tomorrow)
 - [plan-day-management]: System prompt includes full Mon–Sun week calendar with day-of-week labels and a `← today` marker so Claude doesn't recompute day-of-week incorrectly
 - [plan-day-management]: All training days (not just upcoming) shown in system prompt with `[COMPLETED]`/`[SKIPPED]` status labels — gives Claude full plan state for targeted `<plan:add>`/`<plan:update>` decisions

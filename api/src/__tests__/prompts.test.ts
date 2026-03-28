@@ -103,6 +103,41 @@ describe('buildSystemPrompt — skip-vs-delete instructions', () => {
   });
 });
 
+describe('buildSystemPrompt — past dates allowed in initial training plan', () => {
+  it('allows past dates in the training_plan block', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('Past training days');
+    expect(prompt).toContain('may be included');
+  });
+
+  it('instructs Claude to set completed: true for past sessions the user ran', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('completed: true');
+  });
+
+  it('instructs Claude to set skipped: true for past sessions the user missed', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('skipped: true');
+  });
+
+  it('still forbids plan:add on past dates', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    // The plan:add restriction should still be present
+    expect(prompt).toContain('plan:add');
+    expect(prompt).toContain('cannot target past dates');
+  });
+
+  it('clarifies past-date allowance is only for initial training_plan block', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('ONLY for the initial');
+  });
+
+  it('onboarding prompt mentions recent training history context', () => {
+    const prompt = buildSystemPrompt(undefined, 2, [], SATURDAY);
+    expect(prompt).toContain('training recently');
+  });
+});
+
 describe('buildSystemPrompt — AppShell layout (h-[100dvh])', () => {
   // This is a documentation test — verifying the fix exists in the source.
   // The actual rendering is tested by AppShell unit tests.
