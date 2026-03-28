@@ -54,6 +54,21 @@ app.http('createPlan', {
 
       const db = await getDb();
 
+      // Refuse to start a new plan if there's already an active plan with training history —
+      // the user must archive first to avoid losing completed-day records
+      const activePlanWithHistory = await db.collection<Plan>('plans').findOne({
+        status: 'active',
+        'phases.weeks.days.completed': true,
+      });
+      if (activePlanWithHistory) {
+        return {
+          status: 409,
+          jsonBody: {
+            error: 'Cannot start a new plan while training history exists. Archive your current plan first.',
+          },
+        };
+      }
+
       // D-02: Delete abandoned/legacy plans on every new start to keep the DB clean:
       // - 'onboarding': empty abandoned plans from previous starts
       // - 'discarded': legacy status from an old schema, no longer used
@@ -157,8 +172,22 @@ app.http('generatePlan', {
       }
       const resolvedObjective = deriveObjective(resolvedGoal?.eventType) ?? objective;
 
+      // Strip any run/cross-train days scheduled before today — Claude sometimes ignores the date constraint
+      const today = new Date().toISOString().split('T')[0];
+      const strippedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
+        ...phase,
+        weeks: phase.weeks.map(week => ({
+          ...week,
+          days: week.days.map(day =>
+            day.type !== 'rest' && day.date < today
+              ? { ...day, type: 'rest' as const, guidelines: 'Rest day', objective: undefined, completed: false, skipped: false }
+              : day
+          ),
+        })),
+      }));
+
       // Normalize every week to exactly 7 days (Mon–Sun), filling gaps with rest days
-      const normalizedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
+      const normalizedPhases = strippedPhases.map((phase: PlanPhase) => ({
         ...phase,
         weeks: phase.weeks.map(normalizeWeekDays),
       }));
@@ -173,6 +202,38 @@ app.http('generatePlan', {
         return {
           status: 400,
           jsonBody: { error: 'Invalid planId format' },
+        };
+      }
+
+      // Refuse to replace a plan that has any completed days — history must not be erased.
+      // Check 1: the specific plan being updated
+      const existingPlan = await db.collection<Plan>('plans').findOne({ _id: objectId });
+      if (existingPlan) {
+        const hasCompleted = existingPlan.phases
+          ?.flatMap(p => p.weeks.flatMap(w => w.days))
+          .some(d => d.completed);
+        if (hasCompleted) {
+          return {
+            status: 409,
+            jsonBody: {
+              error: 'Cannot replace a plan that has completed days. Use plan:add and plan:update commands to make targeted changes instead.',
+            },
+          };
+        }
+      }
+      // Check 2: any other active plan with completed days (guards against stale-client planId exploits
+      // where the client sends a newer onboarding plan's ID that has no history, while the real active
+      // plan with completed days still exists in the DB)
+      const otherActiveWithHistory = await db.collection<Plan>('plans').findOne({
+        status: 'active',
+        'phases.weeks.days.completed': true,
+      });
+      if (otherActiveWithHistory) {
+        return {
+          status: 409,
+          jsonBody: {
+            error: 'Cannot replace a plan that has completed days. Use plan:add and plan:update commands to make targeted changes instead.',
+          },
         };
       }
 

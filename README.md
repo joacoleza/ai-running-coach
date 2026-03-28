@@ -4,10 +4,10 @@
 
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-81.6%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-90%2F90-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-189%2F189-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-37%2F37-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-80.7%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-97%2F97-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-197%2F197-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-38%2F38-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -24,7 +24,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Training plan view** — View your plan as phases → weeks → days with dates shown as "Monday 2025-04-28"
 - **Inline day editing** — Click any day's objective or guidelines to edit in place; click the date label to reschedule; add new days to any week
 - **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
-- **Chat app control** — Tell the coach to update a day and it applies `<plan:update>` patches live — no page refresh needed
+- **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go

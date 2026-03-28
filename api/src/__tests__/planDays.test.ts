@@ -241,6 +241,19 @@ describe('DELETE /api/plan/days/:date', () => {
     expect(result.status).toBe(404);
   });
 
+  it('returns 409 when trying to delete a completed day', async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [{ ...validActivePlan.phases[0], weeks: [{ ...validActivePlan.phases[0].weeks[0], days: makeWeekDays({ completed: true }) }] }],
+    });
+
+    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const result = await handlers.get('deleteDay')!(req, ctx);
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('Cannot remove a completed day');
+  });
+
   it('rejects invalid date format (400)', async () => {
     const req = makeReq('DELETE', { date: 'not-a-date' });
     const result = await handlers.get('deleteDay')!(req, ctx);
@@ -302,5 +315,13 @@ describe('POST /api/plan/days', () => {
     const req = makePostReq({ date: '2026-04-09', type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(404);
+  });
+
+  it('returns 400 when adding a day in the past', async () => {
+    const pastDate = '2020-01-01';
+    const req = makePostReq({ date: pastDate, type: 'run' });
+    const result = await handlers.get('addDay')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Cannot add a training day in the past');
   });
 });

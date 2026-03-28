@@ -44,6 +44,7 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
   const [movingDate, setMovingDate] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isReadOnly = readonly || day.completed || day.skipped;
   const isEditing = editingField !== null || movingDate;
@@ -51,19 +52,24 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
   // Shared error-catching wrappers
   const update = async (updates: Record<string, string>) => {
     setError(null);
+    setIsSaving(true);
     try {
       await onUpdate(day.date, updates);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const remove = async () => {
     setError(null);
+    setIsSaving(true);
     try {
       await onDelete(day.date);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
+      setIsSaving(false);
     }
   };
 
@@ -324,8 +330,19 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
 
         {day.skipped && <span className="ml-1 text-xs text-gray-400">(skipped)</span>}
 
-        {/* Action buttons — hidden while editing; confirm-state always visible, otherwise hover-only on desktop */}
-        {!isEditing && (
+        {/* Saving indicator */}
+        {isSaving && (
+          <span className="inline-flex items-center gap-1 ml-2 align-middle text-xs text-gray-400" aria-label="Saving">
+            <svg className="h-3.5 w-3.5 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+            Saving…
+          </span>
+        )}
+
+        {/* Action buttons — hidden while editing or saving; confirm-state always visible, otherwise hover-only on desktop */}
+        {!isEditing && !isSaving && (
           <span className={`inline-flex items-center gap-1 ml-2 align-middle no-underline ${confirmingDelete ? '' : 'md:opacity-0 md:group-hover:opacity-100 md:transition-opacity'}`}>
             {/* Undo for completed/skipped */}
             {(day.completed || day.skipped) && !readonly && !confirmingDelete && (
@@ -360,8 +377,8 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
               </>
             )}
 
-            {/* Delete / Confirmation */}
-            {!readonly && (
+            {/* Delete / Confirmation — hidden for completed days (history must not be erased) */}
+            {!readonly && !day.completed && (
               confirmingDelete ? (
                 <>
                   <span className="text-xs text-gray-500">Remove?</span>

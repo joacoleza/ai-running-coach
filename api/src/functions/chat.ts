@@ -21,7 +21,7 @@ app.http('chat', {
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
-    const { planId, message } = await req.json() as { planId: string; message: string };
+    const { planId, message, currentDate } = await req.json() as { planId: string; message: string; currentDate?: string };
     if (!planId || !message) {
       return { status: 400, jsonBody: { error: 'planId and message are required' } };
     }
@@ -39,14 +39,17 @@ app.http('chat', {
     await db.collection<ChatMessage>('messages').insertOne(userMsg);
 
     // Get plan for summary and onboarding state
-    const plan = await db.collection<Plan>('plans').findOne({ _id: planId as any });
+    const { ObjectId } = await import('mongodb');
+    const plan = ObjectId.isValid(planId)
+      ? await db.collection<Plan>('plans').findOne({ _id: new ObjectId(planId) as any })
+      : null;
     const summary = plan?.summary;
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
     const phases = plan?.phases;
 
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
-    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases);
+    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases, currentDate);
 
     // Stream Claude response
     const stream = anthropic.messages.stream({

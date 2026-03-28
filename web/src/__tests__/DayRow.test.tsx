@@ -121,6 +121,8 @@ describe('DayRow', () => {
     // Skip/complete buttons should not be visible
     expect(screen.queryByTitle('Mark as completed')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Mark as skipped')).not.toBeInTheDocument();
+    // Delete button must not be visible — completed days are locked history
+    expect(screen.queryByTitle('Delete day')).not.toBeInTheDocument();
     // Clicking guidelines should not enter edit mode
     const guidelinesSpan = screen.getByText('Easy Zone 2 run');
     fireEvent.click(guidelinesSpan);
@@ -306,6 +308,47 @@ describe('DayRow', () => {
       fireEvent.click(screen.getByText('Yes'));
     });
     expect(await screen.findByText('Delete failed')).toBeInTheDocument();
+  });
+});
+
+describe('DayRow — saving state', () => {
+  it('shows saving spinner while update is in flight', async () => {
+    let resolveUpdate!: () => void;
+    const onUpdate = vi.fn().mockImplementation(
+      () => new Promise<void>((resolve) => { resolveUpdate = resolve; })
+    );
+    render(<DayRow day={makeRunDay()} onUpdate={onUpdate} onDelete={noop} />);
+    // Trigger an update — do not await so it stays pending
+    fireEvent.click(screen.getByTitle('Mark as completed'));
+    // Saving spinner should be visible
+    expect(await screen.findByLabelText('Saving')).toBeInTheDocument();
+    // Action buttons should be hidden while saving
+    expect(screen.queryByTitle('Mark as completed')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Delete day')).not.toBeInTheDocument();
+    // Resolve the update
+    await act(async () => { resolveUpdate(); });
+    // Spinner gone, action buttons back (day prop unchanged — parent controls updates)
+    expect(screen.queryByLabelText('Saving')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Mark as completed')).toBeInTheDocument();
+  });
+
+  it('clears saving state after update resolves', async () => {
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    render(<DayRow day={makeRunDay()} onUpdate={onUpdate} onDelete={noop} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Mark as completed'));
+    });
+    expect(screen.queryByLabelText('Saving')).not.toBeInTheDocument();
+  });
+
+  it('clears saving state after update rejects', async () => {
+    const onUpdate = vi.fn().mockRejectedValue(new Error('fail'));
+    render(<DayRow day={makeRunDay()} onUpdate={onUpdate} onDelete={noop} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Mark as completed'));
+    });
+    expect(screen.queryByLabelText('Saving')).not.toBeInTheDocument();
+    expect(screen.getByText('fail')).toBeInTheDocument();
   });
 });
 

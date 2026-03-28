@@ -48,7 +48,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
   // Mobile: bottom sheet overlay (partial height) so the app is visible behind it.
   // Desktop (md+): always visible as fixed-width right panel.
   const asideClass = isOpen
-    ? 'flex fixed inset-x-0 bottom-0 h-[85vh] z-50 flex-col bg-white rounded-t-2xl shadow-xl md:relative md:inset-auto md:h-auto md:rounded-none md:shadow-none md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:h-screen md:sticky md:top-0'
+    ? 'flex fixed inset-x-0 bottom-0 h-[85dvh] z-50 flex-col bg-white rounded-t-2xl shadow-xl md:relative md:inset-auto md:h-auto md:rounded-none md:shadow-none md:z-auto md:w-80 lg:w-96 md:border-l md:border-gray-200 md:h-screen md:sticky md:top-0'
     : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:h-screen md:sticky md:top-0';
 
   // Determine header title

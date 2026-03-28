@@ -9,9 +9,22 @@ import type { PlanPhase } from './types.js';
  */
 export function buildSystemPrompt(summary?: string, onboardingStep?: number, phases?: PlanPhase[], currentDate?: string): string {
   const today = currentDate ?? new Date().toISOString().split('T')[0];
+  const todayDt = new Date(today + 'T12:00:00');
+  const todayDayOfWeek = todayDt.toLocaleDateString('en-US', { weekday: 'long' });
+
+  // Build the full Mon–Sun dates for the current week so Claude has an unambiguous calendar anchor
+  const todayDow = todayDt.getDay(); // 0=Sun … 6=Sat
+  const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
+  const weekCalendar = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
+    const d = new Date(todayDt);
+    d.setDate(todayDt.getDate() - daysFromMon + i);
+    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    return `${label} ${iso}${iso === today ? ' ← today' : ''}`;
+  }).join(', ');
+
   let prompt = `You are an AI running coach. Your sole purpose is to help with running training, race preparation, injury prevention, and fitness coaching.
 
-**Today's date is ${today}.** Always use this date when reasoning about schedules, plan start dates, and upcoming sessions.
+**Today is ${todayDayOfWeek}, ${today}.** Current week: ${weekCalendar}. Use these exact dates — do not compute day-of-week yourself.
 
 **Stay on topic.** If the user asks about anything unrelated to running, fitness, or training, politely decline and redirect them back to their running goals. Example: "I'm here to help with your running training — let me know if you have any questions about your plan or upcoming sessions!"
 
@@ -53,10 +66,26 @@ To modify a specific training day, emit a self-closing XML tag at the end of you
 | \`<plan:update date="YYYY-MM-DD" skipped="true" />\` | Mark day as skipped |
 | \`<plan:update date="YYYY-MM-DD" completed="false" skipped="false" />\` | Undo — revert a completed or skipped day back to active |
 
+To add a brand-new training day on a date that has no session yet:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:add date="YYYY-MM-DD" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy pace run" />\` | Add a new run on that date |
+
 Rules:
-- Always place \`<plan:update>\` tags at the end of your response, after all readable text.
-- Use the exact ISO date (YYYY-MM-DD) that appears in the plan.
-- You may emit multiple \`<plan:update>\` tags in one response.
+- Always place \`<plan:update>\` and \`<plan:add>\` tags at the end of your response, after all readable text.
+- Use the exact ISO date (YYYY-MM-DD).
+- You may emit multiple tags in one response (mix of \`<plan:update>\` and \`<plan:add>\`).
+- Use \`<plan:add>\` only for dates that do not already have a training session. Use \`<plan:update>\` for dates that already exist in the plan.
+- **Never use \`<plan:add>\` on a date that is before today (${today}).** Past dates cannot be trained on.
+- **Never use \`<plan:update>\` to remove or downgrade a completed day.** Completed days are locked.
+
+---
+
+## When to Replace vs. Incrementally Update the Plan
+
+- If **no days have been completed yet**, you may generate a full new \`<training_plan>\` to replace the current one.
+- If **any day has been completed**, you must **never** emit a \`<training_plan>\` block. Use \`<plan:add>\` and \`<plan:update>\` to make targeted changes instead. Replacing the plan would erase the user's training history.
 
 ---
 
@@ -97,26 +126,23 @@ You are on question **${onboardingStep + 1} of 6**. Ask exactly one question. Af
   }
 
   if (phases && phases.length > 0) {
+    const labelDate = (date: string) => {
+      const dow = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+      return `${dow} ${date}`;
+    };
+
     const allDays = phases.flatMap(p => p.weeks.flatMap(w => w.days));
-    const upcoming = allDays
-      .filter(d => !d.completed && !d.skipped && d.type !== 'rest')
+    const trainingDays = allDays
+      .filter(d => d.type !== 'rest')
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    const completed = allDays
-      .filter(d => d.completed)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5);
-
-    if (upcoming.length > 0) {
-      prompt += `\n\n---\n\n## Current Training Schedule (authoritative)\n\nThis is the **live, current state of the plan** — including all manual additions and edits. A date listed here IS a scheduled training session. This list supersedes any earlier description in the conversation. Use these exact dates when emitting \`<plan:update>\` commands.\n\n`;
-      for (const d of upcoming) {
+    if (trainingDays.length > 0) {
+      prompt += `\n\n---\n\n## Current Training Schedule (authoritative)\n\nThis is the **live, current state of the plan** — every training day with its exact date, day-of-week, and status. This supersedes any earlier description in the conversation. Use these exact dates when emitting \`<plan:update>\` or \`<plan:add>\` commands.\n\n`;
+      for (const d of trainingDays) {
         const obj = d.objective ? `${d.objective.value} ${d.objective.unit}` : '';
-        prompt += `- **${d.date}** | ${d.type} ${obj} — ${d.guidelines}\n`;
+        const status = d.completed ? ' [COMPLETED]' : d.skipped ? ' [SKIPPED]' : '';
+        prompt += `- **${labelDate(d.date)}**${status} | ${d.type} ${obj} — ${d.guidelines}\n`;
       }
-    }
-
-    if (completed.length > 0) {
-      prompt += `\n**Recently completed:** ${completed.map(d => d.date).join(', ')}\n`;
     }
   }
 

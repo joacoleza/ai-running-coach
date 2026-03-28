@@ -32,7 +32,7 @@ export function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      <div className="p-2 mb-2">
+      <div className="p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           onClick={() => {
