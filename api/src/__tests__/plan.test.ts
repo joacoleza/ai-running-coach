@@ -247,6 +247,149 @@ describe('Plan Schema (PLAN-02)', () => {
   });
 });
 
+describe('Plan Generation - past dates allowed on initial creation', () => {
+  const pastDate = '2026-03-25'; // Tuesday of the current week (before today 2026-03-28)
+
+  const phasesWithPastCompleted = [
+    {
+      name: 'Base Building',
+      description: 'Build aerobic base',
+      weeks: [
+        {
+          weekNumber: 1,
+          startDate: '2026-03-23',
+          days: [
+            {
+              date: pastDate,
+              type: 'run',
+              objective: { kind: 'distance', value: 5, unit: 'km' },
+              guidelines: 'Easy run (already done)',
+              completed: true,
+              skipped: false,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  const phasesWithPastSkipped = [
+    {
+      name: 'Base Building',
+      description: 'Build aerobic base',
+      weeks: [
+        {
+          weekNumber: 1,
+          startDate: '2026-03-23',
+          days: [
+            {
+              date: pastDate,
+              type: 'run',
+              objective: { kind: 'distance', value: 5, unit: 'km' },
+              guidelines: 'Easy run (missed)',
+              completed: false,
+              skipped: true,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  const phasesWithPastNoFlag = [
+    {
+      name: 'Base Building',
+      description: 'Build aerobic base',
+      weeks: [
+        {
+          weekNumber: 1,
+          startDate: '2026-03-23',
+          days: [
+            {
+              date: pastDate,
+              type: 'run',
+              objective: { kind: 'distance', value: 5, unit: 'km' },
+              guidelines: 'Easy run',
+              completed: false,
+              skipped: false,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+
+  it('preserves past run days with completed: true (training history)', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithPastCompleted })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
+    const pastDay = allDays.find((d: any) => d.date === pastDate);
+    expect(pastDay).toBeDefined();
+    expect(pastDay.type).toBe('run');
+    expect(pastDay.completed).toBe(true);
+    expect(pastDay.skipped).toBe(false);
+  });
+
+  it('preserves past run days with skipped: true (missed session)', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithPastSkipped })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
+    const pastDay = allDays.find((d: any) => d.date === pastDate);
+    expect(pastDay).toBeDefined();
+    expect(pastDay.type).toBe('run');
+    expect(pastDay.completed).toBe(false);
+    expect(pastDay.skipped).toBe(true);
+  });
+
+  it('preserves past run days without flags (not converted to rest)', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithPastNoFlag })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
+    const pastDay = allDays.find((d: any) => d.date === pastDate);
+    expect(pastDay).toBeDefined();
+    // Must remain a run day, NOT converted to rest
+    expect(pastDay.type).toBe('run');
+  });
+
+  it('plan with past completed days still normalizes weeks to 7 days', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithPastCompleted })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan.phases[0].weeks[0].days).toHaveLength(7);
+  });
+});
+
 describe('Plan Generation - completed-day guard', () => {
   it('returns 409 when plan already has a completed day', async () => {
     const planId = await createTestPlan();

@@ -82,32 +82,56 @@ describe('buildSystemPrompt — upcoming week calendars from a Sunday', () => {
 describe('buildSystemPrompt — skip-vs-delete instructions', () => {
   it('tells Claude it cannot delete training days', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('cannot delete training days');
+    expect(prompt).toContain('You cannot delete training days.');
   });
 
-  it('instructs Claude to use skipped="true" when user asks to remove a day', () => {
+  it('instructs Claude to mark removed days as skipped using plan:update', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('skipped="true"');
-    // Instruction should be in the plan-update rules section
-    expect(prompt).toContain('remove');
+    // Must link the "remove/delete" request to the skipped=true action in one sentence
+    expect(prompt).toContain('asks to "remove" or "delete" a day, mark it as skipped with `<plan:update date="..." skipped="true" />`');
   });
 
-  it('tells Claude to be transparent about skipping vs deleting', () => {
+  it('tells Claude to be transparent that the day is still visible as skipped, not deleted', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('marked as skipped');
+    expect(prompt).toContain('tell the user the day has been marked as skipped (it will appear crossed out in the plan)');
   });
 
-  it('tells Claude to verify weekday names against provided calendar', () => {
+  it('tells Claude to count only active (non-skipped, non-completed) run days when summarising', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('count only non-skipped, non-completed run days');
+  });
+
+  it('tells Claude to verify weekday names against the provided calendar', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
     expect(prompt).toContain('verify the weekday name against the provided calendar');
   });
 });
 
-describe('buildSystemPrompt — AppShell layout (h-[100dvh])', () => {
-  // This is a documentation test — verifying the fix exists in the source.
-  // The actual rendering is tested by AppShell unit tests.
-  it('placeholder: mobile layout uses dynamic viewport height (tested in AppShell)', () => {
-    // See AppShell.tsx: h-[100dvh] replaces h-screen so Safari bottom chrome does not clip the sidebar
-    expect(true).toBe(true);
+describe('buildSystemPrompt — past dates allowed in initial training plan', () => {
+  it('allows past dates in the training_plan block with the correct today-anchored phrasing', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    // Must be a single coherent statement, not two stray fragments
+    expect(prompt).toContain('Past training days (before today 2026-03-28) may be included');
+  });
+
+  it('links completed: true to sessions the user ran in the same sentence', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('set `completed: true` if the user ran it');
+  });
+
+  it('links skipped: true to sessions the user missed in the same sentence', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('`skipped: true` if they missed it');
+  });
+
+  it('plan:add restriction on past dates is still present in the same rule', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    // The allowance and the restriction must both appear and refer to the same thing
+    expect(prompt).toContain('ONLY for the initial `<training_plan>` block.** The `<plan:add>` command still cannot target past dates.');
+  });
+
+  it('onboarding question 3 asks about recent training to help populate past sessions', () => {
+    const prompt = buildSystemPrompt(undefined, 2, [], SATURDAY);
+    expect(prompt).toContain('whether they have been training recently (this determines if past days should be included in the plan)');
   });
 });

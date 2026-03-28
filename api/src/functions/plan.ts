@@ -172,22 +172,12 @@ app.http('generatePlan', {
       }
       const resolvedObjective = deriveObjective(resolvedGoal?.eventType) ?? objective;
 
-      // Strip any run/cross-train days scheduled before today — Claude sometimes ignores the date constraint
-      const today = new Date().toISOString().split('T')[0];
-      const strippedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
-        ...phase,
-        weeks: phase.weeks.map(week => ({
-          ...week,
-          days: week.days.map(day =>
-            day.type !== 'rest' && day.date < today
-              ? { ...day, type: 'rest' as const, guidelines: 'Rest day', objective: undefined, completed: false, skipped: false }
-              : day
-          ),
-        })),
-      }));
+      // Past run/cross-train days are intentionally preserved — the user may have provided their
+      // recent training history during onboarding and Claude will mark those days completed/skipped.
+      // Only future sessions without completed/skipped flags count as upcoming training.
 
       // Normalize every week to exactly 7 days (Mon–Sun), filling gaps with rest days
-      const normalizedPhases = strippedPhases.map((phase: PlanPhase) => ({
+      const normalizedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
         ...phase,
         weeks: phase.weeks.map(normalizeWeekDays),
       }));

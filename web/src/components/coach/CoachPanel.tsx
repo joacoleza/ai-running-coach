@@ -12,7 +12,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     useChatContext();
   const [input, setInput] = useState('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-scroll chat container to bottom on new messages — avoids scrolling the whole page
   useEffect(() => {
@@ -33,6 +33,9 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     if (!input.trim() || isStreaming) return;
     const text = input;
     setInput('');
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
     await sendMessage(text);
   };
 
@@ -41,6 +44,12 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
       e.preventDefault();
       void handleSend();
     }
+  };
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
   };
 
   const isActive = isStreaming || isGeneratingPlan || isBusy;
@@ -157,16 +166,16 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
       {/* Input area -- only show when plan exists */}
       {plan && (
         <div className="border-t border-gray-200 p-3">
-          <div className="flex gap-2">
-            <input
+          <div className="flex gap-2 items-end">
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInput}
               onKeyDown={handleKeyDown}
               disabled={isActive}
               placeholder={isStreaming ? 'Coach is responding...' : isGeneratingPlan ? 'Building your plan...' : 'Type a message...'}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 resize-none overflow-hidden max-h-32"
             />
             <button
               onClick={() => void handleSend()}

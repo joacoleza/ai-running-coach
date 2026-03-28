@@ -132,6 +132,8 @@ describe('CoachPanel — cursor-pointer on interactive elements', () => {
 });
 
 describe('CoachPanel — active plan (no start button)', () => {
+  beforeEach(() => { mockSendMessage.mockClear(); });
+
   const activePlan: PlanData = {
     _id: 'p1',
     status: 'active',
@@ -151,5 +153,30 @@ describe('CoachPanel — active plan (no start button)', () => {
     mockUseChatContext.mockReturnValue(makeChatContext({ plan: activePlan }));
     render(<CoachPanel isOpen={true} onClose={onClose} />);
     expect(screen.getByPlaceholderText(/type a message/i)).toBeInTheDocument();
+  });
+
+  it('input is a textarea (supports multiline)', () => {
+    mockUseChatContext.mockReturnValue(makeChatContext({ plan: activePlan }));
+    render(<CoachPanel isOpen={true} onClose={onClose} />);
+    const input = screen.getByPlaceholderText(/type a message/i);
+    expect(input.tagName).toBe('TEXTAREA');
+  });
+
+  it('Enter sends the message', () => {
+    mockUseChatContext.mockReturnValue(makeChatContext({ plan: activePlan }));
+    render(<CoachPanel isOpen={true} onClose={onClose} />);
+    const textarea = screen.getByPlaceholderText(/type a message/i);
+    fireEvent.change(textarea, { target: { value: 'hello' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+    expect(mockSendMessage).toHaveBeenCalledWith('hello');
+  });
+
+  it('Shift+Enter does not send the message', () => {
+    mockUseChatContext.mockReturnValue(makeChatContext({ plan: activePlan }));
+    render(<CoachPanel isOpen={true} onClose={onClose} />);
+    const textarea = screen.getByPlaceholderText(/type a message/i);
+    fireEvent.change(textarea, { target: { value: 'hello' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true });
+    expect(mockSendMessage).not.toHaveBeenCalled();
   });
 });
