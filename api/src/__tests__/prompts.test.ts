@@ -124,10 +124,11 @@ describe('buildSystemPrompt — past dates allowed in initial training plan', ()
     expect(prompt).toContain('`skipped: true` if they missed it');
   });
 
-  it('plan:add restriction on past dates is still present in the same rule', () => {
+  it('plan:add allows past dates with completed/skipped flags', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // The allowance and the restriction must both appear and refer to the same thing
-    expect(prompt).toContain('ONLY for the initial `<training_plan>` block.** The `<plan:add>` command still cannot target past dates.');
+    // Past-date adds are allowed with completed/skipped flags — same as training_plan block
+    expect(prompt).toContain('Past completed/skipped days** can also be added with `<plan:add>`');
+    expect(prompt).toContain('completed="true"` or `skipped="true"`');
   });
 
   it('onboarding question 3 asks about recent training to help populate past sessions', () => {
