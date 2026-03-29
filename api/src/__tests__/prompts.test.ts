@@ -4,20 +4,20 @@ import { buildSystemPrompt } from '../shared/prompts.js';
 // Fixed date: Saturday 2026-03-28
 const SATURDAY = '2026-03-28';
 
-describe('buildSystemPrompt — date tool instruction', () => {
+describe('buildSystemPrompt — date calendar instruction', () => {
   it('includes today date and day-of-week', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
     expect(prompt).toContain('Saturday, 2026-03-28');
   });
 
-  it('instructs Claude to use get_week_dates tool', () => {
+  it('instructs Claude to use the calendar, not compute dates', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('get_week_dates');
+    expect(prompt).toContain('use the calendar below, never compute');
   });
 
-  it('tells Claude never to compute dates itself', () => {
+  it('tells Claude never to compute day-of-week itself', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('Never compute dates yourself');
+    expect(prompt).toContain('Never compute day-of-week yourself');
   });
 
   it('explains DD/MM/YYYY parsing', () => {
@@ -25,11 +25,17 @@ describe('buildSystemPrompt — date tool instruction', () => {
     expect(prompt).toContain('DD/MM/YYYY format');
   });
 
-  it('does not contain a precomputed calendar table', () => {
+  it('includes a pre-computed 26-week calendar with past and future weeks', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // No "Week +1:" or "Week -1:" rows — those are gone
-    expect(prompt).not.toContain('Week +1:');
-    expect(prompt).not.toContain('Week -1:');
+    // Should contain both past (-13) and future (+12) week markers
+    expect(prompt).toContain('Week -13:');
+    expect(prompt).toContain('Week +12:');
+    expect(prompt).toContain('Week 0 (this week):');
+  });
+
+  it('marks today with <- today in the calendar', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('2026-03-28 <- today');
   });
 });
 
@@ -54,9 +60,9 @@ describe('buildSystemPrompt — skip-vs-delete instructions', () => {
     expect(prompt).toContain('count only non-skipped, non-completed run days');
   });
 
-  it('tells Claude to verify weekday names via the tool', () => {
+  it('tells Claude to use weekday names from the calendar', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('verify the weekday name via the tool');
+    expect(prompt).toContain('use the exact weekday shown in the calendar above');
   });
 });
 

@@ -14,7 +14,6 @@ vi.mock('@anthropic-ai/sdk', () => ({
 
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
-import { getWeekDates } from '../functions/chat.js';
 import Anthropic from '@anthropic-ai/sdk';
 
 type Msg = { planId: string; role: 'user' | 'assistant'; content: string; timestamp: Date };
@@ -36,72 +35,6 @@ function makeMockDb(messages: Msg[], count?: number) {
   };
 }
 
-describe('getWeekDates — tool implementation', () => {
-  it('returns correct Mon–Sun dates for offset 0 on a Wednesday', () => {
-    const result = getWeekDates(0, 0, '2026-03-25');
-    expect(result['0'].monday).toBe('2026-03-23');
-    expect(result['0'].wednesday).toBe('2026-03-25');
-    expect(result['0'].sunday).toBe('2026-03-29');
-  });
-
-  it('returns correct dates for offset +1 (next week)', () => {
-    const result = getWeekDates(1, 1, '2026-03-25');
-    expect(result['1'].monday).toBe('2026-03-30');
-    expect(result['1'].sunday).toBe('2026-04-05');
-  });
-
-  it('returns correct dates for offset -1 (last week)', () => {
-    const result = getWeekDates(-1, -1, '2026-03-25');
-    expect(result['-1'].monday).toBe('2026-03-16');
-    expect(result['-1'].sunday).toBe('2026-03-22');
-  });
-
-  it('handles Sunday correctly — Sunday is end of week, not start', () => {
-    const result = getWeekDates(0, 0, '2026-03-29'); // Sunday
-    expect(result['0'].monday).toBe('2026-03-23');
-    expect(result['0'].sunday).toBe('2026-03-29');
-  });
-
-  it('handles Monday correctly — Monday is first day of week', () => {
-    const result = getWeekDates(0, 0, '2026-03-30'); // Monday
-    expect(result['0'].monday).toBe('2026-03-30');
-    expect(result['0'].sunday).toBe('2026-04-05');
-  });
-
-  it('handles large positive offset', () => {
-    const result = getWeekDates(12, 12, '2026-03-28');
-    expect(result['12'].monday).toBe('2026-06-15');
-    expect(result['12'].sunday).toBe('2026-06-21');
-  });
-
-  it('handles negative offset for historical dates', () => {
-    const result = getWeekDates(-7, -7, '2026-03-28');
-    expect(result['-7'].monday).toBe('2026-02-02');
-    expect(result['-7'].sunday).toBe('2026-02-08');
-  });
-
-  it('returns all 7 day keys per week', () => {
-    const result = getWeekDates(0, 0, '2026-03-25');
-    expect(Object.keys(result['0']).sort()).toEqual(
-      ['friday', 'monday', 'saturday', 'sunday', 'thursday', 'tuesday', 'wednesday']
-    );
-  });
-
-  it('returns a range of weeks in one call', () => {
-    const result = getWeekDates(0, 2, '2026-03-25'); // 3 weeks
-    expect(Object.keys(result)).toEqual(['0', '1', '2']);
-    expect(result['0'].monday).toBe('2026-03-23');
-    expect(result['1'].monday).toBe('2026-03-30');
-    expect(result['2'].monday).toBe('2026-04-06');
-  });
-
-  it('returns a range spanning past and future', () => {
-    const result = getWeekDates(-2, 1, '2026-03-25'); // 4 weeks
-    expect(Object.keys(result).sort()).toEqual(['-1', '-2', '0', '1'].sort());
-    expect(result['-2'].monday).toBe('2026-03-09');
-    expect(result['1'].sunday).toBe('2026-04-05');
-  });
-});
 
 describe('Chat - Rolling 20-message window (COACH-06)', () => {
   it('buildContextMessages returns last 20 messages sorted by timestamp', async () => {

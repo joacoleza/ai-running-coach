@@ -4,61 +4,10 @@ import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
-import { normalizeWeekDays } from '../shared/planUtils.js';
+import { normalizePlanPhases } from '../shared/planUtils.js';
 import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 
 const anthropic = new Anthropic();
-
-/**
- * Returns ISO dates (YYYY-MM-DD) for every week in the range [fromOffset, toOffset].
- * Offset 0 = the week containing `today`, 1 = next week, -1 = last week, etc.
- * Result is keyed by offset string: { "0": {monday:…, …}, "1": {…}, … }
- */
-export function getWeekDates(
-  fromOffset: number,
-  toOffset: number,
-  today: string,
-): Record<string, Record<string, string>> {
-  const todayDt = new Date(today + 'T12:00:00');
-  const todayDow = todayDt.getDay(); // 0=Sun … 6=Sat
-  const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
-  const isoDate = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const result: Record<string, Record<string, string>> = {};
-  for (let wi = fromOffset; wi <= toOffset; wi++) {
-    const week: Record<string, string> = {};
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(todayDt);
-      d.setDate(todayDt.getDate() - daysFromMon + 7 * wi + i);
-      week[dayNames[i]] = isoDate(d);
-    }
-    result[String(wi)] = week;
-  }
-  return result;
-}
-
-const TOOLS: Anthropic.Tool[] = [
-  {
-    name: 'get_week_dates',
-    description:
-      'Returns the exact ISO dates (YYYY-MM-DD) for every week in a range. Use a single call to get all weeks you need — e.g. from_offset=0, to_offset=9 for a 10-week plan. Offset 0 = current week (Mon–Sun containing today), 1 = next week, -1 = last week, -4 = four weeks ago. Returns an object keyed by offset: {"0":{monday:"…",tuesday:"…",…,sunday:"…"}, "1":{…}, …}.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        from_offset: {
-          type: 'integer',
-          description: 'First week offset to include (e.g. -4 for 4 weeks ago, 0 for this week).',
-        },
-        to_offset: {
-          type: 'integer',
-          description: 'Last week offset to include (e.g. 9 for 9 weeks ahead). Must be >= from_offset.',
-        },
-      },
-      required: ['from_offset', 'to_offset'],
-    },
-  },
-];
 
 app.http('chat', {
   methods: ['POST'],
@@ -84,7 +33,7 @@ app.http('chat', {
 
     const db = await getDb();
 
-    // Save user message
+    // Save user message — content is stored as-is, newlines preserved
     const userMsg: ChatMessage = {
       planId,
       role: 'user',
@@ -103,7 +52,7 @@ app.http('chat', {
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
     const phases = plan?.phases;
 
-    // Resolve today's date (used by getWeekDates tool handler)
+    // Resolve today's date for status labeling in synthetic plan context
     const isoDate = (d: Date) =>
       `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     const today = currentDate ?? isoDate(new Date());
@@ -140,7 +89,7 @@ app.http('chat', {
       }
     }
 
-    // Stream Claude response, handling tool calls in a loop before forwarding the final response
+    // Stream Claude response (no tool calls — calendar is pre-computed in the system prompt)
     const messages: Anthropic.MessageParam[] = contextMessages;
     let fullText = '';
     const encoder = new TextEncoder();
@@ -148,63 +97,26 @@ app.http('chat', {
     const body = new ReadableStream({
       async start(controller) {
         try {
-          // Tool-use loop: keep calling Claude until it returns end_turn (or max_tokens)
-          while (true) {
-            const stream = anthropic.messages.stream({
-              model: 'claude-sonnet-4-20250514',
-              max_tokens: 16000,
-              system: systemPrompt,
-              messages,
-              tools: TOOLS,
-            });
+          const stream = anthropic.messages.stream({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 16000,
+            system: systemPrompt,
+            messages,
+          });
 
-            // Forward text to client — during a tool_use turn Claude emits no text, so this
-            // accumulates only the final response text.
-            stream.on('text', (text) => {
-              fullText += text;
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-            });
+          stream.on('text', (text) => {
+            fullText += text;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+          });
 
-            let finalMessage: Anthropic.Message;
-            try {
-              finalMessage = await stream.finalMessage();
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : String(err);
-              context.error('Claude stream error:', { message: msg, planId, stack: err instanceof Error ? err.stack : undefined });
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Claude error: ${msg}` })}\n\n`));
-              controller.close();
-              return;
-            }
-
-            if (finalMessage.stop_reason === 'tool_use') {
-              // Execute each tool call and collect results
-              const toolUseBlocks = finalMessage.content.filter(
-                (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use'
-              );
-              messages.push({ role: 'assistant', content: finalMessage.content });
-
-              const toolResults: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map(block => {
-                if (block.name === 'get_week_dates') {
-                  const input = block.input as { from_offset: number; to_offset: number };
-                  return {
-                    type: 'tool_result' as const,
-                    tool_use_id: block.id,
-                    content: JSON.stringify(getWeekDates(input.from_offset, input.to_offset, today)),
-                  };
-                }
-                return {
-                  type: 'tool_result' as const,
-                  tool_use_id: block.id,
-                  content: 'Unknown tool',
-                };
-              });
-
-              messages.push({ role: 'user', content: toolResults });
-              continue; // Next iteration — Claude will now use the dates and respond
-            }
-
-            // Final turn (end_turn or max_tokens) — save message and emit done
-            break;
+          try {
+            await stream.finalMessage();
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            context.error('Claude stream error:', { message: msg, planId, stack: err instanceof Error ? err.stack : undefined });
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Claude error: ${msg}` })}\n\n`));
+            controller.close();
+            return;
           }
 
           // Save assistant message
@@ -245,10 +157,8 @@ app.http('chat', {
                     return undefined;
                   }
                   const resolvedObjective = deriveObjective(resolvedGoal?.eventType);
-                  const normalizedPhases = parsed.phases.map((p: PlanPhase) => ({
-                    ...p,
-                    weeks: p.weeks.map(normalizeWeekDays),
-                  }));
+                  // Global normalization: redistribute days to calendar-correct weeks
+                  const normalizedPhases = normalizePlanPhases(parsed.phases);
                   await db.collection<Plan>('plans').findOneAndUpdate(
                     { _id: new ObjectId(planId) as any },
                     {

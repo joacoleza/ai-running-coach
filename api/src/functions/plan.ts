@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { Plan, PlanGoal, PlanPhase } from '../shared/types.js';
-import { normalizeWeekDays } from '../shared/planUtils.js';
+import { normalizePlanPhases } from '../shared/planUtils.js';
 
 app.http('getPlan', {
   methods: ['GET'],
@@ -161,11 +161,8 @@ app.http('generatePlan', {
       // recent training history during onboarding and Claude will mark those days completed/skipped.
       // Only future sessions without completed/skipped flags count as upcoming training.
 
-      // Normalize every week to exactly 7 days (Mon–Sun), filling gaps with rest days
-      const normalizedPhases = parsedPlan.phases.map((phase: PlanPhase) => ({
-        ...phase,
-        weeks: phase.weeks.map(normalizeWeekDays),
-      }));
+      // Global normalization: redistribute days to calendar-correct weeks
+      const normalizedPhases = normalizePlanPhases(parsedPlan.phases);
 
       const db = await getDb();
 
