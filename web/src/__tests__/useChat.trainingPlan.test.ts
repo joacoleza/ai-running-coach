@@ -74,7 +74,7 @@ describe('sendMessage — planState in request body', () => {
       await result.current.sendMessage('hi')
     })
 
-    const chatCall = mockFetch.mock.calls.find(([url]: [string]) => url === '/api/chat')
+    const chatCall = mockFetch.mock.calls.find(([url]: string[]) => url === '/api/chat')
     expect(chatCall).toBeDefined()
     const body = JSON.parse(chatCall![1].body as string)
     expect(body.planId).toBe('plan1')
@@ -98,7 +98,7 @@ describe('sendMessage — planState in request body', () => {
       await result.current.sendMessage('create my plan')
     })
 
-    const generateCalls = mockFetch.mock.calls.filter(([url]: [string]) => url === '/api/plan/generate')
+    const generateCalls = mockFetch.mock.calls.filter(([url]: string[]) => url === '/api/plan/generate')
     expect(generateCalls).toHaveLength(0)
   })
 })
@@ -133,7 +133,7 @@ describe('startPlan — planGenerated flow', () => {
       await result.current.startPlan('conversational')
     })
 
-    const generateCalls = mockFetch.mock.calls.filter(([url]: [string]) => url === '/api/plan/generate')
+    const generateCalls = mockFetch.mock.calls.filter(([url]: string[]) => url === '/api/plan/generate')
     expect(generateCalls).toHaveLength(0)
     expect(result.current.plan?._id).toBe('plan1')
   })
