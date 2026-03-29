@@ -197,28 +197,32 @@ Plans:
 
 ## Phase 3 — Run Logging & Feedback
 
-**Goal:** Owner can upload a run from Apple Watch, see parsed data, and get coaching feedback that optionally adjusts the plan.
+**Goal:** Owner can log a run manually, see it in the Runs list, and get coaching feedback that optionally adjusts the plan.
 
-**Requirements covered:** RUN-01, RUN-02, RUN-03, RUN-04, RUN-05, COACH-03, COACH-04
+**Requirements covered:** RUN-01, RUN-02, RUN-04, COACH-03, COACH-04
 
 **Deliverables:**
-- Apple Health ZIP upload flow: SAS token request → direct upload to Blob Storage (bypasses 30 MB SWA proxy limit)
-- Background Azure Function (Blob trigger) that SAX-parses `export.xml`, extracts workouts from last upload
-- Run data stored: date, distance, duration, avg/max HR, pace, cadence, elevation gain
-- HR zone computation from HR time-series records vs. user's configured max HR
-- Run-to-plan matching: link parsed run to the closest planned session by date and distance
-- Automatic session completion when a matching run is logged
-- Post-run coaching trigger: coach generates feedback (run vs plan, insight, adjustment)
-- Streaming feedback delivered to chat interface
-- Plan adjustments by coach update the stored plan sessions
-- Upload status polling: frontend shows "Parsing..." → "Done" (async background processing)
+- Manual run entry form: date, distance, duration, avg HR (optional), notes (optional), pace computed
+- Two entry points: "Complete" button on Training Plan day, and "Log a run" button on Runs page
+- Run-to-plan matching: link logged run to the matching active plan day by date; auto-complete the day
+- Runs stored in `runs` MongoDB collection; linked to plan day document
+- Undo completed day with linked run → unlinks run but keeps it in Runs list
+- Post-run coaching: fires automatically after run saved; streams feedback to CoachPanel
+  - Linked run: run vs plan comparison + optional plan adjustment via `<plan:update>`
+  - Standalone run: run summary + one insight using last 5 completed runs as context
+- Coaching insight stored on run record (visible in run detail without scrolling chat)
+- Runs page: list of all runs (all-time, reverse date, infinite scroll) with filters (date/distance/duration)
+- Run detail modal: date, distance, time, pace, avg HR, notes, coaching insight, plan link
+- Delete run: only if unlinked (linked runs require undo on plan day first)
 
 **UAT:**
-- Upload an Apple Health ZIP — receives "upload received, parsing..." immediately
-- After processing, run appears with correct distance, pace, and HR data
-- The matching planned session is marked complete
-- Coach chat shows post-run feedback with comparison to plan
-- If coach adjusts the plan, calendar updates reflect the change
+- Click "Complete" on a plan day → run entry form → fill in data → save → day marked complete, run in Runs list
+- CoachPanel auto-opens after save, streams post-run feedback comparing run to plan target
+- If coach adjusts the plan, Training Plan page updates automatically
+- Log a standalone run from Runs page → coaching feedback fires using recent run history
+- Runs page lists all runs; click a run → detail modal with coaching insight
+- Undo a completed day → day reverts to active, run stays in Runs list
+- Linked run has no delete button; unlinked run has a delete button
 
 ---
 

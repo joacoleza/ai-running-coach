@@ -1,52 +1,59 @@
 # Phase 3: Run Logging & Feedback — Context
 
-**Gathered:** 2026-03-28
+**Gathered:** 2026-03-29 (revised — removed Apple Health ZIP upload; manual entry only)
 **Status:** Ready for planning
 
 <domain>
 ## Phase Boundary
 
-Phase 3 delivers the run data loop: user logs a run (via manual entry or Apple Health ZIP upload), the data is stored and linked to the training plan, and the coach generates post-run feedback visible in chat and as a persistent field on the plan page. The Runs page becomes a functional run history list.
+Phase 3 delivers the run data loop: user logs a run manually (via a form on the Training Plan page or the Runs page), the data is stored and linked to the training plan, and the coach automatically generates post-run feedback visible in chat. The Runs page becomes a functional run history list with detail view and filters.
 
-This phase does NOT include the dashboard/progress views (Phase 4).
+This phase does NOT include:
+- Apple Health ZIP upload (removed — too complex, manual entry is sufficient)
+- Dashboard/progress views (Phase 4)
 
 </domain>
 
 <decisions>
 ## Implementation Decisions
 
-### Run Data Entry — Dual Input Method
+### Run Entry — Manual Form Only
 
-- **D-01:** Support BOTH manual entry AND Apple Health ZIP upload. User chooses per run.
-  - **Manual entry:** time (required), distance (required), bpm/avg HR (optional). Quick, no file needed.
-  - **ZIP upload:** Apple Health `export.xml` parsed for full workout data — distance, duration, avg/max HR, pace, cadence, elevation. Background async processing.
-- **D-02:** The Apple Health ZIP upload path uses the existing ROADMAP architecture: SAS token → direct Blob Storage upload (bypasses 30 MB SWA proxy limit) → Blob trigger Azure Function SAX-parses `export.xml`, extracts workouts.
-- **D-03:** Max HR is required for HR zone computation. Must be added to the user's plan goal/profile. If not set, HR zones are skipped (no blocking error).
+- **D-01:** Run logging is **manual entry only**. No file upload, no ZIP, no async parsing.
+- **D-02:** Run entry is available from **two places**:
+  1. **Training Plan page** — click "Complete" on a plan day → form appears (pre-fills date from the day)
+  2. **Runs page** — standalone "Log a run" button → same form without a pre-filled plan day
+- **D-03:** Form fields:
+  - Date (required, pre-filled when entering from a plan day)
+  - Distance (required, respects user's km/miles preference)
+  - Duration / time (required, e.g. "45:30")
+  - Avg HR / BPM (optional)
+  - Notes (optional, free text)
+  - Pace is **computed** from distance + duration — not entered manually
+- **D-04:** HR zones are **not computed** in Phase 3. No time-series HR data available with manual entry. Avg HR stored as-is. Zone charts deferred to v2 (ANLX-01).
 
 ### Run-to-Plan Linking Rules
 
-- **D-04:** When a run is logged for a date matching the **active plan**:
-  1. Date exists and is not completed/skipped → link run, mark day completed
-  2. No day entry for that date → create a new day entry, link run, mark completed
-  3. Date was skipped → unskip it, mark completed, link run
-  4. Date is already completed (regardless of whether run data exists) → **reject with error** (409)
+- **D-05:** When a run is logged for a date matching the **active plan**:
+  1. Day exists and is not completed/skipped → link run, mark day completed
+  2. No day entry for that date → store run unlinked (no auto-create of a plan day)
+  3. Day was skipped → unskip it, mark completed, link run
+  4. Day is already completed → **reject with 409** (duplicate completion)
 
-- **D-05:** When a run is logged for a date matching an **archived plan**:
-  1. Date not run or skipped → accept run, store it, but do NOT link to the archived day
-  2. Date was completed without run data linked → link the run to that archived day
-  3. Date already has a run linked → reject with error
+- **D-06:** When a run is logged for a date matching an **archived plan**:
+  1. Day not completed → accept run, store it, link to archived day
+  2. Day already has a run linked → reject with 409
 
-- **D-06:** When a run has no matching plan date (no active or archived plan covers that date) → store the run unlinked. No error.
+- **D-07:** When a run has no matching plan date → store unlinked. No error.
 
 ### Completing a Training Plan Day
 
-- **D-07:** When user taps "Complete" on an active training plan day, show a form prompting for:
-  - Time (required)
-  - Distance (required)
-  - Average BPM (optional)
-  - Confirms → day marked complete, run record created and linked
-- **D-08:** Agent-created completed days (e.g., during plan creation with historical data) may have no run data initially. A "Add run data" affordance should appear on completed days that have no linked run — so the user can fill in data retroactively.
-- **D-09:** When the coach creates a plan via chat and mentions past completed runs, the coach MUST ask for time and distance for each mentioned run before proceeding. BPM is optional. Without time + distance, the past run cannot be logged in the registry.
+- **D-08:** Clicking "Complete" on an active plan day opens the run entry form (pre-filled date). On submit:
+  - Run record created and linked to the day
+  - Day marked completed
+  - Post-run coaching fires automatically
+
+- **D-09:** Completed days that have no linked run show an "Add run data" affordance — retroactive data entry. Submitting this form links a run to the already-completed day but does NOT retrigger coaching feedback (user can ask the coach manually if needed).
 
 ### Undo a Completed Day (When Run is Linked)
 
@@ -55,40 +62,47 @@ This phase does NOT include the dashboard/progress views (Phase 4).
 
 ### Plan Protection Against Replacement
 
-- **D-12:** The coach (in chat) cannot discard or regenerate a plan from scratch if any days have linked run data. The coach informs the user why and suggests alternatives (e.g., adjust specific days).
-- **D-13:** Archiving a plan IS allowed even if it has linked run data. Archiving = completing the plan cycle. The linked runs remain associated with the archived plan's days.
+- **D-12:** The coach cannot regenerate a plan from scratch if any days have linked run data. Informs the user and suggests alternatives (adjust specific days).
+- **D-13:** Archiving a plan IS allowed even if it has linked run data. Archiving = finishing the plan cycle.
 
-### Post-Run Coaching Output
+### Post-Run Coaching — Automatic Trigger
 
-- **D-14:** After a run is logged (either method), the coach generates post-run feedback:
-  1. **Chat feedback** — streamed to the coach panel (existing infrastructure). Run vs plan comparison, one insight, any plan adjustment using `<plan:update>` tags.
-  2. **Insights field on run record** — the same or condensed coaching note stored on the run document. Viewable on the run detail page.
-  3. **Coach feedback field on Training Plan page** — a "Latest coach insight" section always visible at the top of the active plan. Shows the most recent post-run coaching note. Replaced after each run upload. User doesn't need to scroll through chat history to find it.
-  4. **Estimated goal time** — a field next to the goal/target date on the Training Plan page (e.g., "Estimated finish: ~2h05m"). Updated by the coach after each run upload based on current fitness trajectory.
+- **D-14:** Post-run coaching fires **automatically** after a run is saved (both from plan day and standalone). The coach panel opens (or highlights) and streaming feedback begins.
 
-### Async Upload UX (ZIP path)
+- **D-15:** If run is **linked to an active plan day** → coach receives:
+  - The logged run (distance, time, pace, avg HR, notes)
+  - The plan day target (type, distance target, guidelines)
+  - The full current plan state (already injected as synthetic context per CLAUDE.md)
+  - Feedback covers: run vs plan comparison, one insight, any plan adjustment via `<plan:update>` tags
 
-- **D-15:** ZIP upload flow: immediate "Uploading..." → "Parsing..." (while Blob trigger runs) → "Done — run logged". Frontend polls for parse completion status.
-- **D-16:** After successful processing (either entry method), navigate user to the Runs page or open the Coach panel to show feedback.
+- **D-16:** If run is **standalone (no plan link)** → coach receives:
+  - The logged run
+  - The last **5** completed runs as context (enough for trend/pattern recognition)
+  - Feedback covers: run summary, one insight (pacing, effort, consistency)
+  - No plan adjustments (no day to link to)
 
-### Runs Page — List View
+- **D-17:** Coaching feedback is streamed to the existing chat interface (CoachPanel). Uses the existing `POST /api/chat` endpoint — no new streaming infrastructure needed. The run data is injected as a user message that triggers the feedback.
 
-- **D-17:** Runs page lists ALL runs in reverse date order (newest first), including runs from archived plans.
-- **D-18:** Infinite scroll (no pagination).
-- **D-19:** Filters at the top: date range, distance range, time range.
-- **D-20:** Each run row shows: date, distance, time, pace, optional bpm. Click → run detail page.
-- **D-21:** Run detail page includes: all run fields + insights text + link to associated training plan (active or archived). If no plan association, no link shown.
-- **D-22:** Run detail page includes a Delete button — visible only if the run has no linked plan day. If linked, the button is disabled/hidden (user must undo the day first).
+- **D-18:** The coaching insight text is also **stored on the run record** so it's visible on the run detail without needing to scroll chat history.
 
-### Max HR Configuration
+### Runs Page — List + Detail + Filters
 
-- **D-23:** Max HR is added to the user's profile/plan goal. Can be set during onboarding or edited on the plan page. Defaults to empty (HR zones not computed until set). Used by ZIP upload parser for zone computation; not needed for manual entry.
+- **D-19:** Runs page lists ALL runs in reverse date order (newest first), including runs from archived plans.
+- **D-20:** Infinite scroll (no pagination).
+- **D-21:** Filters at the top: date range, distance range, time/duration range. Applied client-side or via query params.
+- **D-22:** Each run row shows: date, distance, time, pace, optional avg HR. Linked plan day shown as a badge (e.g., "Week 3 · Tempo").
+- **D-23:** Clicking a run opens a **detail modal** (not a separate page) showing:
+  - Date, distance, time, pace, avg HR (if set), notes
+  - Coaching insight (if available)
+  - Link to associated plan day/phase (if linked)
+  - Delete button — visible only if the run has no linked plan day
+- **D-24:** Linked runs show a disabled/hidden delete button with tooltip: "Undo the training plan day first to delete this run."
 
 ### Claude's Discretion
 
-- HR zone display on run detail: whether to show a zone breakdown bar/chart or just the zone label (e.g., "Zone 3 — Aerobic") is left to planner discretion.
-- ZIP parse scope: whether to extract all workouts since last upload or a configurable lookback window (e.g., 30 days) — planner decides based on performance and usability.
-- Whether coach feedback fires immediately after parse or after a brief "view your run?" prompt is planner's call.
+- Whether to show the run detail as a modal or slide-over panel — planner decides based on existing UI patterns.
+- Whether filters are always visible or toggled via a "Filter" button — planner decides.
+- Exact wording of the coaching prompt injected when a run is logged — planner/researcher can craft this.
 
 </decisions>
 
@@ -98,24 +112,26 @@ This phase does NOT include the dashboard/progress views (Phase 4).
 **Downstream agents MUST read these before planning or implementing.**
 
 ### Requirements
-- `.planning/REQUIREMENTS.md` §Run Logging (RUN-01 through RUN-05) — acceptance criteria for upload, parse, HR zones, plan matching, async UX
-- `.planning/REQUIREMENTS.md` §AI Coaching Chat (COACH-03, COACH-04) — post-run feedback and plan adjustment requirements
+- `.planning/REQUIREMENTS.md` §Run Logging (RUN-01 through RUN-04) — updated to reflect manual entry only
+- `.planning/REQUIREMENTS.md` §AI Coaching Chat (COACH-03, COACH-04) — post-run feedback and plan adjustment
 
 ### Architecture
-- `CLAUDE.md` §Architecture Decisions — `<plan:update>` and `<plan:add>` tag protocol, plan replace guard, plan archive guard, MongoDB patterns, Azure Functions streaming setup
-- `.planning/ROADMAP.md` §Phase 3 — original deliverables list (SAS token flow, Blob trigger, SAX parse, HR zones, run-to-plan matching, polling UX)
+- `CLAUDE.md` §Architecture Decisions — `<plan:update>` and `<plan:add>` tag protocol, plan replace guard, synthetic plan-state context injection, MongoDB patterns, Azure Functions streaming
+- `.planning/ROADMAP.md` §Phase 3 — updated deliverables list
 
 ### Existing Types & Data Model
-- `api/src/shared/types.ts` — Plan, PlanDay, PlanGoal types to extend (Run type needs to be added)
-- `api/src/functions/plan.ts`, `planDays.ts` — existing day management patterns to follow
+- `api/src/shared/types.ts` — Plan, PlanDay, PlanGoal types; Run type needs to be added
+- `api/src/functions/plan.ts`, `planDays.ts` — existing day management patterns (PATCH, plan replace guard)
 - `api/src/middleware/auth.ts` — requirePassword middleware pattern for new endpoints
 - `api/src/shared/db.ts` — shared DB connection pattern
+- `api/src/shared/prompts.ts` — buildSystemPrompt signature; synthetic plan-state context injection pattern
 
 ### Frontend Patterns
-- `web/src/hooks/usePlan.ts` — plan fetching/mutation hook pattern
-- `web/src/contexts/` — ChatContext shared state pattern
+- `web/src/hooks/usePlan.ts` — plan fetching/mutation hook pattern; `plan-updated` window event
+- `web/src/contexts/ChatContext.tsx` — shared chat state; how to trigger coach from non-chat UI
 - `web/src/pages/Runs.tsx` — placeholder page to implement
-- `web/src/components/plan/` — DayRow and PlanView components to extend for completion flow
+- `web/src/components/plan/DayRow.tsx` — extend "Complete" toggle into run entry form flow
+- `web/src/components/plan/PlanView.tsx` — where to add run entry form integration
 
 </canonical_refs>
 
@@ -123,53 +139,57 @@ This phase does NOT include the dashboard/progress views (Phase 4).
 ## Existing Code Insights
 
 ### Reusable Assets
-- `useChat.ts` / `ChatContext` — post-run coaching feedback flows through existing streaming chat infrastructure; no new streaming needed
-- `<plan:update>` tag protocol — already wired in `useChat.ts`; coach can auto-apply plan adjustments as part of post-run feedback
+- `useChat.ts` / `ChatContext` — post-run coaching flows through existing streaming chat; no new streaming infrastructure needed
+- `<plan:update>` tag protocol — already wired in `useChat.ts`; coach auto-applies plan adjustments as part of post-run feedback
 - `requirePassword` middleware — use for all new run endpoints
-- `DayRow` — needs a "Complete" flow extension (currently just a toggle); becomes a prompt-for-run-data flow
-- `usePlan.ts` — fetches active plan; will need to trigger re-fetch after run logged + plan day linked
+- `DayRow` — extend "Complete" button into a run-data prompt flow; currently just a toggle
+- `usePlan.ts` — fetches active plan; needs to trigger re-fetch after run logged + plan day linked
+- `plan-updated` window event — dispatch after run logging to refresh Training Plan page
 
 ### Established Patterns
-- Azure Functions HTTP handlers in `api/src/functions/` — new `runs.ts` and `runUpload.ts` follow same shape
+- Azure Functions HTTP handlers in `api/src/functions/` — new `runs.ts` follows same shape
 - MongoDB collection pattern via `getDb()` — runs stored in new `runs` collection
-- `plan-updated` window event — `useChat` dispatches it after `plan:update`; run logging should dispatch same event to refresh Training Plan page
-- Error surfacing in chat — `useChat.ts` appends `⚠️ <errors>` to assistant message on API failure; run parse errors should use same pattern
+- Error surfacing in chat — `useChat.ts` appends `⚠️ <errors>` on API failure
 
 ### Integration Points
-- Training Plan page: add "Latest coach insight" section + "Estimated finish time" field — connects to active plan document
-- `DayRow`: extend "Complete" button to open run data prompt form
-- New `Runs` page: full implementation replacing placeholder
-- Sidebar nav: Runs already has a nav entry — just needs the page to work
-- `POST /api/plan/generate` and `POST /api/plan`: the plan replace guard must also check for linked run data (extend existing guard)
+- Training Plan page (`DayRow`): "Complete" → run entry form → save → trigger post-run coaching
+- New `Runs` page: list + filters + detail modal + "Log a run" button
+- `POST /api/chat`: injecting run data as a synthetic user message to trigger post-run coaching
+- `POST /api/plan/generate` and `POST /api/plan`: plan replace guard must also block when run data exists
 
 </code_context>
 
 <specifics>
 ## Specific Requirements
 
-- **Both input methods in Phase 3**: manual entry form AND Apple Health ZIP upload. Not one-or-the-other.
-- **"Latest coach insight" on plan page**: a distinct, always-visible field — not inside the chat panel. User should not need to scroll through chat history to find last coaching note.
-- **Estimated finish time**: displayed next to goal and target date on Training Plan page. e.g., "Goal: Half Marathon · Target: 2026-09-15 · Est. finish: ~2h05m". Updated by coach on every run upload.
-- **Runs list = all time**: includes runs from archived plans. Not filtered to active plan only.
-- **Delete runs**: only deletable if unlinked (no plan day association). Linked runs require undo on the plan day first.
-- **Max HR**: new profile field — needed for HR zone computation from ZIP data. Optional, not blocking.
-- **Plan protection**: archiving with run data is OK (archiving = finishing the plan). Regenerating from scratch is blocked.
-- **Apple Health ZIP**: the ZIP is produced from iPhone Health app → profile icon → Export All Health Data. The parser should handle large files gracefully (100–500 MB typical).
+- **Manual entry only** — no ZIP upload, no Blob Storage, no async parsing pipeline.
+- **Two entry points** — from DayRow "Complete" AND from Runs page "Log a run" button. Same form, same API.
+- **Form fields**: date, distance, duration, avg HR (optional), notes (optional). Pace computed server-side or client-side from distance + duration.
+- **Coaching fires automatically** — right after run saved. Coach panel opens. No manual trigger needed.
+- **Linked run coaching context**: run + plan day target + full plan state (via existing synthetic context injection).
+- **Standalone run coaching context**: run + last 5 completed runs.
+- **Coaching insight stored on run record** — visible in run detail modal without scrolling chat.
+- **Runs list = all time** — includes runs from archived plans.
+- **Detail modal** (not a separate page) — date, distance, time, pace, avg HR, notes, coaching insight, plan link.
+- **Delete only if unlinked** — linked runs require undo on the plan day first.
+- **Filters** on Runs page: date range, distance range, duration range.
 
 </specifics>
 
 <deferred>
 ## Deferred Ideas
 
-- **GPS route display** — from Apple Health `.gpx` files. Mentioned in v2 REQUIREMENTS (ENCO-03). Out of scope for Phase 3.
-- **HR zone charts** — visual zone breakdown per run (v2: ANLX-01). Phase 3 stores zone data; visualization deferred.
-- **Strava/Garmin integrations** — explicitly out of scope per PROJECT.md.
-- **Screenshot OCR** — considered as upload alternative. Out of scope per PROJECT.md ("Screenshot-based run data entry — structured XML export is more reliable"). Manual entry covers the lightweight case.
-- **Weekly volume trends** (ANLX-02) — deferred to Phase 4 / v2.
+- **Apple Health ZIP upload** — removed from this phase. Could be added as a separate phase if manual entry proves insufficient. SAS token + Blob trigger approach still valid if revisited.
+- **HR zone computation** — deferred to v2 (ANLX-01). Requires time-series HR data not available with manual entry.
+- **GPS route display** — v2 (ENCO-03).
+- **Weekly volume trends** — Phase 4 / v2 (ANLX-02).
+- **Max HR profile field** — no longer needed in Phase 3 without HR zone computation. Defer to v2.
+- **Estimated goal time on plan page** — was in prior context (D-14 old). Deferred; can be added when coach has enough run history to estimate.
+- **Retroactive coaching on "Add run data"** — D-09 explicitly excludes auto-trigger on retroactive data entry. User can ask coach manually.
 
 </deferred>
 
 ---
 
 *Phase: 03-run-logging*
-*Context gathered: 2026-03-28*
+*Context gathered: 2026-03-29 (revised from 2026-03-28)*
