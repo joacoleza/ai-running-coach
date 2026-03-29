@@ -4,7 +4,8 @@ import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
-import { ChatMessage, Plan } from '../shared/types.js';
+import { normalizeWeekDays } from '../shared/planUtils.js';
+import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 
 const anthropic = new Anthropic();
 
@@ -21,7 +22,11 @@ app.http('chat', {
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
-    const { planId, message, currentDate } = await req.json() as { planId: string; message: string; currentDate?: string };
+    const { planId, message, currentDate } = await req.json() as {
+      planId: string;
+      message: string;
+      currentDate?: string;
+    };
     if (!planId || !message) {
       return { status: 400, jsonBody: { error: 'planId and message are required' } };
     }
@@ -50,6 +55,36 @@ app.http('chat', {
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
     const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases, currentDate);
+
+    // Inject current plan state as a synthetic message pair right before the user's message.
+    // This makes the current plan appear as recent conversation context, overriding stale
+    // references in older history (e.g. days the user later deleted or un-completed).
+    if (phases && phases.length > 0 && contextMessages.length > 0) {
+      const trainingDays = phases
+        .flatMap(p => p.weeks.flatMap(w => w.days))
+        .filter(d => d.type !== 'rest')
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      if (trainingDays.length > 0) {
+        const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const today = currentDate ?? isoDate(new Date());
+        const lines = trainingDays.map(d => {
+          const dow = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : (d.date < today ? '[PAST/UPCOMING]' : '[UPCOMING]');
+          const obj = d.objective ? ` ${d.objective.value}${d.objective.unit}` : '';
+          return `- ${dow} ${d.date} ${status}:${obj} — ${d.guidelines}`;
+        });
+        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${lines.join('\n')}`;
+
+        // Insert synthetic pair before the last message (the current user message)
+        const currentUserMsg = contextMessages.pop()!;
+        contextMessages.push(
+          { role: 'user', content: planStateContent },
+          { role: 'assistant', content: 'Got it — I have the current state of your plan.' },
+        );
+        contextMessages.push(currentUserMsg);
+      }
+    }
 
     // Stream Claude response
     const stream = anthropic.messages.stream({
@@ -88,12 +123,58 @@ app.http('chat', {
               );
             }
 
+            // If Claude generated a training plan, parse and save it directly — no client round-trip needed
+            let planGenerated = false;
+            if (fullText.includes('<training_plan>') && ObjectId.isValid(planId)) {
+              const planMatch = fullText.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
+              if (planMatch) {
+                try {
+                  const parsed = JSON.parse(planMatch[1]) as { goal?: PlanGoal; phases: PlanPhase[] };
+                  if (parsed.phases && Array.isArray(parsed.phases) && parsed.phases.length > 0) {
+                    const resolvedGoal: PlanGoal = parsed.goal ?? plan?.goal ?? ({} as PlanGoal);
+                    function deriveObjective(eventType?: string): Plan['objective'] | undefined {
+                      if (!eventType) return undefined;
+                      const et = eventType.toLowerCase().replace(/[\s_]+/g, '-');
+                      if (et.includes('half')) return 'half-marathon';
+                      if (et.includes('marathon')) return 'marathon';
+                      if (et.includes('15k')) return '15km';
+                      if (et.includes('10k')) return '10km';
+                      if (et.includes('5k')) return '5km';
+                      return undefined;
+                    }
+                    const resolvedObjective = deriveObjective(resolvedGoal?.eventType);
+                    const normalizedPhases = parsed.phases.map((p: PlanPhase) => ({
+                      ...p,
+                      weeks: p.weeks.map(normalizeWeekDays),
+                    }));
+                    await db.collection<Plan>('plans').findOneAndUpdate(
+                      { _id: new ObjectId(planId) as any },
+                      {
+                        $set: {
+                          status: 'active',
+                          goal: resolvedGoal,
+                          phases: normalizedPhases,
+                          objective: resolvedObjective,
+                          targetDate: resolvedGoal?.targetDate,
+                          updatedAt: new Date(),
+                        },
+                      },
+                    );
+                    planGenerated = true;
+                  }
+                } catch {
+                  // Non-fatal: log but let the client know plan saving failed via the done event
+                  context.error('Failed to parse/save training plan from chat response');
+                }
+              }
+            }
+
             // Trigger summarization if needed (fire and forget)
             maybeSummarize(planId, db, anthropic).catch(err =>
               context.error('Summary generation failed:', err)
             );
 
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, planGenerated })}\n\n`));
             controller.close();
           });
 

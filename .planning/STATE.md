@@ -146,12 +146,13 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-28 — quick task 260328-uuj: fix plan adjustment restrictions (409 guards, past date flags, silent error surfacing)_
+_Last updated: 2026-03-29 — quick task 260329-ep5: disable Add Day for past weeks, planState in agent messages, fix startDate, server-side plan saving_
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260329-ep5 | disable Add Day for past weeks, planState to agent, fix startDate, server-side plan saving | 2026-03-29 | 929ee6b | [260329-ep5-fix-4-issues-disable-add-day-when-all-da](./quick/260329-ep5-fix-4-issues-disable-add-day-when-all-da/) |
 | 260328-uuj | fix plan adjustment 409 conflict completed dates and silent errors | 2026-03-28 | 808bd73 | [260328-uuj-fix-plan-adjustment-409-conflict-complet](./quick/260328-uuj-fix-plan-adjustment-409-conflict-complet/) |
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |

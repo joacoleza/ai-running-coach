@@ -232,6 +232,30 @@ describe('PlanView', () => {
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
+  it('hides + Add day button when all 7 days of the week are in the past', () => {
+    // A plan where all training days are in a fully past week (well before today)
+    const pastPlan: PlanData = {
+      ...plan,
+      phases: [
+        {
+          name: 'Past Phase',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              startDate: '2020-01-06', // Mon 6 Jan 2020 — entire week is in the past
+              days: [
+                { date: '2020-01-06', type: 'run', guidelines: 'Old run', completed: true, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    render(<PlanView plan={pastPlan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
+  });
+
   it('Add button shows spinner and "Adding…" text while save is in flight', async () => {
     let resolveAdd!: () => void;
     const onAddDay = vi.fn().mockImplementation(

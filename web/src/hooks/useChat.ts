@@ -53,37 +53,6 @@ export function parseXmlAttrs(attrString: string): Record<string, string> {
   return result;
 }
 
-function extractGoalFromText(text: string): Record<string, unknown> {
-  // The system prompt instructs Claude to include goal info in the response.
-  // Try to find a <goal> block or extract from the conversation.
-  const goalMatch = text.match(/<goal>([\s\S]*?)<\/goal>/);
-  if (goalMatch) {
-    try {
-      return JSON.parse(goalMatch[1]);
-    } catch {
-      // fall through
-    }
-  }
-  // Try to extract goal from the <training_plan> JSON itself
-  const planMatch = text.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
-  if (planMatch) {
-    try {
-      const parsed = JSON.parse(planMatch[1]) as { goal?: Record<string, unknown> };
-      if (parsed.goal && typeof parsed.goal === 'object') {
-        return parsed.goal;
-      }
-    } catch {
-      // fall through
-    }
-  }
-  // Fallback: minimal goal without a default eventType so objective stays undefined
-  return {
-    targetDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    weeklyMileage: 0,
-    availableDays: 4,
-    units: 'km',
-  };
-}
 
 export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -238,9 +207,9 @@ export function useChat(): UseChatReturn {
           const jsonStr = line.slice(6).trim();
           if (!jsonStr) continue;
 
-          let payload: { text?: string; done?: boolean; error?: string };
+          let payload: { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
           try {
-            payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; error?: string };
+            payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
           } catch {
             // Incomplete JSON in buffer — skip (handled by buffer accumulation)
             continue;
@@ -286,8 +255,8 @@ export function useChat(): UseChatReturn {
               });
             }
 
-            // Handle training plan generation (takes priority over navigate commands)
-            if (accumulatedText.includes('<training_plan>')) {
+            // Handle training plan generation — plan was saved server-side, just re-fetch
+            if (payload.planGenerated || accumulatedText.includes('<training_plan>')) {
               setIsGeneratingPlan(true);
               // Strip the raw <training_plan> block from the displayed message
               setMessages((prev) => {
@@ -302,30 +271,12 @@ export function useChat(): UseChatReturn {
                 return updated;
               });
 
-              const extractedGoal = extractGoalFromText(accumulatedText);
               try {
-                const generateResponse = await fetch('/api/plan/generate', {
-                  method: 'POST',
-                  headers: authHeaders(),
-                  body: JSON.stringify({
-                    planId: plan._id,
-                    claudeResponseText: accumulatedText,
-                    goal: extractedGoal,
-                    objective: (extractedGoal as { eventType?: string }).eventType,
-                  }),
-                });
-
-                if (generateResponse.ok) {
-                  const updatedPlan = await fetchPlan();
-                  if (updatedPlan) setPlan(updatedPlan);
-                  window.dispatchEvent(new Event('plan-updated'));
-                  setIsGeneratingPlan(false);
-                  navigate('/plan');
-                } else {
-                  const errData = await generateResponse.json().catch(() => ({ error: 'Plan generation failed' })) as { error?: string };
-                  setIsGeneratingPlan(false);
-                  setError(errData.error ?? 'Something went wrong generating your plan');
-                }
+                const updatedPlan = await fetchPlan();
+                if (updatedPlan) setPlan(updatedPlan);
+                window.dispatchEvent(new Event('plan-updated'));
+                setIsGeneratingPlan(false);
+                navigate('/plan');
               } catch {
                 setIsGeneratingPlan(false);
                 setError('Something went wrong generating your plan');
@@ -536,9 +487,9 @@ export function useChat(): UseChatReturn {
               const jsonStr = line.slice(6).trim();
               if (!jsonStr) continue;
 
-              let payload: { text?: string; done?: boolean; error?: string };
+              let payload: { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
               try {
-                payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; error?: string };
+                payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
               } catch {
                 continue;
               }
@@ -564,7 +515,7 @@ export function useChat(): UseChatReturn {
               } else if (payload.done) {
                 if (!alive()) return;
                 setIsStreaming(false);
-                if (accumulatedText.includes('<training_plan>')) {
+                if (payload.planGenerated || accumulatedText.includes('<training_plan>')) {
                   setIsGeneratingPlan(true);
                   setMessages((prev) => {
                     const updated = [...prev];
@@ -578,29 +529,13 @@ export function useChat(): UseChatReturn {
                     return updated;
                   });
 
-                  const extractedGoal = extractGoalFromText(accumulatedText);
                   try {
-                    const generateResponse = await fetch('/api/plan/generate', {
-                      method: 'POST',
-                      headers: authHeaders(),
-                      body: JSON.stringify({
-                        planId: data.plan._id,
-                        claudeResponseText: accumulatedText,
-                        goal: extractedGoal,
-                        objective: (extractedGoal as { eventType?: string }).eventType,
-                      }),
-                    });
+                    const updatedPlan = await fetchPlan();
                     if (!alive()) return;
-                    if (generateResponse.ok) {
-                      const updatedPlan = await fetchPlan();
-                      if (!alive()) return;
-                      if (updatedPlan) setPlan(updatedPlan);
-                      window.dispatchEvent(new Event('plan-updated'));
-                      setIsGeneratingPlan(false);
-                      navigate('/plan');
-                    } else {
-                      if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
-                    }
+                    if (updatedPlan) setPlan(updatedPlan);
+                    window.dispatchEvent(new Event('plan-updated'));
+                    setIsGeneratingPlan(false);
+                    navigate('/plan');
                   } catch {
                     if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
                   }

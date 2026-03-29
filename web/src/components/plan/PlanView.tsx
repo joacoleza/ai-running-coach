@@ -143,6 +143,9 @@ interface PlanViewProps {
 export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
 
+  // Use local date to avoid UTC offset issues
+  const todayLocal = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+
   return (
     <div>
       {plan.phases.map(phase => (
@@ -160,6 +163,12 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }:
               addingDayTo?.phaseName === phase.name &&
               addingDayTo?.weekNumber === week.weekNumber;
 
+            // Disable "+ Add day" if every slot in the week is either past or already has a workout
+            const takenDates = new Set(activeDays.map(d => d.date));
+            const hasAvailableDay = getWeekDays(week.startDate).some(
+              ({ date }) => date >= todayLocal && !takenDates.has(date)
+            );
+
             return (
               <div key={week.weekNumber} className="mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
@@ -175,7 +184,7 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }:
                     />
                   ))}
                 </div>
-                {!readonly && onAddDay && (
+                {!readonly && onAddDay && hasAvailableDay && (
                   isAddingHere ? (
                     <AddDayForm
                       weekStartDate={week.startDate}

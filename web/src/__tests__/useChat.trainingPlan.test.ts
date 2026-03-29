@@ -1,4 +1,143 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { useChat } from '../hooks/useChat'
+
+const mockFetch = vi.fn()
+vi.stubGlobal('fetch', mockFetch)
+
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+  React.createElement(MemoryRouter, null, children)
+
+const testPhases = [
+  {
+    name: 'Base',
+    description: '',
+    weeks: [
+      {
+        weekNumber: 1,
+        startDate: '2026-04-07',
+        days: [{ date: '2026-04-07', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
+      },
+    ],
+  },
+]
+
+const testPlan = {
+  _id: 'plan1',
+  status: 'active',
+  onboardingMode: 'conversational',
+  onboardingStep: 0,
+  goal: { eventType: 'half-marathon', targetDate: '2026-05-17', weeklyMileage: 30, availableDays: 3, units: 'km' },
+  phases: testPhases,
+}
+
+function makeStreamResponse(chunks: string[]) {
+  const encoder = new TextEncoder()
+  let i = 0
+  const stream = new ReadableStream({
+    pull(controller) {
+      if (i < chunks.length) {
+        controller.enqueue(encoder.encode(chunks[i++]))
+      } else {
+        controller.close()
+      }
+    },
+  })
+  return { ok: true, body: stream, json: async () => ({}) }
+}
+
+describe('sendMessage — planState in request body', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    localStorage.setItem('app_password', 'test-pw')
+    // Mount: return existing active plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // Messages fetch
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ messages: [] }) })
+  })
+
+  it('sends planId, message, and currentDate in the /api/chat request body', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Hello!"}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('hi')
+    })
+
+    const chatCall = mockFetch.mock.calls.find(([url]: [string]) => url === '/api/chat')
+    expect(chatCall).toBeDefined()
+    const body = JSON.parse(chatCall![1].body as string)
+    expect(body.planId).toBe('plan1')
+    expect(body.message).toBe('hi')
+    expect(body.currentDate).toBeDefined()
+  })
+
+  it('does NOT call /api/plan/generate when server signals planGenerated', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Here is your plan!"}\n\n',
+        'data: {"done":true,"planGenerated":true}\n\n',
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('create my plan')
+    })
+
+    const generateCalls = mockFetch.mock.calls.filter(([url]: [string]) => url === '/api/plan/generate')
+    expect(generateCalls).toHaveLength(0)
+  })
+})
+
+describe('startPlan — planGenerated flow', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    localStorage.setItem('app_password', 'test-pw')
+    // Mount: no existing plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: null }) })
+  })
+
+  it('does NOT call /api/plan/generate when startPlan receives planGenerated=true', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const onboardingPlan = { ...testPlan, _id: 'plan2', status: 'onboarding', onboardingStep: 0, phases: [] }
+
+    // POST /api/plan → new onboarding plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: onboardingPlan }) })
+    // POST /api/chat stream → planGenerated: true
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Here is your training plan!"}\n\n',
+        'data: {"done":true,"planGenerated":true}\n\n',
+      ])
+    )
+    // GET /api/plan → active plan after server saved it
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.startPlan('conversational')
+    })
+
+    const generateCalls = mockFetch.mock.calls.filter(([url]: [string]) => url === '/api/plan/generate')
+    expect(generateCalls).toHaveLength(0)
+    expect(result.current.plan?._id).toBe('plan1')
+  })
+})
 
 // Two regexes used in useChat.ts:
 // 1. Live streaming (no closing tag yet): /<training_plan>[\s\S]*/g

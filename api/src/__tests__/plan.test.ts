@@ -460,6 +460,38 @@ describe('Plan Generation - completed-day guard removed', () => {
   });
 });
 
+describe('Plan Generation - startDate normalization', () => {
+  it('corrects wrong startDate (e.g. Tuesday) to Monday of same week via generatePlan', async () => {
+    const planId = await createTestPlan();
+    const phasesWithWrongStartDate = [
+      {
+        name: 'Base',
+        description: '',
+        weeks: [
+          {
+            weekNumber: 1,
+            startDate: '2026-01-13', // Tuesday — Claude sometimes generates this instead of Monday
+            days: [
+              { date: '2026-01-14', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
+            ],
+          },
+        ],
+      },
+    ];
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithWrongStartDate })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    // startDate corrected to the Monday of the week containing 2026-01-13
+    expect(result.jsonBody.plan.phases[0].weeks[0].startDate).toBe('2026-01-12');
+  });
+});
+
 describe('createPlan - no completed-day guard', () => {
   it('allows creating a new plan even when active plan has completed days', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
