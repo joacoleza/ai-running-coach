@@ -12,23 +12,22 @@ describe('buildSystemPrompt — upcoming week calendars', () => {
     expect(prompt).toContain('Sat 2026-03-28 ← today');
   });
 
-  it('includes 5 upcoming weeks with correct dates', () => {
+  it('includes 12 upcoming weeks with correct dates', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
     // Week +1: Mon 2026-03-30
     expect(prompt).toContain('Week +1:');
     expect(prompt).toContain('Mon 2026-03-30');
-    // Week +2: Mon 2026-04-06
-    expect(prompt).toContain('Week +2:');
-    expect(prompt).toContain('Mon 2026-04-06');
-    // Week +3: Mon 2026-04-13
-    expect(prompt).toContain('Week +3:');
-    expect(prompt).toContain('Mon 2026-04-13');
-    // Week +4: Mon 2026-04-20
-    expect(prompt).toContain('Week +4:');
-    expect(prompt).toContain('Mon 2026-04-20');
     // Week +5: Mon 2026-04-27
     expect(prompt).toContain('Week +5:');
     expect(prompt).toContain('Mon 2026-04-27');
+    // Week +8: Mon 2026-05-18
+    expect(prompt).toContain('Week +8:');
+    expect(prompt).toContain('Mon 2026-05-18');
+    // Week +12: Mon 2026-06-15 — last week of 12-week lookahead
+    expect(prompt).toContain('Week +12:');
+    expect(prompt).toContain('Mon 2026-06-15');
+    // Must NOT include Week +13 (beyond 12-week limit)
+    expect(prompt).not.toContain('Week +13:');
   });
 
   it('upcoming weeks include all 7 days (Mon–Sun) with correct dates', () => {

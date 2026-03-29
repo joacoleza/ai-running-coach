@@ -542,6 +542,82 @@ test.describe('plan:add streaming', () => {
       expect(postBody).toMatchObject({ date: '2026-04-10', type: 'run' })
     }).toPass({ timeout: 8_000 })
   })
+
+  test('past-date plan:add with completed="true" sends correct POST body', async ({ page }) => {
+    const planAddTag = '<plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+    const replyWithAdd = `Logged your past run! ${planAddTag}`
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: `data: ${JSON.stringify({ text: replyWithAdd })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`,
+      })
+    })
+
+    let postBody: any = null
+    await page.route('**/api/plan/days', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        postBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    const input = page.getByPlaceholder('Type a message...')
+    await expect(input).toBeVisible({ timeout: 10_000 })
+    await input.fill('Log my past run from January 12')
+    await page.getByRole('button', { name: 'Send' }).click()
+
+    // Tag stripped from display
+    await expect(page.getByText(planAddTag)).not.toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Logged your past run!')).toBeVisible({ timeout: 10_000 })
+
+    // POST body must include completed="true" so the API accepts the past date
+    await expect(async () => {
+      expect(postBody).toMatchObject({ date: '2026-01-12', type: 'run', completed: 'true' })
+    }).toPass({ timeout: 8_000 })
+  })
+
+  test('plan:update tag response shows "Building your training plan..." indicator then hides it', async ({ page }) => {
+    const planUpdateTag = '<plan:update date="2026-04-07" guidelines="Updated run!" />'
+    const replyWithUpdate = `Done! ${planUpdateTag}`
+
+    await loginWithPlan(page)
+
+    // Use a slow-resolving chat response to give the indicator time to appear
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: `data: ${JSON.stringify({ text: replyWithUpdate })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`,
+      })
+    })
+
+    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    const input = page.getByPlaceholder('Type a message...')
+    await expect(input).toBeVisible({ timeout: 10_000 })
+    await input.fill('Update Monday run')
+    await page.getByRole('button', { name: 'Send' }).click()
+
+    // After the response processes, the indicator should have been shown and then hidden.
+    // The plan:update tag should not appear in the chat.
+    await expect(page.getByText(planUpdateTag)).not.toBeVisible({ timeout: 10_000 })
+    // The readable text should be visible
+    await expect(page.getByText('Done!')).toBeVisible({ timeout: 10_000 })
+    // Input should be re-enabled after isGeneratingPlan returns to false
+    await expect(input).toBeEnabled({ timeout: 8_000 })
+  })
 })
 
 test.describe('Sidebar navigation order (Phase 2.1)', () => {
