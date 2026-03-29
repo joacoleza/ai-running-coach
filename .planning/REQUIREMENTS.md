@@ -35,11 +35,9 @@
 
 ### Run Logging
 
-- [ ] **RUN-01**: User can upload an Apple Health export ZIP file
-- [ ] **RUN-02**: App extracts workout data from the ZIP: distance, duration, avg/max HR, pace, cadence, elevation
-- [ ] **RUN-03**: HR zones are computed from HR records and user's max HR
-- [ ] **RUN-04**: Parsed run data is stored and linked to the training plan session it corresponds to
-- [ ] **RUN-05**: Upload is asynchronous — browser gets immediate feedback while parsing runs in background
+- [ ] **RUN-01**: User can log a run manually (date, distance, duration, avg HR optional, notes optional) from the Training Plan page or the Runs page
+- [ ] **RUN-02**: Logged run stored with: date, distance, duration, avg HR (optional), notes (optional), computed pace
+- [ ] **RUN-04**: Run linked to the matching active plan day; linked run marks the day completed
 
 ### AI Coaching Chat
 
@@ -116,9 +114,7 @@
 | PLAN-04 | Phase 2 | Complete |
 | RUN-01 | Phase 3 | Pending |
 | RUN-02 | Phase 3 | Pending |
-| RUN-03 | Phase 3 | Pending |
 | RUN-04 | Phase 3 | Pending |
-| RUN-05 | Phase 3 | Pending |
 | COACH-01 | Phase 2 | Complete |
 | COACH-02 | Phase 2 | Complete |
 | COACH-03 | Phase 3 | Pending |
@@ -134,8 +130,8 @@
 | IMP-03 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 33 total
-- Mapped to phases: 33
+- v1 requirements: 31 total (RUN-03 and RUN-05 removed — ZIP upload approach dropped in Phase 3 rethink 2026-03-29)
+- Mapped to phases: 31
 - Unmapped: 0 ✓
 
 ---
