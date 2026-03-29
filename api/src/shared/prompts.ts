@@ -12,11 +12,42 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
   const todayDt = new Date(today + 'T12:00:00');
   const todayDayOfWeek = todayDt.toLocaleDateString('en-US', { weekday: 'long' });
 
+  // Build 26-week pre-computed calendar: offsets -13 to +12 relative to current week
+  const DAY_ABBREVS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const isoDateStr = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
+  // Find Monday of the current week (using UTC-safe noon time)
+  const todayDow = todayDt.getDay();
+  const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
+  const currentMonday = new Date(todayDt);
+  currentMonday.setDate(todayDt.getDate() - daysFromMon);
+
+  const calendarLines: string[] = [];
+  for (let offset = -13; offset <= 12; offset++) {
+    const weekLabel = offset === 0 ? 'Week 0 (this week)' : offset < 0 ? `Week ${offset}` : `Week +${offset}`;
+    const parts: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(currentMonday);
+      d.setDate(currentMonday.getDate() + offset * 7 + i);
+      const dateStr = isoDateStr(d);
+      const isToday = dateStr === today;
+      parts.push(`${DAY_ABBREVS[i]} ${dateStr}${isToday ? ' <- today' : ''}`);
+    }
+    calendarLines.push(`${weekLabel}: ${parts.join(', ')}`);
+  }
+  const calendarBlock = calendarLines.join('\n');
+
   let prompt = `You are an AI running coach. Your sole purpose is to help with running training, race preparation, injury prevention, and fitness coaching.
 
 **Today is ${todayDayOfWeek}, ${today}.**
 
-**Dates — use the \`get_week_dates\` tool, never compute:** Call \`get_week_dates(from_offset, to_offset)\` to get exact dates for one or many weeks in a single call. Examples: \`(0,0)\` = just this week, \`(1,10)\` = next 10 weeks, \`(-4,0)\` = last 4 weeks + this week. Returns \`{"0":{monday:"YYYY-MM-DD",…,sunday:"…"}, "1":{…}, …}\`. Never compute dates yourself.
+**Dates — use the calendar below, never compute:** All dates for the next 12 weeks and past 13 weeks are listed below. Use these dates directly. Never compute day-of-week yourself.
+
+${calendarBlock}
 
 **When a user gives a date in DD/MM/YYYY format** (e.g. "08/02/2026"), read it as day=8, month=2, year=2026 → 2026-02-08. Use that date directly — no tool needed for explicit numeric dates. If they also give a weekday name, trust the numeric date and verify the weekday against the tool result if unsure.
 
@@ -76,7 +107,7 @@ Rules:
 - **\`<plan:add>\` on a past date (before ${today}) is ONLY allowed when \`completed="true"\` or \`skipped="true"\` is included.** This lets you record training history the user describes. Past-date adds without a status flag are rejected by the API.
 - **Never use \`<plan:update>\` to remove or downgrade a completed day.** Completed days are locked.
 - **You cannot delete training days.** When a user asks to "remove" or "delete" a day, mark it as skipped with \`<plan:update date="..." skipped="true" />\` and be transparent: tell the user the day has been marked as skipped (it will appear crossed out in the plan). Do not describe the plan as if the day was deleted — skipped days still appear in the training plan view. When summarising the remaining sessions after a skip, count only non-skipped, non-completed run days.
-- **Always use dates from the \`get_week_dates\` tool when referencing days.** Never compute day-of-week independently. When describing a date in your response text, always verify the weekday name via the tool (e.g. say "Tuesday 2026-04-28", not "Monday 2026-04-28" if the tool returns April 28 as Tuesday).
+- **Always use dates from the calendar above when referencing days.** Never compute day-of-week independently. When describing a date in your response text, use the exact weekday shown in the calendar above (e.g. say "Tuesday 2026-04-28" only if the calendar shows Tue 2026-04-28).
 
 ---
 
