@@ -174,7 +174,7 @@ export function useChat(): UseChatReturn {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ planId: plan._id, message: text, currentDate: localDate, planState: plan.phases }),
+        body: JSON.stringify({ planId: plan._id, message: text, currentDate: localDate }),
       });
 
       if (!response.ok) {
@@ -452,7 +452,7 @@ export function useChat(): UseChatReturn {
           const chatResponse = await fetch('/api/chat', {
             method: 'POST',
             headers: authHeaders(),
-            body: JSON.stringify({ planId: data.plan._id, message: initMessage, currentDate: localDate2, planState: data.plan.phases }),
+            body: JSON.stringify({ planId: data.plan._id, message: initMessage, currentDate: localDate2 }),
           });
 
           if (!alive()) return;

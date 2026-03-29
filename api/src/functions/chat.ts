@@ -22,11 +22,10 @@ app.http('chat', {
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
-    const { planId, message, currentDate, planState } = await req.json() as {
+    const { planId, message, currentDate } = await req.json() as {
       planId: string;
       message: string;
       currentDate?: string;
-      planState?: PlanPhase[];
     };
     if (!planId || !message) {
       return { status: 400, jsonBody: { error: 'planId and message are required' } };
@@ -51,12 +50,41 @@ app.http('chat', {
       : null;
     const summary = plan?.summary;
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
-    // Prefer client-provided plan state (reflects latest UI changes) over MongoDB snapshot
-    const phases = planState ?? plan?.phases;
+    const phases = plan?.phases;
 
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
     const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases, currentDate);
+
+    // Inject current plan state as a synthetic message pair right before the user's message.
+    // This makes the current plan appear as recent conversation context, overriding stale
+    // references in older history (e.g. days the user later deleted or un-completed).
+    if (phases && phases.length > 0 && contextMessages.length > 0) {
+      const trainingDays = phases
+        .flatMap(p => p.weeks.flatMap(w => w.days))
+        .filter(d => d.type !== 'rest')
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      if (trainingDays.length > 0) {
+        const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const today = currentDate ?? isoDate(new Date());
+        const lines = trainingDays.map(d => {
+          const dow = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
+          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : (d.date < today ? '[PAST/UPCOMING]' : '[UPCOMING]');
+          const obj = d.objective ? ` ${d.objective.value}${d.objective.unit}` : '';
+          return `- ${dow} ${d.date} ${status}:${obj} — ${d.guidelines}`;
+        });
+        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${lines.join('\n')}`;
+
+        // Insert synthetic pair before the last message (the current user message)
+        const currentUserMsg = contextMessages.pop()!;
+        contextMessages.push(
+          { role: 'user', content: planStateContent },
+          { role: 'assistant', content: 'Got it — I have the current state of your plan.' },
+        );
+        contextMessages.push(currentUserMsg);
+      }
+    }
 
     // Stream Claude response
     const stream = anthropic.messages.stream({

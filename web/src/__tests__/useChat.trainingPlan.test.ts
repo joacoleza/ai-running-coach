@@ -58,7 +58,7 @@ describe('sendMessage — planState in request body', () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ messages: [] }) })
   })
 
-  it('includes planState (plan.phases) in the /api/chat request body', async () => {
+  it('sends planId, message, and currentDate in the /api/chat request body', async () => {
     const { result } = renderHook(() => useChat(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -77,8 +77,9 @@ describe('sendMessage — planState in request body', () => {
     const chatCall = mockFetch.mock.calls.find(([url]: [string]) => url === '/api/chat')
     expect(chatCall).toBeDefined()
     const body = JSON.parse(chatCall![1].body as string)
-    expect(body.planState).toBeDefined()
-    expect(body.planState).toEqual(testPhases)
+    expect(body.planId).toBe('plan1')
+    expect(body.message).toBe('hi')
+    expect(body.currentDate).toBeDefined()
   })
 
   it('does NOT call /api/plan/generate when server signals planGenerated', async () => {
