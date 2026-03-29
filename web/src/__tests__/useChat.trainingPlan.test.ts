@@ -139,6 +139,183 @@ describe('startPlan — planGenerated flow', () => {
   })
 })
 
+// ---------------------------------------------------------------------------
+// sendMessage — plan:update and plan:add tag processing
+// ---------------------------------------------------------------------------
+
+describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    localStorage.setItem('app_password', 'test-pw')
+    // Mount: active plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // Messages fetch
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ messages: [] }) })
+  })
+
+  it('strips plan:add tag from displayed message and POSTs to /api/plan/days', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const tag = '<plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        `data: ${JSON.stringify({ text: `Added Friday! ${tag}` })}\n\n`,
+        `data: ${JSON.stringify({ done: true })}\n\n`,
+      ])
+    )
+    // GET /api/plan after message
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // POST /api/plan/days
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan after updates
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('Add a run on Friday')
+    })
+
+    // plan:add tag should not appear in the displayed message
+    const lastMsg = result.current.messages[result.current.messages.length - 1]
+    expect(lastMsg.role).toBe('assistant')
+    expect(lastMsg.content).not.toContain('<plan:add')
+    expect(lastMsg.content).toContain('Added Friday!')
+
+    // POST to /api/plan/days should have been called
+    const postCall = mockFetch.mock.calls.find(([url]: string[]) => url === '/api/plan/days')
+    expect(postCall).toBeDefined()
+    const body = JSON.parse(postCall![1].body as string)
+    expect(body.date).toBe('2026-04-10')
+    expect(body.type).toBe('run')
+  })
+
+  it('includes completed="true" in POST body for past-date plan:add with completed flag', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const tag = '<plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        `data: ${JSON.stringify({ text: `Logged past run! ${tag}` })}\n\n`,
+        `data: ${JSON.stringify({ done: true })}\n\n`,
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('log my past run')
+    })
+
+    const postCall = mockFetch.mock.calls.find(([url]: string[]) => url === '/api/plan/days')
+    expect(postCall).toBeDefined()
+    const body = JSON.parse(postCall![1].body as string)
+    expect(body.date).toBe('2026-01-12')
+    expect(body.completed).toBe('true')
+  })
+
+  it('isGeneratingPlan is true while plan:update is being applied and false when done', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const tag = '<plan:update date="2026-04-07" guidelines="Updated!" />'
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        `data: ${JSON.stringify({ text: `Updated! ${tag}` })}\n\n`,
+        `data: ${JSON.stringify({ done: true })}\n\n`,
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // PATCH /api/plan/days/2026-04-07
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan after updates
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('update my run')
+    })
+
+    // After everything completes, isGeneratingPlan should be false
+    expect(result.current.isGeneratingPlan).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// plan:add and plan:update live-stream stripping
+// ---------------------------------------------------------------------------
+
+// Regexes used in useChat.ts during streaming (same as production code)
+const stripPlanUpdateLive = (content: string): string =>
+  content.replace(/<plan:update[^/]*\/>/g, '').trim()
+
+const stripPlanAddLive = (content: string): string =>
+  content.replace(/<plan:add[^/]*\/>/g, '').trim()
+
+const stripPlanTagsLive = (content: string): string =>
+  content
+    .replace(/<training_plan>[\s\S]*/g, '')
+    .replace(/<plan:update[^/]*\/>/g, '')
+    .replace(/<plan:add[^/]*\/>/g, '')
+    .trim()
+
+describe('plan:update live-stream stripping', () => {
+  it('strips a self-closing plan:update tag from display', () => {
+    const text = 'I updated Monday\'s run! <plan:update date="2026-04-07" guidelines="Easy run" />'
+    expect(stripPlanUpdateLive(text)).toBe("I updated Monday's run!")
+  })
+
+  it('strips multiple plan:update tags', () => {
+    const text = 'Updated two days! <plan:update date="2026-04-07" completed="true" /> <plan:update date="2026-04-09" skipped="true" />'
+    expect(stripPlanUpdateLive(text)).toBe('Updated two days!')
+  })
+
+  it('returns content unchanged when no plan:update tag', () => {
+    const text = 'Your next run is on Monday!'
+    expect(stripPlanUpdateLive(text)).toBe(text)
+  })
+})
+
+describe('plan:add live-stream stripping', () => {
+  it('strips a self-closing plan:add tag from display', () => {
+    const text = 'Added a Friday run! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    expect(stripPlanAddLive(text)).toBe('Added a Friday run!')
+  })
+
+  it('strips a plan:add tag with completed="true" for a past run', () => {
+    const text = 'Logged your past run! <plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+    expect(stripPlanAddLive(text)).toBe("Logged your past run!")
+  })
+
+  it('strips a plan:add tag with skipped="true" for a missed run', () => {
+    const text = 'Marked as skipped! <plan:add date="2026-03-05" objective_kind="time" objective_value="40" objective_unit="min" guidelines="40\' Z2" skipped="true" />'
+    expect(stripPlanAddLive(text)).toBe('Marked as skipped!')
+  })
+
+  it('strips multiple plan:add tags', () => {
+    const text = 'Added two runs! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <plan:add date="2026-04-12" objective_kind="distance" objective_value="8" objective_unit="km" guidelines="Tempo" />'
+    expect(stripPlanAddLive(text)).toBe('Added two runs!')
+  })
+
+  it('returns content unchanged when no plan:add tag', () => {
+    const text = 'Your training plan looks great!'
+    expect(stripPlanAddLive(text)).toBe(text)
+  })
+})
+
+describe('combined plan tag live-stream stripping', () => {
+  it('strips both plan:update and plan:add tags from one response', () => {
+    const text = 'Updated Monday and added Friday! <plan:update date="2026-04-07" completed="true" /> <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    expect(stripPlanTagsLive(text)).toBe('Updated Monday and added Friday!')
+  })
+
+  it('strips training_plan block even when plan:add tag also present', () => {
+    const text = 'Here is your plan! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <training_plan>{"phases":[]}'
+    expect(stripPlanTagsLive(text)).toBe('Here is your plan!')
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Two regexes used in useChat.ts:
 // 1. Live streaming (no closing tag yet): /<training_plan>[\s\S]*/g
 // 2. End-of-stream cleanup (closing tag present): /<training_plan>[\s\S]*?<\/training_plan>/g

@@ -146,12 +146,13 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-29 — quick task 260329-lc2: fix TS2769 build errors in useChat.trainingPlan.test.ts, CLAUDE.md npm run build doc_
+_Last updated: 2026-03-29 — quick task 260329-n0p: fix plan:add past dates, strip plan:add streaming tags, 12-week calendar, isGeneratingPlan indicator_
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260329-n0p | fix plan:add past dates + strip plan:add streaming tags + 12-week calendar + isGeneratingPlan indicator | 2026-03-29 | 5f3638c | [260329-n0p-fix-plan-add-past-dates-strip-plan-tags-](./quick/260329-n0p-fix-plan-add-past-dates-strip-plan-tags-/) |
 | 260329-lc2 | fix TS2769 build errors in useChat.trainingPlan.test.ts, CLAUDE.md npm run build doc | 2026-03-29 | 8a7a1bd | [260329-lc2-fix-typescript-build-errors-in-usechat-t](./quick/260329-lc2-fix-typescript-build-errors-in-usechat-t/) |
 | 260329-ep5 | disable Add Day for past weeks, planState to agent, fix startDate, server-side plan saving | 2026-03-29 | 929ee6b | [260329-ep5-fix-4-issues-disable-add-day-when-all-da](./quick/260329-ep5-fix-4-issues-disable-add-day-when-all-da/) |
 | 260328-uuj | fix plan adjustment 409 conflict completed dates and silent errors | 2026-03-28 | 808bd73 | [260328-uuj-fix-plan-adjustment-409-conflict-complet](./quick/260328-uuj-fix-plan-adjustment-409-conflict-complet/) |

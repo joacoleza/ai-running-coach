@@ -190,6 +190,7 @@ export function useChat(): UseChatReturn {
       const decoder = new TextDecoder();
       let buffer = '';
       let accumulatedText = '';
+      let planUpdateDetected = false;
 
       while (true) {
         const { value, done } = await reader.read();
@@ -217,6 +218,11 @@ export function useChat(): UseChatReturn {
 
           if (payload.text) {
             accumulatedText += payload.text;
+            // Show plan-update indicator as soon as plan modification tags are detected
+            if (!planUpdateDetected && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add'))) {
+              planUpdateDetected = true;
+              setIsGeneratingPlan(true);
+            }
             // Update last assistant message in state with streaming content.
             // Strip machine-data tags from display as they arrive.
             setMessages((prev) => {
@@ -228,6 +234,7 @@ export function useChat(): UseChatReturn {
                   content: accumulatedText
                     .replace(/<training_plan>[\s\S]*/g, '')
                     .replace(/<plan:update[^/]*\/>/g, '')
+                    .replace(/<plan:add[^/]*\/>/g, '')
                     .trim(),
                 };
               }
@@ -366,6 +373,10 @@ export function useChat(): UseChatReturn {
                 const refreshedPlan = await fetchPlan();
                 if (refreshedPlan) setPlan(refreshedPlan);
                 window.dispatchEvent(new Event('plan-updated'));
+                setIsGeneratingPlan(false);
+              } else if (planUpdateDetected) {
+                // Tags were detected during streaming but not in accumulated text (edge case) — reset
+                setIsGeneratingPlan(false);
               }
 
               // Execute navigate commands after plan refresh so target page has fresh data
@@ -471,6 +482,7 @@ export function useChat(): UseChatReturn {
           const decoder = new TextDecoder();
           let buffer = '';
           let accumulatedText = '';
+          let planUpdateDetected2 = false;
 
           while (true) {
             const { value, done } = await reader.read();
@@ -496,6 +508,11 @@ export function useChat(): UseChatReturn {
 
               if (payload.text) {
                 accumulatedText += payload.text;
+                // Show plan-update indicator as soon as plan modification tags are detected
+                if (!planUpdateDetected2 && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add'))) {
+                  planUpdateDetected2 = true;
+                  if (alive()) setIsGeneratingPlan(true);
+                }
                 if (alive()) {
                   setMessages((prev) => {
                     const updated = [...prev];
@@ -506,6 +523,7 @@ export function useChat(): UseChatReturn {
                         content: accumulatedText
                           .replace(/<training_plan>[\s\S]*/g, '')
                           .replace(/<plan:update[^/]*\/>/g, '')
+                          .replace(/<plan:add[^/]*\/>/g, '')
                           .trim(),
                       };
                     }
@@ -624,6 +642,10 @@ export function useChat(): UseChatReturn {
                     if (!alive()) return;
                     if (refreshedPlan) setPlan(refreshedPlan);
                     window.dispatchEvent(new Event('plan-updated'));
+                    if (alive()) setIsGeneratingPlan(false);
+                  } else if (planUpdateDetected2) {
+                    // Tags were detected during streaming but not in accumulated text (edge case) — reset
+                    if (alive()) setIsGeneratingPlan(false);
                   }
                 }
               } else if (payload.error) {

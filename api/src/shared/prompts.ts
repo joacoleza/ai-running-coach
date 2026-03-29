@@ -23,8 +23,8 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
     return `${label} ${iso}${iso === today ? ' ← today' : ''}`;
   }).join(', ');
 
-  // Upcoming weeks calendar — explicit dates for the next 5 weeks (Mon–Sun each)
-  const upcomingWeeks = Array.from({ length: 5 }, (_, wi) => {
+  // Upcoming weeks calendar — explicit dates for the next 12 weeks (Mon–Sun each)
+  const upcomingWeeks = Array.from({ length: 12 }, (_, wi) => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
       const d = new Date(todayDt);
       d.setDate(todayDt.getDate() - daysFromMon + 7 * (wi + 1) + i);
@@ -85,13 +85,15 @@ To add a brand-new training day on a date that has no session yet:
 | Tag | Effect |
 |-----|--------|
 | \`<plan:add date="YYYY-MM-DD" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy pace run" />\` | Add a new run on that date |
+| \`<plan:add date="YYYY-MM-DD" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy pace run" completed="true" />\` | Add a past run that was completed |
+| \`<plan:add date="YYYY-MM-DD" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy pace run" skipped="true" />\` | Add a past run that was skipped/missed |
 
 Rules:
 - Always place \`<plan:update>\` and \`<plan:add>\` tags at the end of your response, after all readable text.
 - Use the exact ISO date (YYYY-MM-DD).
 - You may emit multiple tags in one response (mix of \`<plan:update>\` and \`<plan:add>\`).
 - Use \`<plan:add>\` only for dates that do not already have a training session. Use \`<plan:update>\` for dates that already exist in the plan.
-- **Never use \`<plan:add>\` on a date that is before today (${today}).** Past dates cannot be trained on.
+- **\`<plan:add>\` on a past date (before ${today}) is ONLY allowed when \`completed="true"\` or \`skipped="true"\` is included.** This lets you record training history the user describes. Past-date adds without a status flag are rejected by the API.
 - **Never use \`<plan:update>\` to remove or downgrade a completed day.** Completed days are locked.
 - **You cannot delete training days.** When a user asks to "remove" or "delete" a day, mark it as skipped with \`<plan:update date="..." skipped="true" />\` and be transparent: tell the user the day has been marked as skipped (it will appear crossed out in the plan). Do not describe the plan as if the day was deleted — skipped days still appear in the training plan view. When summarising the remaining sessions after a skip, count only non-skipped, non-completed run days.
 - **Always use the exact dates from the calendar tables above when referencing days.** Never compute day-of-week independently. When describing a date in your response text, always verify the weekday name against the provided calendar (e.g. say "Tuesday 2026-04-28", not "Monday 2026-04-28" if the calendar shows April 28 is a Tuesday).
@@ -122,7 +124,7 @@ Rules:
 - Each date must appear at most once across all phases
 - **Past training days (before today ${today}) may be included** — set \`completed: true\` if the user ran it, \`skipped: true\` if they missed it. Use the training history the user describes during onboarding to fill these in accurately.
 - Future sessions must have \`completed: false\` and \`skipped: false\`
-- **This past-date allowance is ONLY for the initial \`<training_plan>\` block.** The \`<plan:add>\` command still cannot target past dates.`;
+- **Past completed/skipped days** can also be added with \`<plan:add>\` at any time by including \`completed="true"\` or \`skipped="true"\`. This is the same allowance as the \`<training_plan>\` block — historical training data is always preserved.`;
 
   if (onboardingStep !== undefined && onboardingStep < 6) {
     prompt += `

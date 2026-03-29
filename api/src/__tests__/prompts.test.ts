@@ -12,23 +12,22 @@ describe('buildSystemPrompt — upcoming week calendars', () => {
     expect(prompt).toContain('Sat 2026-03-28 ← today');
   });
 
-  it('includes 5 upcoming weeks with correct dates', () => {
+  it('includes 12 upcoming weeks with correct dates', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
     // Week +1: Mon 2026-03-30
     expect(prompt).toContain('Week +1:');
     expect(prompt).toContain('Mon 2026-03-30');
-    // Week +2: Mon 2026-04-06
-    expect(prompt).toContain('Week +2:');
-    expect(prompt).toContain('Mon 2026-04-06');
-    // Week +3: Mon 2026-04-13
-    expect(prompt).toContain('Week +3:');
-    expect(prompt).toContain('Mon 2026-04-13');
-    // Week +4: Mon 2026-04-20
-    expect(prompt).toContain('Week +4:');
-    expect(prompt).toContain('Mon 2026-04-20');
     // Week +5: Mon 2026-04-27
     expect(prompt).toContain('Week +5:');
     expect(prompt).toContain('Mon 2026-04-27');
+    // Week +8: Mon 2026-05-18
+    expect(prompt).toContain('Week +8:');
+    expect(prompt).toContain('Mon 2026-05-18');
+    // Week +12: Mon 2026-06-15 — last week of 12-week lookahead
+    expect(prompt).toContain('Week +12:');
+    expect(prompt).toContain('Mon 2026-06-15');
+    // Must NOT include Week +13 (beyond 12-week limit)
+    expect(prompt).not.toContain('Week +13:');
   });
 
   it('upcoming weeks include all 7 days (Mon–Sun) with correct dates', () => {
@@ -124,10 +123,11 @@ describe('buildSystemPrompt — past dates allowed in initial training plan', ()
     expect(prompt).toContain('`skipped: true` if they missed it');
   });
 
-  it('plan:add restriction on past dates is still present in the same rule', () => {
+  it('plan:add allows past dates with completed/skipped flags', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // The allowance and the restriction must both appear and refer to the same thing
-    expect(prompt).toContain('ONLY for the initial `<training_plan>` block.** The `<plan:add>` command still cannot target past dates.');
+    // Past-date adds are allowed with completed/skipped flags — same as training_plan block
+    expect(prompt).toContain('Past completed/skipped days** can also be added with `<plan:add>`');
+    expect(prompt).toContain('completed="true"` or `skipped="true"`');
   });
 
   it('onboarding question 3 asks about recent training to help populate past sessions', () => {
