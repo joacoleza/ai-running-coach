@@ -1,4 +1,106 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
+import React from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { useChat } from '../hooks/useChat'
+
+const mockFetch = vi.fn()
+vi.stubGlobal('fetch', mockFetch)
+
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+  React.createElement(MemoryRouter, null, children)
+
+const testPhases = [
+  {
+    name: 'Base',
+    description: '',
+    weeks: [
+      {
+        weekNumber: 1,
+        startDate: '2026-04-07',
+        days: [{ date: '2026-04-07', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
+      },
+    ],
+  },
+]
+
+const testPlan = {
+  _id: 'plan1',
+  status: 'active',
+  onboardingMode: 'conversational',
+  onboardingStep: 0,
+  goal: { eventType: 'half-marathon', targetDate: '2026-05-17', weeklyMileage: 30, availableDays: 3, units: 'km' },
+  phases: testPhases,
+}
+
+function makeStreamResponse(chunks: string[]) {
+  const encoder = new TextEncoder()
+  let i = 0
+  const stream = new ReadableStream({
+    pull(controller) {
+      if (i < chunks.length) {
+        controller.enqueue(encoder.encode(chunks[i++]))
+      } else {
+        controller.close()
+      }
+    },
+  })
+  return { ok: true, body: stream, json: async () => ({}) }
+}
+
+describe('sendMessage — planState in request body', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    localStorage.setItem('app_password', 'test-pw')
+    // Mount: return existing active plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // Messages fetch
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ messages: [] }) })
+  })
+
+  it('includes planState (plan.phases) in the /api/chat request body', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Hello!"}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('hi')
+    })
+
+    const chatCall = mockFetch.mock.calls.find(([url]: [string]) => url === '/api/chat')
+    expect(chatCall).toBeDefined()
+    const body = JSON.parse(chatCall![1].body as string)
+    expect(body.planState).toBeDefined()
+    expect(body.planState).toEqual(testPhases)
+  })
+
+  it('does NOT call /api/plan/generate when server signals planGenerated', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Here is your plan!"}\n\n',
+        'data: {"done":true,"planGenerated":true}\n\n',
+      ])
+    )
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('create my plan')
+    })
+
+    const generateCalls = mockFetch.mock.calls.filter(([url]: [string]) => url === '/api/plan/generate')
+    expect(generateCalls).toHaveLength(0)
+  })
+})
 
 // Two regexes used in useChat.ts:
 // 1. Live streaming (no closing tag yet): /<training_plan>[\s\S]*/g

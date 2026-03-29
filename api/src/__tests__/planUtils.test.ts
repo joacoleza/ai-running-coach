@@ -116,4 +116,21 @@ describe('normalizeWeekDays', () => {
     expect(result.weekNumber).toBe(1);
     expect(result.startDate).toBe('2026-03-23');
   });
+
+  it('corrects a wrong startDate (e.g. Tuesday) to the Monday of the same week', () => {
+    // Claude sometimes provides Tuesday as startDate when Monday is correct
+    const weekWithWrongStart: PlanWeek = {
+      weekNumber: 2,
+      startDate: '2026-01-13', // Tuesday — wrong (should be Monday 2026-01-12)
+      days: [
+        { date: '2026-01-14', type: 'run', guidelines: 'Easy run', completed: false, skipped: false },
+      ],
+    };
+    const result = normalizeWeekDays(weekWithWrongStart);
+    expect(result.startDate).toBe('2026-01-12'); // corrected to Monday
+    expect(result.days).toHaveLength(7);
+    expect(result.days[0].date).toBe('2026-01-12'); // Mon
+    expect(result.days[2].date).toBe('2026-01-14'); // Wed run preserved
+    expect(result.days[2].type).toBe('run');
+  });
 });

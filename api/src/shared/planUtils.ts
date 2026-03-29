@@ -31,5 +31,6 @@ export function normalizeWeekDays(week: PlanWeek): PlanWeek {
     completed: false,
     skipped: false,
   });
-  return { ...week, days };
+  // Always normalise startDate to the actual Monday of the week, regardless of what Claude provided
+  return { ...week, startDate: allDates[0], days };
 }
