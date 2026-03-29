@@ -12,7 +12,7 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
   const todayDt = new Date(today + 'T12:00:00');
   const todayDayOfWeek = todayDt.toLocaleDateString('en-US', { weekday: 'long' });
 
-  // Build Mon–Sun dates for the current week + next 5 weeks so Claude never has to compute future dates
+  // Build Mon–Sun dates for the current week and surrounding weeks
   const todayDow = todayDt.getDay(); // 0=Sun … 6=Sat
   const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
   const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -23,8 +23,19 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
     return `${label} ${iso}${iso === today ? ' ← today' : ''}`;
   }).join(', ');
 
-  // Upcoming weeks calendar — explicit dates for the next 12 weeks (Mon–Sun each)
-  const upcomingWeeks = Array.from({ length: 12 }, (_, wi) => {
+  // Past weeks calendar — 13 weeks back for historical training context
+  const pastWeeks = Array.from({ length: 13 }, (_, wi) => {
+    const weekOffset = -(13 - wi); // -13 down to -1
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
+      const d = new Date(todayDt);
+      d.setDate(todayDt.getDate() - daysFromMon + 7 * weekOffset + i);
+      return `${label} ${isoDate(d)}`;
+    });
+    return `Week ${weekOffset}: ${days.join(', ')}`;
+  }).join('\n');
+
+  // Upcoming weeks calendar — 24 weeks forward (covers marathon plans up to ~6 months)
+  const upcomingWeeks = Array.from({ length: 24 }, (_, wi) => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
       const d = new Date(todayDt);
       d.setDate(todayDt.getDate() - daysFromMon + 7 * (wi + 1) + i);
@@ -37,8 +48,19 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
 
 **Today is ${todayDayOfWeek}, ${today}.** Current week: ${weekCalendar}.
 
-Upcoming weeks (use these exact dates — do not compute day-of-week yourself):
+**Date reference tables — ALWAYS look up dates here, never compute them yourself:**
+
+Past weeks (use for historical training data):
+${pastWeeks}
+Current week: ${weekCalendar}
+Upcoming weeks:
 ${upcomingWeeks}
+
+**Critical date rules:**
+- **Never compute day-of-week yourself.** Always look up the date in the tables above to get the exact YYYY-MM-DD.
+- **When a user gives a date in DD/MM/YYYY format** (e.g. "08/02/2026"), parse it as day=8, month=2, year=2026 → 2026-02-08. Then verify the weekday name by finding that date in the tables above.
+- **When a user says a weekday and a date together** (e.g. "Monday 09/02/2026"), trust the date (2026-02-09) and verify the weekday matches — look it up in the tables rather than computing. If they disagree, trust the explicit YYYY-MM-DD or DD/MM/YYYY date the user provided.
+- **When scheduling new sessions**, find the exact row for the target week in the upcoming weeks table and read the date for the requested weekday directly from that row.
 
 **Stay on topic.** If the user asks about anything unrelated to running, fitness, or training, politely decline and redirect them back to their running goals. Example: "I'm here to help with your running training — let me know if you have any questions about your plan or upcoming sessions!"
 

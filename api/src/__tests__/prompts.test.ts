@@ -12,7 +12,7 @@ describe('buildSystemPrompt — upcoming week calendars', () => {
     expect(prompt).toContain('Sat 2026-03-28 ← today');
   });
 
-  it('includes 12 upcoming weeks with correct dates', () => {
+  it('includes 24 upcoming weeks with correct dates', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
     // Week +1: Mon 2026-03-30
     expect(prompt).toContain('Week +1:');
@@ -23,11 +23,32 @@ describe('buildSystemPrompt — upcoming week calendars', () => {
     // Week +8: Mon 2026-05-18
     expect(prompt).toContain('Week +8:');
     expect(prompt).toContain('Mon 2026-05-18');
-    // Week +12: Mon 2026-06-15 — last week of 12-week lookahead
+    // Week +12: Mon 2026-06-15
     expect(prompt).toContain('Week +12:');
     expect(prompt).toContain('Mon 2026-06-15');
-    // Must NOT include Week +13 (beyond 12-week limit)
-    expect(prompt).not.toContain('Week +13:');
+    // Week +24: Mon 2026-09-07 — last week of 24-week lookahead
+    expect(prompt).toContain('Week +24:');
+    expect(prompt).toContain('Mon 2026-09-07');
+    // Must NOT include Week +25 (beyond 24-week limit)
+    expect(prompt).not.toContain('Week +25:');
+  });
+
+  it('includes 13 past weeks for historical training data', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    // Week -1: Mon 2026-03-16 (the week before current)
+    expect(prompt).toContain('Week -1:');
+    expect(prompt).toContain('Mon 2026-03-16');
+    // Week -4: Mon 2026-02-23
+    expect(prompt).toContain('Week -4:');
+    expect(prompt).toContain('Mon 2026-02-23');
+    // Week -8: Mon 2026-01-26 — covers typical plan history
+    expect(prompt).toContain('Week -8:');
+    expect(prompt).toContain('Mon 2026-01-26');
+    // Week -13: Mon 2025-12-22 — 13 weeks back (start of lookahead)
+    expect(prompt).toContain('Week -13:');
+    expect(prompt).toContain('Mon 2025-12-22');
+    // Must NOT include Week -14 (beyond 13-week past limit)
+    expect(prompt).not.toContain('Week -14:');
   });
 
   it('upcoming weeks include all 7 days (Mon–Sun) with correct dates', () => {
@@ -44,7 +65,13 @@ describe('buildSystemPrompt — upcoming week calendars', () => {
 
   it('does not tell Claude to compute day-of-week independently', () => {
     const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('do not compute day-of-week yourself');
+    expect(prompt).toContain('Never compute day-of-week yourself');
+  });
+
+  it('includes DD/MM/YYYY date format parsing instruction', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    expect(prompt).toContain('DD/MM/YYYY format');
+    expect(prompt).toContain('08/02/2026');
   });
 });
 
