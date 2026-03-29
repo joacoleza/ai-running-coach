@@ -16,7 +16,7 @@ export function buildSystemPrompt(summary?: string, onboardingStep?: number, pha
 
 **Today is ${todayDayOfWeek}, ${today}.**
 
-**Dates — use the \`get_week_dates\` tool, never compute:** Call \`get_week_dates(week_offset)\` whenever you need to know what date a weekday falls on — for scheduling, adding history, or building a plan. \`week_offset=0\` = this week, \`1\` = next week, \`-1\` = last week, \`-4\` = 4 weeks ago, etc. The tool returns exact YYYY-MM-DD for each day (monday…sunday). Never compute dates yourself.
+**Dates — use the \`get_week_dates\` tool, never compute:** Call \`get_week_dates(from_offset, to_offset)\` to get exact dates for one or many weeks in a single call. Examples: \`(0,0)\` = just this week, \`(1,10)\` = next 10 weeks, \`(-4,0)\` = last 4 weeks + this week. Returns \`{"0":{monday:"YYYY-MM-DD",…,sunday:"…"}, "1":{…}, …}\`. Never compute dates yourself.
 
 **When a user gives a date in DD/MM/YYYY format** (e.g. "08/02/2026"), read it as day=8, month=2, year=2026 → 2026-02-08. Use that date directly — no tool needed for explicit numeric dates. If they also give a weekday name, trust the numeric date and verify the weekday against the tool result if unsure.
 

@@ -10,21 +10,30 @@ import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 const anthropic = new Anthropic();
 
 /**
- * Returns the exact ISO dates (YYYY-MM-DD) for each day of the requested week.
- * week_offset=0 is the week containing `today`, 1=next week, -1=last week, etc.
+ * Returns ISO dates (YYYY-MM-DD) for every week in the range [fromOffset, toOffset].
+ * Offset 0 = the week containing `today`, 1 = next week, -1 = last week, etc.
+ * Result is keyed by offset string: { "0": {monday:…, …}, "1": {…}, … }
  */
-export function getWeekDates(weekOffset: number, today: string): Record<string, string> {
+export function getWeekDates(
+  fromOffset: number,
+  toOffset: number,
+  today: string,
+): Record<string, Record<string, string>> {
   const todayDt = new Date(today + 'T12:00:00');
   const todayDow = todayDt.getDay(); // 0=Sun … 6=Sat
   const daysFromMon = todayDow === 0 ? 6 : todayDow - 1;
   const isoDate = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const dayNames = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  const result: Record<string, string> = {};
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(todayDt);
-    d.setDate(todayDt.getDate() - daysFromMon + 7 * weekOffset + i);
-    result[dayNames[i]] = isoDate(d);
+  const result: Record<string, Record<string, string>> = {};
+  for (let wi = fromOffset; wi <= toOffset; wi++) {
+    const week: Record<string, string> = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(todayDt);
+      d.setDate(todayDt.getDate() - daysFromMon + 7 * wi + i);
+      week[dayNames[i]] = isoDate(d);
+    }
+    result[String(wi)] = week;
   }
   return result;
 }
@@ -33,16 +42,20 @@ const TOOLS: Anthropic.Tool[] = [
   {
     name: 'get_week_dates',
     description:
-      'Returns the exact ISO dates (YYYY-MM-DD) for each day of a given week. Call this whenever you need to know what date a specific weekday falls on — for scheduling sessions, adding historical runs, or building a training plan. week_offset=0 is the current week (Mon–Sun containing today), 1 is next week, -1 is last week, 2 is two weeks ahead, -4 is four weeks ago, etc.',
+      'Returns the exact ISO dates (YYYY-MM-DD) for every week in a range. Use a single call to get all weeks you need — e.g. from_offset=0, to_offset=9 for a 10-week plan. Offset 0 = current week (Mon–Sun containing today), 1 = next week, -1 = last week, -4 = four weeks ago. Returns an object keyed by offset: {"0":{monday:"…",tuesday:"…",…,sunday:"…"}, "1":{…}, …}.',
     input_schema: {
       type: 'object' as const,
       properties: {
-        week_offset: {
+        from_offset: {
           type: 'integer',
-          description: 'Weeks offset from current week. 0=this week, 1=next week, -1=last week, etc.',
+          description: 'First week offset to include (e.g. -4 for 4 weeks ago, 0 for this week).',
+        },
+        to_offset: {
+          type: 'integer',
+          description: 'Last week offset to include (e.g. 9 for 9 weeks ahead). Must be >= from_offset.',
         },
       },
-      required: ['week_offset'],
+      required: ['from_offset', 'to_offset'],
     },
   },
 ];
@@ -172,11 +185,11 @@ app.http('chat', {
 
               const toolResults: Anthropic.ToolResultBlockParam[] = toolUseBlocks.map(block => {
                 if (block.name === 'get_week_dates') {
-                  const input = block.input as { week_offset: number };
+                  const input = block.input as { from_offset: number; to_offset: number };
                   return {
                     type: 'tool_result' as const,
                     tool_use_id: block.id,
-                    content: JSON.stringify(getWeekDates(input.week_offset, today)),
+                    content: JSON.stringify(getWeekDates(input.from_offset, input.to_offset, today)),
                   };
                 }
                 return {

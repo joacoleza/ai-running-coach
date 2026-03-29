@@ -38,53 +38,68 @@ function makeMockDb(messages: Msg[], count?: number) {
 
 describe('getWeekDates — tool implementation', () => {
   it('returns correct Mon–Sun dates for offset 0 on a Wednesday', () => {
-    const result = getWeekDates(0, '2026-03-25'); // Wednesday
-    expect(result.monday).toBe('2026-03-23');
-    expect(result.wednesday).toBe('2026-03-25');
-    expect(result.sunday).toBe('2026-03-29');
+    const result = getWeekDates(0, 0, '2026-03-25');
+    expect(result['0'].monday).toBe('2026-03-23');
+    expect(result['0'].wednesday).toBe('2026-03-25');
+    expect(result['0'].sunday).toBe('2026-03-29');
   });
 
   it('returns correct dates for offset +1 (next week)', () => {
-    const result = getWeekDates(1, '2026-03-25');
-    expect(result.monday).toBe('2026-03-30');
-    expect(result.sunday).toBe('2026-04-05');
+    const result = getWeekDates(1, 1, '2026-03-25');
+    expect(result['1'].monday).toBe('2026-03-30');
+    expect(result['1'].sunday).toBe('2026-04-05');
   });
 
   it('returns correct dates for offset -1 (last week)', () => {
-    const result = getWeekDates(-1, '2026-03-25');
-    expect(result.monday).toBe('2026-03-16');
-    expect(result.sunday).toBe('2026-03-22');
+    const result = getWeekDates(-1, -1, '2026-03-25');
+    expect(result['-1'].monday).toBe('2026-03-16');
+    expect(result['-1'].sunday).toBe('2026-03-22');
   });
 
   it('handles Sunday correctly — Sunday is end of week, not start', () => {
-    const result = getWeekDates(0, '2026-03-29'); // Sunday
-    expect(result.monday).toBe('2026-03-23');
-    expect(result.sunday).toBe('2026-03-29');
+    const result = getWeekDates(0, 0, '2026-03-29'); // Sunday
+    expect(result['0'].monday).toBe('2026-03-23');
+    expect(result['0'].sunday).toBe('2026-03-29');
   });
 
   it('handles Monday correctly — Monday is first day of week', () => {
-    const result = getWeekDates(0, '2026-03-30'); // Monday
-    expect(result.monday).toBe('2026-03-30');
-    expect(result.sunday).toBe('2026-04-05');
+    const result = getWeekDates(0, 0, '2026-03-30'); // Monday
+    expect(result['0'].monday).toBe('2026-03-30');
+    expect(result['0'].sunday).toBe('2026-04-05');
   });
 
   it('handles large positive offset', () => {
-    const result = getWeekDates(12, '2026-03-28'); // Saturday, 12 weeks ahead
-    expect(result.monday).toBe('2026-06-15');
-    expect(result.sunday).toBe('2026-06-21');
+    const result = getWeekDates(12, 12, '2026-03-28');
+    expect(result['12'].monday).toBe('2026-06-15');
+    expect(result['12'].sunday).toBe('2026-06-21');
   });
 
   it('handles negative offset for historical dates', () => {
-    const result = getWeekDates(-7, '2026-03-28'); // 7 weeks back from Saturday
-    expect(result.monday).toBe('2026-02-02');
-    expect(result.sunday).toBe('2026-02-08');
+    const result = getWeekDates(-7, -7, '2026-03-28');
+    expect(result['-7'].monday).toBe('2026-02-02');
+    expect(result['-7'].sunday).toBe('2026-02-08');
   });
 
-  it('returns all 7 day keys', () => {
-    const result = getWeekDates(0, '2026-03-25');
-    expect(Object.keys(result).sort()).toEqual(
+  it('returns all 7 day keys per week', () => {
+    const result = getWeekDates(0, 0, '2026-03-25');
+    expect(Object.keys(result['0']).sort()).toEqual(
       ['friday', 'monday', 'saturday', 'sunday', 'thursday', 'tuesday', 'wednesday']
     );
+  });
+
+  it('returns a range of weeks in one call', () => {
+    const result = getWeekDates(0, 2, '2026-03-25'); // 3 weeks
+    expect(Object.keys(result)).toEqual(['0', '1', '2']);
+    expect(result['0'].monday).toBe('2026-03-23');
+    expect(result['1'].monday).toBe('2026-03-30');
+    expect(result['2'].monday).toBe('2026-04-06');
+  });
+
+  it('returns a range spanning past and future', () => {
+    const result = getWeekDates(-2, 1, '2026-03-25'); // 4 weeks
+    expect(Object.keys(result).sort()).toEqual(['-1', '-2', '0', '1'].sort());
+    expect(result['-2'].monday).toBe('2026-03-09');
+    expect(result['1'].sunday).toBe('2026-04-05');
   });
 });
 
