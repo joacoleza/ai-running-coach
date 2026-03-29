@@ -174,4 +174,83 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     // Main content (Training Plan) should be visible again
     await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 10_000 })
   })
+
+  test('planGenerated=true: re-fetches plan via GET /api/plan, never calls /api/plan/generate', async ({ page }) => {
+    const planWithPhases = {
+      ...mockPlanBase,
+      status: 'active' as const,
+      objective: 'Half marathon in spring',
+      phases: [
+        {
+          name: 'Base',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [{ date: '2026-04-07', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
+            },
+          ],
+        },
+      ],
+    }
+
+    // phase tracks app state so GET /api/plan returns the right plan at each stage
+    let phase: 'initial' | 'onboarding' | 'planSaved' = 'initial'
+    let generateEndpointCalled = false
+    let planGetAfterSaveCount = 0
+
+    await page.route('**/api/plan/generate', async (route) => {
+      generateEndpointCalled = true
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: planWithPhases }) })
+    })
+
+    await page.route('**/api/plan', async (route) => {
+      const method = route.request().method()
+      if (method === 'GET') {
+        if (phase === 'planSaved') {
+          planGetAfterSaveCount++
+          await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: planWithPhases }) })
+        } else {
+          // Before onboarding or during onboarding: no plan yet (shows welcome screen)
+          await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: null }) })
+        }
+      } else {
+        // POST /api/plan — create onboarding plan so startPlan flow proceeds
+        phase = 'onboarding'
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: { ...mockPlanBase } }),
+        })
+      }
+    })
+
+    await page.route('**/api/messages**', async (route) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+
+    // Chat responds with planGenerated: true — set phase BEFORE fulfilling so subsequent GETs return the saved plan
+    await page.route('**/api/chat', async (route) => {
+      phase = 'planSaved'
+      const body =
+        `data: ${JSON.stringify({ text: 'Here is your training plan!' })}\n\n` +
+        `data: ${JSON.stringify({ done: true, planGenerated: true })}\n\n`
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body,
+      })
+    })
+
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByRole('button', { name: 'Start New Plan' }).click()
+    await expect(page.getByText('Here is your training plan!')).toBeVisible({ timeout: 15_000 })
+
+    // After planGenerated: true, the client must have re-fetched via GET /api/plan
+    expect(planGetAfterSaveCount).toBeGreaterThanOrEqual(1)
+    // /api/plan/generate must never have been called — server saves the plan, client only re-fetches
+    expect(generateEndpointCalled).toBe(false)
+  })
 })
