@@ -8,5 +8,6 @@ import './functions/chat.js';
 import './functions/messages.js';
 import './functions/plan.js';
 import './functions/planDays.js';
+import './functions/planPhases.js';
 import './functions/planArchive.js';
 import './functions/sessions.js';
