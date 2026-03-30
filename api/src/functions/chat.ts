@@ -4,10 +4,32 @@ import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
-import { normalizeWeekDays } from '../shared/planUtils.js';
+import { assignPlanStructure } from '../shared/planUtils.js';
 import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 
 const anthropic = new Anthropic();
+
+// Extract the first balanced JSON object from a string, ignoring any trailing content.
+// Claude occasionally emits stray characters after the closing brace (e.g. an extra `}`)
+// which makes JSON.parse throw "Unexpected non-whitespace character after JSON".
+export function extractFirstJson(text: string): string {
+  const start = text.indexOf('{');
+  if (start === -1) throw new Error('No JSON object found in text');
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (!inString) {
+      if (ch === '{') depth++;
+      else if (ch === '}') { if (--depth === 0) return text.slice(start, i + 1); }
+    }
+  }
+  throw new Error('Unbalanced JSON object in training plan');
+}
 
 app.http('chat', {
   methods: ['POST'],
@@ -22,10 +44,10 @@ app.http('chat', {
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
-    const { planId, message, currentDate } = await req.json() as {
+    const { planId, message } = await req.json() as {
       planId: string;
       message: string;
-      currentDate?: string;
+      currentDate?: string; // kept for backward compat but no longer forwarded to prompt
     };
     if (!planId || !message) {
       return { status: 400, jsonBody: { error: 'planId and message are required' } };
@@ -33,7 +55,7 @@ app.http('chat', {
 
     const db = await getDb();
 
-    // Save user message
+    // Save user message — content is stored as-is, newlines preserved
     const userMsg: ChatMessage = {
       planId,
       role: 'user',
@@ -54,25 +76,28 @@ app.http('chat', {
 
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
-    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases, currentDate);
+    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases);
 
     // Inject current plan state as a synthetic message pair right before the user's message.
     // This makes the current plan appear as recent conversation context, overriding stale
     // references in older history (e.g. days the user later deleted or un-completed).
     if (phases && phases.length > 0 && contextMessages.length > 0) {
       const trainingDays = phases
-        .flatMap(p => p.weeks.flatMap(w => w.days))
-        .filter(d => d.type !== 'rest')
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .flatMap(p => p.weeks.flatMap(w =>
+          w.days
+            .filter(d => d.type !== 'rest')
+            .map(d => ({ ...d, weekNumber: w.weekNumber }))
+        ))
+        .sort((a, b) => {
+          if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
+          return (a.label ?? '').localeCompare(b.label ?? '');
+        });
 
       if (trainingDays.length > 0) {
-        const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        const today = currentDate ?? isoDate(new Date());
         const lines = trainingDays.map(d => {
-          const dow = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
-          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : (d.date < today ? '[PAST/UPCOMING]' : '[UPCOMING]');
+          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : '[UPCOMING]';
           const obj = d.objective ? ` ${d.objective.value}${d.objective.unit}` : '';
-          return `- ${dow} ${d.date} ${status}:${obj} — ${d.guidelines}`;
+          return `- Week ${d.weekNumber} Day ${d.label} ${status}:${obj} — ${d.guidelines}`;
         });
         const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${lines.join('\n')}`;
 
@@ -86,104 +111,108 @@ app.http('chat', {
       }
     }
 
-    // Stream Claude response
-    const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
-      system: systemPrompt,
-      messages: contextMessages,
-    });
-
+    // Stream Claude response (no tool calls — calendar is pre-computed in the system prompt)
+    const messages: Anthropic.MessageParam[] = contextMessages;
     let fullText = '';
     const encoder = new TextEncoder();
+
     const body = new ReadableStream({
       async start(controller) {
         try {
+          const stream = anthropic.messages.stream({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 16000,
+            system: systemPrompt,
+            messages,
+          });
+
           stream.on('text', (text) => {
             fullText += text;
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
           });
 
-          stream.on('message', async () => {
-            // Save assistant message
-            const assistantMsg: ChatMessage = {
-              planId,
-              role: 'assistant',
-              content: fullText,
-              timestamp: new Date(),
-              threadId: planId,
-            };
-            await db.collection<ChatMessage>('messages').insertOne(assistantMsg);
-
-            // Increment onboarding step if in onboarding
-            if (plan?.status === 'onboarding' && plan.onboardingStep < 6) {
-              await db.collection('plans').updateOne(
-                { _id: plan._id },
-                { $inc: { onboardingStep: 1 }, $set: { updatedAt: new Date() } }
-              );
-            }
-
-            // If Claude generated a training plan, parse and save it directly — no client round-trip needed
-            let planGenerated = false;
-            if (fullText.includes('<training_plan>') && ObjectId.isValid(planId)) {
-              const planMatch = fullText.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
-              if (planMatch) {
-                try {
-                  const parsed = JSON.parse(planMatch[1]) as { goal?: PlanGoal; phases: PlanPhase[] };
-                  if (parsed.phases && Array.isArray(parsed.phases) && parsed.phases.length > 0) {
-                    const resolvedGoal: PlanGoal = parsed.goal ?? plan?.goal ?? ({} as PlanGoal);
-                    function deriveObjective(eventType?: string): Plan['objective'] | undefined {
-                      if (!eventType) return undefined;
-                      const et = eventType.toLowerCase().replace(/[\s_]+/g, '-');
-                      if (et.includes('half')) return 'half-marathon';
-                      if (et.includes('marathon')) return 'marathon';
-                      if (et.includes('15k')) return '15km';
-                      if (et.includes('10k')) return '10km';
-                      if (et.includes('5k')) return '5km';
-                      return undefined;
-                    }
-                    const resolvedObjective = deriveObjective(resolvedGoal?.eventType);
-                    const normalizedPhases = parsed.phases.map((p: PlanPhase) => ({
-                      ...p,
-                      weeks: p.weeks.map(normalizeWeekDays),
-                    }));
-                    await db.collection<Plan>('plans').findOneAndUpdate(
-                      { _id: new ObjectId(planId) as any },
-                      {
-                        $set: {
-                          status: 'active',
-                          goal: resolvedGoal,
-                          phases: normalizedPhases,
-                          objective: resolvedObjective,
-                          targetDate: resolvedGoal?.targetDate,
-                          updatedAt: new Date(),
-                        },
-                      },
-                    );
-                    planGenerated = true;
-                  }
-                } catch {
-                  // Non-fatal: log but let the client know plan saving failed via the done event
-                  context.error('Failed to parse/save training plan from chat response');
-                }
-              }
-            }
-
-            // Trigger summarization if needed (fire and forget)
-            maybeSummarize(planId, db, anthropic).catch(err =>
-              context.error('Summary generation failed:', err)
-            );
-
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, planGenerated })}\n\n`));
-            controller.close();
-          });
-
-          stream.on('error', (err) => {
+          try {
+            await stream.finalMessage();
+          } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             context.error('Claude stream error:', { message: msg, planId, stack: err instanceof Error ? err.stack : undefined });
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Claude error: ${msg}` })}\n\n`));
             controller.close();
-          });
+            return;
+          }
+
+          // Save assistant message
+          const assistantMsg: ChatMessage = {
+            planId,
+            role: 'assistant',
+            content: fullText,
+            timestamp: new Date(),
+            threadId: planId,
+          };
+          await db.collection<ChatMessage>('messages').insertOne(assistantMsg);
+
+          // Increment onboarding step if in onboarding
+          if (plan?.status === 'onboarding' && plan.onboardingStep < 6) {
+            await db.collection('plans').updateOne(
+              { _id: plan._id },
+              { $inc: { onboardingStep: 1 }, $set: { updatedAt: new Date() } }
+            );
+          }
+
+          // If Claude generated a training plan, parse and save it directly — no client round-trip needed
+          let planGenerated = false;
+          if (fullText.includes('<training_plan>') && ObjectId.isValid(planId)) {
+            const planMatch = fullText.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
+            if (planMatch) {
+              try {
+                const parsed = JSON.parse(extractFirstJson(planMatch[1])) as { goal?: PlanGoal; phases: PlanPhase[] };
+                if (parsed.phases && Array.isArray(parsed.phases) && parsed.phases.length > 0) {
+                  const resolvedGoal: PlanGoal = parsed.goal ?? plan?.goal ?? ({} as PlanGoal);
+                  function deriveObjective(eventType?: string): Plan['objective'] | undefined {
+                    if (!eventType) return undefined;
+                    const et = eventType.toLowerCase().replace(/[\s_]+/g, '-');
+                    if (et.includes('half')) return 'half-marathon';
+                    if (et.includes('marathon')) return 'marathon';
+                    if (et.includes('15k')) return '15km';
+                    if (et.includes('10k')) return '10km';
+                    if (et.includes('5k')) return '5km';
+                    return undefined;
+                  }
+                  const resolvedObjective = deriveObjective(resolvedGoal?.eventType);
+                  // Assign globally sequential week numbers and A-G labels
+                  const normalizedPhases = assignPlanStructure(parsed.phases);
+                  await db.collection<Plan>('plans').findOneAndUpdate(
+                    { _id: new ObjectId(planId) as any },
+                    {
+                      $set: {
+                        status: 'active',
+                        goal: resolvedGoal,
+                        phases: normalizedPhases,
+                        objective: resolvedObjective,
+                        targetDate: resolvedGoal?.targetDate,
+                        updatedAt: new Date(),
+                      },
+                    },
+                  );
+                  planGenerated = true;
+                }
+              } catch (saveErr) {
+                const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
+                context.error('Failed to parse/save training plan from chat response:', msg);
+                // Surface the error to the client so it shows in the chat
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Plan save failed: ${msg}` })}\n\n`));
+              }
+            }
+          }
+
+          // Trigger summarization if needed (fire and forget)
+          maybeSummarize(planId, db, anthropic).catch(err =>
+            context.error('Summary generation failed:', err)
+          );
+
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, planGenerated })}\n\n`));
+          controller.close();
+
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           context.error('Stream setup error:', { message: msg, planId, stack: err instanceof Error ? (err as Error).stack : undefined });

@@ -12,9 +12,18 @@ vi.mock('@anthropic-ai/sdk', () => ({
   })),
 }));
 
+// Mock Azure Functions + auth + db so chat.ts can be imported without side effects
+vi.mock('@azure/functions', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return { ...actual, app: { http: vi.fn(), setup: vi.fn() } };
+});
+vi.mock('../middleware/auth.js', () => ({ requirePassword: vi.fn().mockResolvedValue(null) }));
+vi.mock('../shared/db.js', () => ({ getDb: vi.fn() }));
+
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { extractFirstJson } from '../functions/chat.js';
 
 type Msg = { planId: string; role: 'user' | 'assistant'; content: string; timestamp: Date };
 
@@ -34,6 +43,7 @@ function makeMockDb(messages: Msg[], count?: number) {
     _mocks: { find, sort, limit, toArray, countDocuments, plansUpdateOne },
   };
 }
+
 
 describe('Chat - Rolling 20-message window (COACH-06)', () => {
   it('buildContextMessages returns last 20 messages sorted by timestamp', async () => {
@@ -113,5 +123,42 @@ describe('Chat - Summary generation (COACH-06)', () => {
 
     expect(prompt).toContain('Conversation Summary');
     expect(prompt).toContain(summary);
+  });
+});
+
+describe('extractFirstJson', () => {
+  it('returns a clean JSON object', () => {
+    const json = '{"phases":[{"name":"Base"}]}';
+    expect(extractFirstJson(json)).toBe(json);
+  });
+
+  it('strips trailing garbage after the closing brace', () => {
+    const json = '{"phases":[]}';
+    const result = extractFirstJson(json + '}');
+    expect(result).toBe(json);
+  });
+
+  it('handles nested objects correctly', () => {
+    const json = '{"a":{"b":{"c":1}}}';
+    expect(extractFirstJson(json)).toBe(json);
+  });
+
+  it('handles escaped quotes inside strings', () => {
+    const json = '{"key":"val\\"ue"}';
+    expect(extractFirstJson(json)).toBe(json);
+  });
+
+  it('throws when no opening brace exists', () => {
+    expect(() => extractFirstJson('"just a string"')).toThrow('No JSON object found in text');
+  });
+
+  it('throws when object is unbalanced', () => {
+    expect(() => extractFirstJson('{"unclosed":')).toThrow('Unbalanced JSON object');
+  });
+
+  it('ignores text before the opening brace', () => {
+    const json = '{"phases":[]}';
+    const result = extractFirstJson('some preamble ' + json);
+    expect(result).toBe(json);
   });
 });

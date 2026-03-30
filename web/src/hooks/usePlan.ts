@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface PlanDay {
-  date: string;
+  label: string;         // "A"-"G" for non-rest days, "" for rest days
   type: 'run' | 'rest' | 'cross-train';
   objective?: { kind: 'distance' | 'time'; value: number; unit: 'km' | 'min'; };
   guidelines: string;
@@ -10,8 +10,7 @@ export interface PlanDay {
 }
 
 export interface PlanWeek {
-  weekNumber: number;
-  startDate: string;
+  weekNumber: number;    // globally sequential across all phases
   days: PlanDay[];
 }
 
@@ -45,8 +44,8 @@ interface UsePlanReturn {
   isLoading: boolean;
   error: string | null;
   refreshPlan: () => Promise<void>;
-  updateDay: (date: string, updates: Record<string, string>) => Promise<void>;
-  deleteDay: (date: string) => Promise<void>;
+  updateDay: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
+  deleteDay: (weekNumber: number, label: string) => Promise<void>;
   addDay: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
   archivePlan: () => Promise<void>;
 }
@@ -76,8 +75,8 @@ export function usePlan(): UsePlanReturn {
     }
   }, []);
 
-  const updateDay = useCallback(async (date: string, updates: Record<string, string>) => {
-    const res = await fetch(`/api/plan/days/${date}`, {
+  const updateDay = useCallback(async (weekNumber: number, label: string, updates: Record<string, string>) => {
+    const res = await fetch(`/api/plan/days/${weekNumber}/${label}`, {
       method: 'PATCH',
       headers: authHeaders(),
       body: JSON.stringify(updates),
@@ -89,8 +88,8 @@ export function usePlan(): UsePlanReturn {
     await refreshPlan();
   }, [refreshPlan]);
 
-  const deleteDay = useCallback(async (date: string) => {
-    const res = await fetch(`/api/plan/days/${date}`, {
+  const deleteDay = useCallback(async (weekNumber: number, label: string) => {
+    const res = await fetch(`/api/plan/days/${weekNumber}/${label}`, {
       method: 'DELETE',
       headers: authHeaders(),
     });
@@ -105,7 +104,7 @@ export function usePlan(): UsePlanReturn {
     const res = await fetch('/api/plan/days', {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ phaseName, weekNumber, ...fields }),
+      body: JSON.stringify({ phaseName, weekNumber, label: fields.label, ...fields }),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({ error: 'Failed to add day' }));

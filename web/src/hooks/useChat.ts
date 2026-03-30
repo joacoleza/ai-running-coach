@@ -170,11 +170,10 @@ export function useChat(): UseChatReturn {
     setIsStreaming(true);
 
     try {
-      const localDate = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: authHeaders(),
-        body: JSON.stringify({ planId: plan._id, message: text, currentDate: localDate }),
+        body: JSON.stringify({ planId: plan._id, message: text }),
       });
 
       if (!response.ok) {
@@ -320,16 +319,16 @@ export function useChat(): UseChatReturn {
                 const updateErrors: string[] = [];
                 for (const match of planUpdates) {
                   const attrs = parseXmlAttrs(match[1]);
-                  if (attrs.date) {
+                  if (attrs.week && attrs.day) {
                     try {
-                      const res = await fetch(`/api/plan/days/${attrs.date}`, {
+                      const res = await fetch(`/api/plan/days/${attrs.week}/${attrs.day}`, {
                         method: 'PATCH',
                         headers: authHeaders(),
                         body: JSON.stringify(attrs),
                       });
                       if (!res.ok) {
                         const body = await res.json().catch(() => ({}));
-                        updateErrors.push(body.error ?? `Could not update day ${attrs.date}`);
+                        updateErrors.push(body.error ?? `Could not update Week ${attrs.week} Day ${attrs.day}`);
                       }
                     } catch {
                       // Non-fatal: individual day update failure doesn't block others
@@ -341,16 +340,16 @@ export function useChat(): UseChatReturn {
                 const addErrors: string[] = [];
                 for (const match of planAdds) {
                   const attrs = parseXmlAttrs(match[1]);
-                  if (attrs.date) {
+                  if (attrs.week && attrs.day) {
                     try {
                       const res = await fetch('/api/plan/days', {
                         method: 'POST',
                         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ type: 'run', ...attrs }),
+                        body: JSON.stringify({ weekNumber: Number(attrs.week), label: attrs.day, type: 'run', ...attrs }),
                       });
                       if (!res.ok) {
                         const body = await res.json().catch(() => ({}));
-                        addErrors.push(body.error ?? `Could not add day ${attrs.date}`);
+                        addErrors.push(body.error ?? `Could not add Week ${attrs.week} Day ${attrs.day}`);
                       }
                     } catch {
                       // Network error — non-fatal
@@ -459,11 +458,10 @@ export function useChat(): UseChatReturn {
         setIsBusy(false);
 
         try {
-          const localDate2 = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
           const chatResponse = await fetch('/api/chat', {
             method: 'POST',
             headers: authHeaders(),
-            body: JSON.stringify({ planId: data.plan._id, message: initMessage, currentDate: localDate2 }),
+            body: JSON.stringify({ planId: data.plan._id, message: initMessage }),
           });
 
           if (!alive()) return;
@@ -589,16 +587,16 @@ export function useChat(): UseChatReturn {
                     for (const match of planUpdates) {
                       if (!alive()) return;
                       const attrs = parseXmlAttrs(match[1]);
-                      if (attrs.date) {
+                      if (attrs.week && attrs.day) {
                         try {
-                          const res = await fetch(`/api/plan/days/${attrs.date}`, {
+                          const res = await fetch(`/api/plan/days/${attrs.week}/${attrs.day}`, {
                             method: 'PATCH',
                             headers: authHeaders(),
                             body: JSON.stringify(attrs),
                           });
                           if (!res.ok) {
                             const body = await res.json().catch(() => ({}));
-                            updateErrors2.push(body.error ?? `Could not update day ${attrs.date}`);
+                            updateErrors2.push(body.error ?? `Could not update Week ${attrs.week} Day ${attrs.day}`);
                           }
                         } catch {
                           // Non-fatal
@@ -610,16 +608,16 @@ export function useChat(): UseChatReturn {
                     for (const match of planAdds) {
                       if (!alive()) return;
                       const attrs = parseXmlAttrs(match[1]);
-                      if (attrs.date) {
+                      if (attrs.week && attrs.day) {
                         try {
                           const res = await fetch('/api/plan/days', {
                             method: 'POST',
                             headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ type: 'run', ...attrs }),
+                            body: JSON.stringify({ weekNumber: Number(attrs.week), label: attrs.day, type: 'run', ...attrs }),
                           });
                           if (!res.ok) {
                             const body = await res.json().catch(() => ({}));
-                            addErrors2.push(body.error ?? `Could not add day ${attrs.date}`);
+                            addErrors2.push(body.error ?? `Could not add Week ${attrs.week} Day ${attrs.day}`);
                           }
                         } catch {
                           // Network error — non-fatal

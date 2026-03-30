@@ -1,137 +1,211 @@
 import { describe, it, expect } from 'vitest';
 import { buildSystemPrompt } from '../shared/prompts.js';
+import type { PlanPhase } from '../shared/types.js';
 
-// Fixed date: Saturday 2026-03-28 — current week Mon=2026-03-23, next Mon=2026-03-30
-const SATURDAY = '2026-03-28';
-
-describe('buildSystemPrompt — upcoming week calendars', () => {
-  it('includes the current week calendar in the prompt', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Current week Mon is 2026-03-23 and Sat (today) is 2026-03-28
-    expect(prompt).toContain('Mon 2026-03-23');
-    expect(prompt).toContain('Sat 2026-03-28 ← today');
+describe('buildSystemPrompt — basic structure', () => {
+  it('includes running coach identity', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('AI running coach');
   });
 
-  it('includes 12 upcoming weeks with correct dates', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Week +1: Mon 2026-03-30
-    expect(prompt).toContain('Week +1:');
-    expect(prompt).toContain('Mon 2026-03-30');
-    // Week +5: Mon 2026-04-27
-    expect(prompt).toContain('Week +5:');
-    expect(prompt).toContain('Mon 2026-04-27');
-    // Week +8: Mon 2026-05-18
-    expect(prompt).toContain('Week +8:');
-    expect(prompt).toContain('Mon 2026-05-18');
-    // Week +12: Mon 2026-06-15 — last week of 12-week lookahead
-    expect(prompt).toContain('Week +12:');
-    expect(prompt).toContain('Mon 2026-06-15');
-    // Must NOT include Week +13 (beyond 12-week limit)
-    expect(prompt).not.toContain('Week +13:');
+  it('includes stay on topic instruction', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('Stay on topic');
   });
 
-  it('upcoming weeks include all 7 days (Mon–Sun) with correct dates', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Week +1: Mon 2026-03-30 … Sun 2026-04-05
-    expect(prompt).toContain('Mon 2026-03-30');
-    expect(prompt).toContain('Tue 2026-03-31');
-    expect(prompt).toContain('Wed 2026-04-01');
-    expect(prompt).toContain('Thu 2026-04-02');
-    expect(prompt).toContain('Fri 2026-04-03');
-    expect(prompt).toContain('Sat 2026-04-04');
-    expect(prompt).toContain('Sun 2026-04-05');
+  it('does not include calendar or date computation instructions', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).not.toContain('Week 0 (this week)');
+    expect(prompt).not.toContain('never compute');
+    expect(prompt).not.toContain('DD/MM/YYYY');
+    expect(prompt).not.toContain('<- today');
   });
 
-  it('does not tell Claude to compute day-of-week independently', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('do not compute day-of-week yourself');
+  it('does not require currentDate parameter', () => {
+    // Should work fine with no arguments
+    const prompt = buildSystemPrompt();
+    expect(typeof prompt).toBe('string');
+    expect(prompt.length).toBeGreaterThan(100);
   });
 });
 
-describe('buildSystemPrompt — upcoming week calendars from a Monday', () => {
-  const MONDAY = '2026-03-30';
-
-  it('current week starts on the same Monday when today is Monday', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], MONDAY);
-    expect(prompt).toContain('Mon 2026-03-30 ← today');
+describe('buildSystemPrompt — plan:update tag format', () => {
+  it('uses week/day attributes instead of date', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('week="3" day="B"');
+    expect(prompt).not.toContain('date="YYYY-MM-DD"');
   });
 
-  it('week +1 starts the following Monday', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], MONDAY);
-    expect(prompt).toContain('Mon 2026-04-06');
-  });
-});
-
-describe('buildSystemPrompt — upcoming week calendars from a Sunday', () => {
-  const SUNDAY = '2026-03-29';
-
-  it('current week Mon is the day before yesterday', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SUNDAY);
-    // Monday of the week containing Sunday 2026-03-29 is 2026-03-23
-    expect(prompt).toContain('Mon 2026-03-23');
-    expect(prompt).toContain('Sun 2026-03-29 ← today');
+  it('documents completed="true" for marking a day done', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('completed="true"');
   });
 
-  it('week +1 starts 2026-03-30', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SUNDAY);
-    expect(prompt).toContain('Mon 2026-03-30');
+  it('documents skipped="true" for skipping a day', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('skipped="true"');
   });
-});
 
-describe('buildSystemPrompt — skip-vs-delete instructions', () => {
   it('tells Claude it cannot delete training days', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+    const prompt = buildSystemPrompt();
     expect(prompt).toContain('You cannot delete training days.');
   });
 
-  it('instructs Claude to mark removed days as skipped using plan:update', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Must link the "remove/delete" request to the skipped=true action in one sentence
-    expect(prompt).toContain('asks to "remove" or "delete" a day, mark it as skipped with `<plan:update date="..." skipped="true" />`');
+  it('instructs Claude to use week/day to mark removed days as skipped', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('mark it as skipped with `<plan:update week="N" day="X" skipped="true" />`');
   });
 
-  it('tells Claude to be transparent that the day is still visible as skipped, not deleted', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('tell the user the day has been marked as skipped (it will appear crossed out in the plan)');
-  });
-
-  it('tells Claude to count only active (non-skipped, non-completed) run days when summarising', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
+  it('tells Claude to count only active run days when summarising', () => {
+    const prompt = buildSystemPrompt();
     expect(prompt).toContain('count only non-skipped, non-completed run days');
-  });
-
-  it('tells Claude to verify weekday names against the provided calendar', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('verify the weekday name against the provided calendar');
   });
 });
 
-describe('buildSystemPrompt — past dates allowed in initial training plan', () => {
-  it('allows past dates in the training_plan block with the correct today-anchored phrasing', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Must be a single coherent statement, not two stray fragments
-    expect(prompt).toContain('Past training days (before today 2026-03-28) may be included');
+describe('buildSystemPrompt — plan:add tag format', () => {
+  it('documents plan:add with week and day attributes', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('<plan:add week=');
+    expect(prompt).toContain('day=');
   });
 
-  it('links completed: true to sessions the user ran in the same sentence', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('set `completed: true` if the user ran it');
+  it('does not contain date-based plan:add format', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).not.toContain('<plan:add date=');
+  });
+});
+
+describe('buildSystemPrompt — training plan JSON format', () => {
+  it('includes label field in example JSON', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('"label":"A"');
   });
 
-  it('links skipped: true to sessions the user missed in the same sentence', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    expect(prompt).toContain('`skipped: true` if they missed it');
+  it('does not include date or startDate in example JSON', () => {
+    const prompt = buildSystemPrompt();
+    // The example JSON in the prompt should not have date fields
+    expect(prompt).not.toContain('"startDate"');
+    // No date field in days (only in goal targetDate)
+    const trainingPlanMatch = prompt.match(/<training_plan>(.*?)<\/training_plan>/);
+    if (trainingPlanMatch) {
+      const exampleJson = trainingPlanMatch[1];
+      // Parse and check days don't have date field
+      const parsed = JSON.parse(exampleJson);
+      const day = parsed.phases[0].weeks[0].days[0];
+      expect(day.date).toBeUndefined();
+      expect(day.label).toBeDefined();
+    }
   });
 
-  it('plan:add allows past dates with completed/skipped flags', () => {
-    const prompt = buildSystemPrompt(undefined, undefined, [], SATURDAY);
-    // Past-date adds are allowed with completed/skipped flags — same as training_plan block
-    expect(prompt).toContain('Past completed/skipped days** can also be added with `<plan:add>`');
-    expect(prompt).toContain('completed="true"` or `skipped="true"`');
+  it('uses globally sequential weekNumber in example JSON', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('"weekNumber":1');
+  });
+});
+
+describe('buildSystemPrompt — current training schedule', () => {
+  it('does not show "authoritative" schedule section when phases is empty', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, []);
+    // The prompt mentions "Current Training Schedule" in the rules text,
+    // but should not have the "## Current Training Schedule (authoritative)" section
+    expect(prompt).not.toContain('## Current Training Schedule');
   });
 
-  it('onboarding question 3 asks about recent training to help populate past sessions', () => {
-    const prompt = buildSystemPrompt(undefined, 2, [], SATURDAY);
+  it('shows schedule with Week/Day format when phases present', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Base',
+        description: 'Base phase',
+        weeks: [
+          {
+            weekNumber: 1,
+            days: [
+              { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
+              { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const prompt = buildSystemPrompt(undefined, undefined, phases);
+    expect(prompt).toContain('## Current Training Schedule');
+    expect(prompt).toContain('Week 1 Day A');
+    expect(prompt).toContain('Easy run');
+    // Rest day (label '') should NOT appear in the schedule
+    const scheduleMatch = prompt.match(/## Current Training Schedule[\s\S]*/);
+    if (scheduleMatch) {
+      // Only one "Week 1 Day" entry (the run), not an entry for the rest day
+      const entries = scheduleMatch[0].match(/\*\*Week \d+ Day [A-G]\*\*/g) ?? [];
+      expect(entries).toHaveLength(1);
+    }
+  });
+
+  it('shows COMPLETED status for completed days', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Base',
+        description: '',
+        weeks: [
+          {
+            weekNumber: 2,
+            days: [
+              { label: 'A', type: 'run', guidelines: 'Long run', completed: true, skipped: false },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const prompt = buildSystemPrompt(undefined, undefined, phases);
+    expect(prompt).toContain('Week 2 Day A');
+    expect(prompt).toContain('[COMPLETED]');
+  });
+
+  it('shows SKIPPED status for skipped days', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Base',
+        description: '',
+        weeks: [
+          {
+            weekNumber: 1,
+            days: [
+              { label: 'B', type: 'run', guidelines: 'Tempo', completed: false, skipped: true },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const prompt = buildSystemPrompt(undefined, undefined, phases);
+    expect(prompt).toContain('Week 1 Day B');
+    expect(prompt).toContain('[SKIPPED]');
+  });
+});
+
+describe('buildSystemPrompt — onboarding step', () => {
+  it('includes onboarding section when onboardingStep is provided', () => {
+    const prompt = buildSystemPrompt(undefined, 2, []);
+    expect(prompt).toContain('Onboarding');
+    expect(prompt).toContain('question **3 of 6**');
+  });
+
+  it('asks about recent training in question 3', () => {
+    const prompt = buildSystemPrompt(undefined, 2, []);
     expect(prompt).toContain('whether they have been training recently (this determines if past days should be included in the plan)');
+  });
+
+  it('does not include onboarding section when onboardingStep is undefined', () => {
+    const prompt = buildSystemPrompt(undefined, undefined, []);
+    expect(prompt).not.toContain('You are on question');
+  });
+});
+
+describe('buildSystemPrompt — summary', () => {
+  it('includes summary when provided', () => {
+    const prompt = buildSystemPrompt('User ran 5K last week', undefined, []);
+    expect(prompt).toContain('Conversation Summary');
+    expect(prompt).toContain('User ran 5K last week');
   });
 });

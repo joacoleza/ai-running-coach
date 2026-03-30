@@ -30,7 +30,7 @@ export interface PlanSession {
 }
 
 export interface PlanDay {
-  date: string;           // ISO YYYY-MM-DD
+  label: string;          // "A"-"G" for non-rest days, "" for rest days
   type: 'run' | 'rest' | 'cross-train';
   objective?: {
     kind: 'distance' | 'time';
@@ -43,8 +43,7 @@ export interface PlanDay {
 }
 
 export interface PlanWeek {
-  weekNumber: number;
-  startDate: string;      // ISO YYYY-MM-DD
+  weekNumber: number;     // globally sequential across all phases (1, 2, 3...)
   days: PlanDay[];
 }
 

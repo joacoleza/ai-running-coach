@@ -1,136 +1,152 @@
 import { describe, it, expect } from 'vitest';
-import { getWeekDates, normalizeWeekDays } from '../shared/planUtils.js';
-import type { PlanWeek } from '../shared/types.js';
+import { assignPlanStructure } from '../shared/planUtils.js';
+import type { PlanPhase } from '../shared/types.js';
 
-describe('getWeekDates', () => {
-  it('returns 7 dates starting on Monday for a Wednesday input', () => {
-    const dates = getWeekDates('2026-03-25'); // Wednesday
-    expect(dates).toHaveLength(7);
-    expect(dates[0]).toBe('2026-03-23'); // Monday
-    expect(dates[6]).toBe('2026-03-29'); // Sunday
+describe('assignPlanStructure', () => {
+  it('returns empty array for empty input', () => {
+    expect(assignPlanStructure([])).toEqual([]);
   });
 
-  it('returns 7 dates starting on Monday for a Monday input', () => {
-    const dates = getWeekDates('2026-03-23'); // Monday
-    expect(dates[0]).toBe('2026-03-23');
-    expect(dates[6]).toBe('2026-03-29');
+  it('assigns globally sequential week numbers across multiple phases', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Phase 1',
+        description: 'Phase 1',
+        weeks: [
+          { weekNumber: 0, days: [] },
+          { weekNumber: 0, days: [] },
+        ],
+      },
+      {
+        name: 'Phase 2',
+        description: 'Phase 2',
+        weeks: [
+          { weekNumber: 0, days: [] },
+          { weekNumber: 0, days: [] },
+        ],
+      },
+    ];
+
+    const result = assignPlanStructure(phases);
+    expect(result[0].weeks[0].weekNumber).toBe(1);
+    expect(result[0].weeks[1].weekNumber).toBe(2);
+    expect(result[1].weeks[0].weekNumber).toBe(3);
+    expect(result[1].weeks[1].weekNumber).toBe(4);
   });
 
-  it('returns 7 dates starting on Monday for a Sunday input', () => {
-    const dates = getWeekDates('2026-03-29'); // Sunday
-    expect(dates[0]).toBe('2026-03-23');
-    expect(dates[6]).toBe('2026-03-29');
+  it('assigns labels A,B,C to non-rest days and empty string to rest days', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Base',
+        description: 'Base',
+        weeks: [
+          {
+            weekNumber: 1,
+            days: [
+              { label: '', type: 'run', guidelines: 'Run 1', completed: false, skipped: false },
+              { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+              { label: '', type: 'run', guidelines: 'Run 2', completed: false, skipped: false },
+              { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+              { label: '', type: 'run', guidelines: 'Run 3', completed: false, skipped: false },
+              { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+              { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const result = assignPlanStructure(phases);
+    const days = result[0].weeks[0].days;
+    expect(days[0].label).toBe('A'); // run
+    expect(days[1].label).toBe('');  // rest
+    expect(days[2].label).toBe('B'); // run
+    expect(days[3].label).toBe('');  // rest
+    expect(days[4].label).toBe('C'); // run
+    expect(days[5].label).toBe('');  // rest
+    expect(days[6].label).toBe('');  // rest
   });
 
-  it('returns 7 dates starting on Monday for a Saturday input', () => {
-    const dates = getWeekDates('2026-03-28'); // Saturday
-    expect(dates[0]).toBe('2026-03-23');
-    expect(dates[6]).toBe('2026-03-29');
+  it('preserves phase names and descriptions', () => {
+    const phases: PlanPhase[] = [
+      { name: 'Base Building', description: 'Build aerobic base', weeks: [] },
+      { name: 'Peak', description: 'Peak training', weeks: [] },
+    ];
+
+    const result = assignPlanStructure(phases);
+    expect(result[0].name).toBe('Base Building');
+    expect(result[0].description).toBe('Build aerobic base');
+    expect(result[1].name).toBe('Peak');
+    expect(result[1].description).toBe('Peak training');
   });
 
-  it('returns consecutive dates in ISO format', () => {
-    // Use a non-DST week (June) to avoid DST clock-change edge cases
-    const dates = getWeekDates('2026-06-10');
-    for (let i = 1; i < dates.length; i++) {
-      const prev = new Date(dates[i - 1] + 'T12:00:00');
-      const curr = new Date(dates[i] + 'T12:00:00');
-      expect(curr.getTime() - prev.getTime()).toBe(86400000);
-    }
+  it('handles phase with no weeks', () => {
+    const phases: PlanPhase[] = [
+      { name: 'Empty Phase', description: '', weeks: [] },
+    ];
+    const result = assignPlanStructure(phases);
+    expect(result[0].weeks).toHaveLength(0);
   });
 
-  it('handles month/year boundaries correctly', () => {
-    const dates = getWeekDates('2026-01-01'); // Thursday
-    expect(dates[0]).toBe('2025-12-29'); // Monday in prev year
-    expect(dates[6]).toBe('2026-01-04');
-  });
-});
+  it('labels reset per week — each week starts with A', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Phase 1',
+        description: '',
+        weeks: [
+          {
+            weekNumber: 1,
+            days: [
+              { label: '', type: 'run', guidelines: 'Run A', completed: false, skipped: false },
+            ],
+          },
+          {
+            weekNumber: 2,
+            days: [
+              { label: '', type: 'run', guidelines: 'Run A2', completed: false, skipped: false },
+              { label: '', type: 'run', guidelines: 'Run B2', completed: false, skipped: false },
+            ],
+          },
+        ],
+      },
+    ];
 
-describe('normalizeWeekDays', () => {
-  const baseWeek: PlanWeek = {
-    weekNumber: 1,
-    startDate: '2026-03-23', // Monday
-    days: [],
-  };
-
-  it('fills an empty week with 7 rest days', () => {
-    const result = normalizeWeekDays({ ...baseWeek, days: [] });
-    expect(result.days).toHaveLength(7);
-    expect(result.days.every(d => d.type === 'rest')).toBe(true);
-  });
-
-  it('preserves existing days and fills the rest with rest days', () => {
-    const week: PlanWeek = {
-      ...baseWeek,
-      days: [
-        { date: '2026-03-25', type: 'run', guidelines: 'Easy 5km', completed: false, skipped: false },
-        { date: '2026-03-27', type: 'run', guidelines: 'Long run', completed: false, skipped: false },
-      ],
-    };
-    const result = normalizeWeekDays(week);
-    expect(result.days).toHaveLength(7);
-    const runDays = result.days.filter(d => d.type === 'run');
-    expect(runDays).toHaveLength(2);
-    const restDays = result.days.filter(d => d.type === 'rest');
-    expect(restDays).toHaveLength(5);
+    const result = assignPlanStructure(phases);
+    expect(result[0].weeks[0].days[0].label).toBe('A');
+    expect(result[0].weeks[1].days[0].label).toBe('A');
+    expect(result[0].weeks[1].days[1].label).toBe('B');
   });
 
-  it('days are ordered Mon–Sun', () => {
-    const week: PlanWeek = {
-      ...baseWeek,
-      days: [
-        { date: '2026-03-29', type: 'run', guidelines: 'Sunday run', completed: false, skipped: false },
-        { date: '2026-03-23', type: 'run', guidelines: 'Monday run', completed: false, skipped: false },
-      ],
-    };
-    const result = normalizeWeekDays(week);
-    expect(result.days[0].date).toBe('2026-03-23');
-    expect(result.days[6].date).toBe('2026-03-29');
-  });
+  it('preserves day properties (type, guidelines, objective, completed, skipped)', () => {
+    const phases: PlanPhase[] = [
+      {
+        name: 'Base',
+        description: '',
+        weeks: [
+          {
+            weekNumber: 1,
+            days: [
+              {
+                label: '',
+                type: 'run',
+                objective: { kind: 'distance', value: 5, unit: 'km' },
+                guidelines: 'Easy run',
+                completed: true,
+                skipped: false,
+              },
+            ],
+          },
+        ],
+      },
+    ];
 
-  it('drops days outside the Mon–Sun range', () => {
-    const week: PlanWeek = {
-      ...baseWeek,
-      days: [
-        // '2026-03-22' is Sunday of the previous week — outside this Mon-Sun range
-        { date: '2026-03-22', type: 'run', guidelines: 'Out of range', completed: false, skipped: false },
-        { date: '2026-03-24', type: 'run', guidelines: 'In range', completed: false, skipped: false },
-      ],
-    };
-    const result = normalizeWeekDays(week);
-    expect(result.days).toHaveLength(7);
-    expect(result.days.find(d => d.date === '2026-03-22')).toBeUndefined();
-    expect(result.days.find(d => d.date === '2026-03-24')?.type).toBe('run');
-  });
-
-  it('rest days have correct default fields', () => {
-    const result = normalizeWeekDays({ ...baseWeek, days: [] });
-    const rest = result.days[0];
-    expect(rest.type).toBe('rest');
-    expect(rest.guidelines).toBe('Rest day');
-    expect(rest.completed).toBe(false);
-    expect(rest.skipped).toBe(false);
-  });
-
-  it('preserves non-day week properties', () => {
-    const result = normalizeWeekDays({ ...baseWeek, days: [] });
-    expect(result.weekNumber).toBe(1);
-    expect(result.startDate).toBe('2026-03-23');
-  });
-
-  it('corrects a wrong startDate (e.g. Tuesday) to the Monday of the same week', () => {
-    // Claude sometimes provides Tuesday as startDate when Monday is correct
-    const weekWithWrongStart: PlanWeek = {
-      weekNumber: 2,
-      startDate: '2026-01-13', // Tuesday — wrong (should be Monday 2026-01-12)
-      days: [
-        { date: '2026-01-14', type: 'run', guidelines: 'Easy run', completed: false, skipped: false },
-      ],
-    };
-    const result = normalizeWeekDays(weekWithWrongStart);
-    expect(result.startDate).toBe('2026-01-12'); // corrected to Monday
-    expect(result.days).toHaveLength(7);
-    expect(result.days[0].date).toBe('2026-01-12'); // Mon
-    expect(result.days[2].date).toBe('2026-01-14'); // Wed run preserved
-    expect(result.days[2].type).toBe('run');
+    const result = assignPlanStructure(phases);
+    const day = result[0].weeks[0].days[0];
+    expect(day.label).toBe('A');
+    expect(day.type).toBe('run');
+    expect(day.objective).toEqual({ kind: 'distance', value: 5, unit: 'km' });
+    expect(day.guidelines).toBe('Easy run');
+    expect(day.completed).toBe(true);
+    expect(day.skipped).toBe(false);
   });
 });

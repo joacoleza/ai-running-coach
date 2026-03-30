@@ -16,7 +16,7 @@ const mockActivePlan = {
           weekNumber: 1,
           days: [
             {
-              date: '2026-04-07',
+              label: 'A',
               type: 'run',
               objective: { kind: 'distance', value: 5, unit: 'km' },
               guidelines: 'Easy Zone 2 run',
@@ -24,14 +24,14 @@ const mockActivePlan = {
               skipped: false,
             },
             {
-              date: '2026-04-08',
+              label: '',
               type: 'rest',
               guidelines: 'Rest day',
               completed: false,
               skipped: false,
             },
             {
-              date: '2026-04-09',
+              label: 'B',
               type: 'run',
               objective: { kind: 'distance', value: 8, unit: 'km' },
               guidelines: 'Tempo run at 5:30/km',
@@ -218,9 +218,9 @@ test.describe('Day row actions (Phase 2.1)', () => {
     // The completed day (Tempo run) should show Undo button
     await expect(page.getByTitle('Undo')).toBeVisible()
 
-    // Capture the PATCH request body when Undo is clicked
+    // Capture the PATCH request body when Undo is clicked (completed day is label B, week 1)
     let patchBody: any = null
-    await page.route('**/api/plan/days/2026-04-09', async (route: any) => {
+    await page.route('**/api/plan/days/1/B', async (route: any) => {
       if (route.request().method() === 'PATCH') {
         patchBody = JSON.parse(route.request().postData() ?? '{}')
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
@@ -261,7 +261,7 @@ test.describe('Day row actions (Phase 2.1)', () => {
 
     await expect(async () => {
       expect(deleteUrl).toContain('/api/plan/days/')
-      expect(deleteUrl).toMatch(/2026-04-07|2026-04-09/)
+      expect(deleteUrl).toMatch(/\/api\/plan\/days\/\d+\/[A-G]/)
     }).toPass({ timeout: 5_000 })
   })
 
@@ -289,37 +289,19 @@ test.describe('Day row actions (Phase 2.1)', () => {
     expect(deleteWasCalled).toBe(false)
   })
 
-  test('Add day form day-selector: rest-day slots are NOT disabled', async ({ page }) => {
-    // Plan with Week 1: Tue (run) + Wed (rest) + startDate '2026-04-07'
-    const planWithRestDays = {
-      ...mockActivePlan,
-      phases: [
-        {
-          name: 'Base Building',
-          weeks: [
-            {
-              weekNumber: 1,
-              startDate: '2026-04-07',
-              days: [
-                { date: '2026-04-07', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
-                { date: '2026-04-08', type: 'rest', guidelines: '', completed: false, skipped: false },
-              ],
-            },
-          ],
-        },
-      ],
-    }
-    await loginWithPlan(page, planWithRestDays)
+  test('Add day form day-selector: taken label A is disabled, free label B is enabled', async ({ page }) => {
+    // mockActivePlan has Week 1: label A (run) + label B (completed run) + rest day
+    await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByTitle('Add a day to this week')).toBeVisible({ timeout: 10_000 })
 
     await page.getByTitle('Add a day to this week').click()
 
-    // Tue (2026-04-07, run day) should be disabled in the AddDayForm day selector
-    await expect(page.getByRole('button', { name: 'Tue' })).toBeDisabled()
+    // Labels A and B are taken by run days — should be disabled
+    await expect(page.getByRole('button', { name: 'A', exact: true })).toBeDisabled()
 
-    // Wed (2026-04-08, rest day) should NOT be disabled — rest is not a real workout
-    await expect(page.getByRole('button', { name: 'Wed' })).not.toBeDisabled()
+    // Label C is free — should be enabled
+    await expect(page.getByRole('button', { name: 'C', exact: true })).not.toBeDisabled()
   })
 })
 
@@ -335,7 +317,7 @@ test.describe('Day row — mark complete / skip / reschedule (Phase 2.1)', () =>
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
     let patchBody: any = null
-    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
+    await page.route('**/api/plan/days/1/A', async (route: any) => {
       if (route.request().method() === 'PATCH') {
         patchBody = JSON.parse(route.request().postData() ?? '{}')
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
@@ -357,7 +339,7 @@ test.describe('Day row — mark complete / skip / reschedule (Phase 2.1)', () =>
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
     let patchBody: any = null
-    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
+    await page.route('**/api/plan/days/1/A', async (route: any) => {
       if (route.request().method() === 'PATCH') {
         patchBody = JSON.parse(route.request().postData() ?? '{}')
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
@@ -370,61 +352,6 @@ test.describe('Day row — mark complete / skip / reschedule (Phase 2.1)', () =>
 
     await expect(async () => {
       expect(patchBody).toMatchObject({ skipped: 'true' })
-    }).toPass({ timeout: 5_000 })
-  })
-
-  test('clicking date label opens day-of-week picker', async ({ page }) => {
-    await loginWithPlan(page)
-    await page.getByRole('link', { name: 'Plan' }).click()
-    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
-
-    // Click the date label of the non-completed run day (Mon 2026-04-07)
-    await page.getByTitle('Click to move to a different date').first().click()
-
-    // Week day buttons appear (Mon–Sun)
-    await expect(page.getByRole('button', { name: 'Mon' })).toBeVisible({ timeout: 5_000 })
-    await expect(page.getByRole('button', { name: 'Sun' })).toBeVisible()
-    // Cancel button appears
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-  })
-
-  test('cancelling date picker restores date label', async ({ page }) => {
-    await loginWithPlan(page)
-    await page.getByRole('link', { name: 'Plan' }).click()
-    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
-
-    await page.getByTitle('Click to move to a different date').first().click()
-    await expect(page.getByRole('button', { name: 'Mon' })).toBeVisible({ timeout: 5_000 })
-
-    await page.getByRole('button', { name: 'Cancel' }).click()
-
-    // Picker gone, date label restored
-    await expect(page.getByRole('button', { name: 'Mon' })).not.toBeVisible()
-    await expect(page.getByTitle('Click to move to a different date')).toBeVisible()
-  })
-
-  test('picking a different date sends PATCH with newDate', async ({ page }) => {
-    await loginWithPlan(page)
-    await page.getByRole('link', { name: 'Plan' }).click()
-    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
-
-    let patchBody: any = null
-    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
-      if (route.request().method() === 'PATCH') {
-        patchBody = JSON.parse(route.request().postData() ?? '{}')
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
-      } else {
-        await route.continue()
-      }
-    })
-
-    await page.getByTitle('Click to move to a different date').first().click()
-    await expect(page.getByRole('button', { name: 'Fri' })).toBeVisible({ timeout: 5_000 })
-    // Fri (2026-04-10) is free — only Mon (Apr 7) and Thu (Apr 9) are taken by runs in mock
-    await page.getByRole('button', { name: 'Fri' }).click()
-
-    await expect(async () => {
-      expect(patchBody).toMatchObject({ newDate: expect.stringMatching(/2026-04-1\d/) })
     }).toPass({ timeout: 5_000 })
   })
 
@@ -450,8 +377,8 @@ test.describe('plan:update streaming (Phase 2.1)', () => {
   })
 
   test('coach response with <plan:update> tag triggers PATCH and plan refresh', async ({ page }) => {
-    const planUpdateTag = '<plan:update date="2026-04-07" guidelines="Updated guidelines" />'
-    const replyWithUpdate = `I've updated Monday's run for you! ${planUpdateTag}`
+    const planUpdateTag = '<plan:update week="1" day="A" guidelines="Updated guidelines" />'
+    const replyWithUpdate = `I've updated Day A for you! ${planUpdateTag}`
 
     // Log in with base routes first
     await loginWithPlan(page)
@@ -467,7 +394,7 @@ test.describe('plan:update streaming (Phase 2.1)', () => {
 
     // Override the specific day route to track whether PATCH is called (takes precedence over loginWithPlan's wildcard)
     let patchCalled = false
-    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
+    await page.route('**/api/plan/days/1/A', async (route: any) => {
       if (route.request().method() === 'PATCH') {
         patchCalled = true
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
@@ -485,7 +412,7 @@ test.describe('plan:update streaming (Phase 2.1)', () => {
     // The plan:update tag should be stripped from displayed message
     await expect(page.getByText(planUpdateTag)).not.toBeVisible({ timeout: 10_000 })
     // The visible part of the reply IS shown (without the tag)
-    await expect(page.getByText("I've updated Monday's run for you!")).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText("I've updated Day A for you!")).toBeVisible({ timeout: 10_000 })
 
     // PATCH was called for the day mentioned in the plan:update tag
     await expect(async () => {
@@ -501,8 +428,8 @@ test.describe('plan:add streaming', () => {
   })
 
   test('coach response with <plan:add> tag triggers POST to /api/plan/days and tag is stripped from display', async ({ page }) => {
-    const planAddTag = '<plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy recovery run" />'
-    const replyWithAdd = `I've added a Friday run for you! ${planAddTag}`
+    const planAddTag = '<plan:add week="1" day="C" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy recovery run" />'
+    const replyWithAdd = `I've added Day C for you! ${planAddTag}`
 
     await loginWithPlan(page)
 
@@ -528,24 +455,24 @@ test.describe('plan:add streaming', () => {
 
     const input = page.getByPlaceholder('Type a message...')
     await expect(input).toBeVisible({ timeout: 10_000 })
-    await input.fill('Add a run on Friday')
+    await input.fill('Add a run on Day C')
     await page.getByRole('button', { name: 'Send' }).click()
 
     // Tag should be stripped from the displayed message
     await expect(page.getByText(planAddTag)).not.toBeVisible({ timeout: 10_000 })
     // Readable part of reply is shown
-    await expect(page.getByText("I've added a Friday run for you!")).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText("I've added Day C for you!")).toBeVisible({ timeout: 10_000 })
 
-    // POST was called with the correct date
+    // POST was called with week number and label
     await expect(async () => {
       expect(postCalled).toBe(true)
-      expect(postBody).toMatchObject({ date: '2026-04-10', type: 'run' })
+      expect(postBody).toMatchObject({ weekNumber: 1, label: 'C', type: 'run' })
     }).toPass({ timeout: 8_000 })
   })
 
-  test('past-date plan:add with completed="true" sends correct POST body', async ({ page }) => {
-    const planAddTag = '<plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
-    const replyWithAdd = `Logged your past run! ${planAddTag}`
+  test('plan:add with completed="true" sends correct POST body', async ({ page }) => {
+    const planAddTag = '<plan:add week="2" day="D" type="run" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+    const replyWithAdd = `Logged your completed run! ${planAddTag}`
 
     await loginWithPlan(page)
 
@@ -569,21 +496,21 @@ test.describe('plan:add streaming', () => {
 
     const input = page.getByPlaceholder('Type a message...')
     await expect(input).toBeVisible({ timeout: 10_000 })
-    await input.fill('Log my past run from January 12')
+    await input.fill('Log my completed run')
     await page.getByRole('button', { name: 'Send' }).click()
 
     // Tag stripped from display
     await expect(page.getByText(planAddTag)).not.toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Logged your past run!')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('Logged your completed run!')).toBeVisible({ timeout: 10_000 })
 
-    // POST body must include completed="true" so the API accepts the past date
+    // POST body must include weekNumber, label, and completed="true"
     await expect(async () => {
-      expect(postBody).toMatchObject({ date: '2026-01-12', type: 'run', completed: 'true' })
+      expect(postBody).toMatchObject({ weekNumber: 2, label: 'D', type: 'run', completed: 'true' })
     }).toPass({ timeout: 8_000 })
   })
 
   test('plan:update tag response shows "Building your training plan..." indicator then hides it', async ({ page }) => {
-    const planUpdateTag = '<plan:update date="2026-04-07" guidelines="Updated run!" />'
+    const planUpdateTag = '<plan:update week="1" day="A" guidelines="Updated run!" />'
     const replyWithUpdate = `Done! ${planUpdateTag}`
 
     await loginWithPlan(page)
@@ -597,7 +524,7 @@ test.describe('plan:add streaming', () => {
       })
     })
 
-    await page.route('**/api/plan/days/2026-04-07', async (route: any) => {
+    await page.route('**/api/plan/days/1/A', async (route: any) => {
       if (route.request().method() === 'PATCH') {
         await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
       } else {

@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** plan-day-management — `<plan:add>` tag, plan-replace guard, saving spinners, date fixes; PR open against master
+**Current focus:** feature/fix-calendar-date-accuracy — remove dates from plan model, use A-G day labels and global sequential week numbers; PR pending
 
 ## Current Phase
 
@@ -125,6 +125,10 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [plan-day-management]: DayRow `isSaving` state — spinner shown, action buttons hidden while update/delete is in-flight; prevents double-clicks and gives visual feedback
 - [plan-day-management]: AddDayForm day picker uses local date (not `new Date().toISOString()`) to determine "today" — same UTC-offset fix as chat currentDate
 - [CI-badges]: vitest runs with `--reporter=verbose --reporter=json --outputFile.json=coverage/test-results.json` to produce JSON counts alongside coverage. playwright.config.ts emits `playwright-results.json` when CI=true. coverage-badge job uses `if: always()` so badges update even on test failure.
+- [260329-ws0]: normalizePlanPhases() uses Date.UTC() for week-number arithmetic — avoids DST mismatch where 7 local days != 7 * 86400000ms across spring/autumn clock changes
+- [260329-ws0]: get_week_dates tool removed from chat.ts entirely — 26-week pre-computed calendar in system prompt (offsets -13 to +12) eliminates tool-call latency and tool misuse errors
+- [260329-ws0]: normalizePlanPhases replaces per-week normalizeWeekDays for plan saves in chat.ts and plan.ts — global pass redistributes days placed in wrong week objects by Claude
+- [260330-07e]: Training plan model now uses globally sequential week numbers + A-G day labels instead of calendar dates; plan:update/plan:add XML tags use week="N" day="X"; system prompt calendar block removed entirely; assignPlanStructure() replaces normalizePlanPhases()
 
 ## Accumulated Context
 
@@ -146,12 +150,15 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-29 — quick task 260329-n0p: fix plan:add past dates, strip plan:add streaming tags, 12-week calendar, isGeneratingPlan indicator_
+_Last updated: 2026-03-29 — quick task 260330-07e: remove dates from training plan, use A-G labels and global sequential week numbers_
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260330-07e | remove dates from training plan, use A-G labels and global sequential week numbers | 2026-03-29 | e843ea5 | [260330-07e-refactor-training-plan-remove-dates-use-](./quick/260330-07e-refactor-training-plan-remove-dates-use-/) |
+| 260329-ws0 | normalizePlanPhases global redistribution, 26-week pre-computed calendar, remove get_week_dates tool | 2026-03-29 | 684f3b4 | [260329-ws0-fix-calendar-date-accuracy-server-side-p](./quick/260329-ws0-fix-calendar-date-accuracy-server-side-p/) |
+| 260329-cal | fix calendar date accuracy: add 13 past weeks + extend to 24 future weeks + DD/MM/YYYY parsing rule | 2026-03-29 | — | [260329-cal-fix-calendar-date-accuracy](./quick/260329-cal-fix-calendar-date-accuracy/) |
 | 260329-n0p | fix plan:add past dates + strip plan:add streaming tags + 12-week calendar + isGeneratingPlan indicator | 2026-03-29 | 5f3638c | [260329-n0p-fix-plan-add-past-dates-strip-plan-tags-](./quick/260329-n0p-fix-plan-add-past-dates-strip-plan-tags-/) |
 | 260329-lc2 | fix TS2769 build errors in useChat.trainingPlan.test.ts, CLAUDE.md npm run build doc | 2026-03-29 | 8a7a1bd | [260329-lc2-fix-typescript-build-errors-in-usechat-t](./quick/260329-lc2-fix-typescript-build-errors-in-usechat-t/) |
 | 260329-ep5 | disable Add Day for past weeks, planState to agent, fix startDate, server-side plan saving | 2026-03-29 | 929ee6b | [260329-ep5-fix-4-issues-disable-add-day-when-all-da](./quick/260329-ep5-fix-4-issues-disable-add-day-when-all-da/) |

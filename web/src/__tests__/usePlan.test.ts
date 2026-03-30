@@ -61,10 +61,10 @@ describe('usePlan', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
-      await result.current.updateDay('2026-04-07', { completed: 'true' });
+      await result.current.updateDay(1, 'A', { completed: 'true' });
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/plan/days/2026-04-07', expect.objectContaining({ method: 'PATCH' }));
+    expect(mockFetch).toHaveBeenCalledWith('/api/plan/days/1/A', expect.objectContaining({ method: 'PATCH' }));
     expect(result.current.plan).toEqual(updatedPlan);
   });
 
@@ -77,7 +77,7 @@ describe('usePlan', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(act(async () => {
-      await result.current.updateDay('2026-04-07', { completed: 'true' });
+      await result.current.updateDay(1, 'A', { completed: 'true' });
     })).rejects.toThrow('Update failed');
   });
 
@@ -126,11 +126,11 @@ describe('usePlan', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {
-      await result.current.deleteDay('2026-04-07');
+      await result.current.deleteDay(1, 'A');
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      '/api/plan/days/2026-04-07',
+      '/api/plan/days/1/A',
       expect.objectContaining({ method: 'DELETE' }),
     );
     expect(result.current.plan?._id).toBe('p1-after-delete');
@@ -145,7 +145,7 @@ describe('usePlan', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await expect(act(async () => {
-      await result.current.deleteDay('2026-04-07');
+      await result.current.deleteDay(1, 'A');
     })).rejects.toThrow('Delete failed');
   });
 

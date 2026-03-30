@@ -6,15 +6,20 @@ import type { Plan } from '../shared/types.js';
 app.http('patchDay', {
   methods: ['PATCH'],
   authLevel: 'anonymous',
-  route: 'plan/days/{date}',
+  route: 'plan/days/{week}/{day}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requirePassword(req);
     if (denied) return denied;
 
-    const date = req.params['date'];
+    const weekParam = req.params['week'];
+    const dayParam = req.params['day'];
 
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return { status: 400, jsonBody: { error: 'Invalid date format. Expected YYYY-MM-DD.' } };
+    const week = Number(weekParam);
+    if (!weekParam || isNaN(week) || week < 1 || !Number.isInteger(week)) {
+      return { status: 400, jsonBody: { error: 'Invalid week number. Expected a positive integer.' } };
+    }
+    if (!dayParam || !/^[A-G]$/.test(dayParam)) {
+      return { status: 400, jsonBody: { error: 'Invalid day label. Expected a single uppercase letter A-G.' } };
     }
 
     let body: {
@@ -25,7 +30,6 @@ app.http('patchDay', {
       completed?: string;
       skipped?: string;
       type?: string;
-      newDate?: string;
     };
 
     try {
@@ -36,74 +40,31 @@ app.http('patchDay', {
 
     const db = await getDb();
 
-    // Reschedule: swap old date → rest, new date → run (copy details)
-    if (body.newDate !== undefined) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(body.newDate)) {
-        return { status: 400, jsonBody: { error: 'Invalid newDate format. Expected YYYY-MM-DD.' } };
-      }
-
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
-      const currentDay = plan?.phases.flatMap(p => p.weeks.flatMap(w => w.days)).find(d => d.date === date);
-      if (!plan || !currentDay) {
-        return { status: 404, jsonBody: { error: 'Day not found' } };
-      }
-
-      const swapSet: Record<string, unknown> = {
-        'phases.$[].weeks.$[].days.$[oldDay].type': 'rest',
-        'phases.$[].weeks.$[].days.$[oldDay].guidelines': 'Rest day',
-        'phases.$[].weeks.$[].days.$[oldDay].completed': false,
-        'phases.$[].weeks.$[].days.$[oldDay].skipped': false,
-        'phases.$[].weeks.$[].days.$[newDay].type': currentDay.type,
-        'phases.$[].weeks.$[].days.$[newDay].guidelines': currentDay.guidelines,
-        'phases.$[].weeks.$[].days.$[newDay].completed': false,
-        'phases.$[].weeks.$[].days.$[newDay].skipped': false,
-      };
-      if (currentDay.objective) {
-        swapSet['phases.$[].weeks.$[].days.$[newDay].objective'] = currentDay.objective;
-      }
-
-      const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
-        {
-          $set: swapSet,
-          $unset: { 'phases.$[].weeks.$[].days.$[oldDay].objective': '' },
-          $currentDate: { updatedAt: true },
-        } as any,
-        {
-          arrayFilters: [{ 'oldDay.date': date }, { 'newDay.date': body.newDate }],
-          returnDocument: 'after',
-        },
-      );
-
-      if (!result) return { status: 404, jsonBody: { error: 'Day not found' } };
-      return { status: 200, jsonBody: { plan: result } };
-    }
-
     // Field updates (guidelines, objective, completed, skipped, type)
     const $set: Record<string, unknown> = {};
 
     if (body.guidelines !== undefined) {
-      $set['phases.$[].weeks.$[].days.$[day].guidelines'] = body.guidelines;
+      $set['phases.$[].weeks.$[week].days.$[day].guidelines'] = body.guidelines;
     }
     if (body.objective_kind && body.objective_value && body.objective_unit) {
-      $set['phases.$[].weeks.$[].days.$[day].objective'] = {
+      $set['phases.$[].weeks.$[week].days.$[day].objective'] = {
         kind: body.objective_kind,
         value: Number(body.objective_value),
         unit: body.objective_unit,
       };
     }
     if (body.type !== undefined) {
-      $set['phases.$[].weeks.$[].days.$[day].type'] = body.type;
+      $set['phases.$[].weeks.$[week].days.$[day].type'] = body.type;
     }
     if (body.completed === 'true' || (body.completed as unknown) === true) {
-      $set['phases.$[].weeks.$[].days.$[day].completed'] = true;
+      $set['phases.$[].weeks.$[week].days.$[day].completed'] = true;
     } else if (body.completed === 'false' || (body.completed as unknown) === false) {
-      $set['phases.$[].weeks.$[].days.$[day].completed'] = false;
+      $set['phases.$[].weeks.$[week].days.$[day].completed'] = false;
     }
     if (body.skipped === 'true' || (body.skipped as unknown) === true) {
-      $set['phases.$[].weeks.$[].days.$[day].skipped'] = true;
+      $set['phases.$[].weeks.$[week].days.$[day].skipped'] = true;
     } else if (body.skipped === 'false' || (body.skipped as unknown) === false) {
-      $set['phases.$[].weeks.$[].days.$[day].skipped'] = false;
+      $set['phases.$[].weeks.$[week].days.$[day].skipped'] = false;
     }
 
     if (Object.keys($set).length === 0) {
@@ -114,7 +75,10 @@ app.http('patchDay', {
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] } },
         { $set, $currentDate: { updatedAt: true } },
-        { arrayFilters: [{ 'day.date': date }], returnDocument: 'after' },
+        {
+          arrayFilters: [{ 'week.weekNumber': week }, { 'day.label': dayParam }],
+          returnDocument: 'after',
+        },
       );
       if (!result) return { status: 404, jsonBody: { error: 'Day not found' } };
       return { status: 200, jsonBody: { plan: result } };
@@ -128,14 +92,20 @@ app.http('patchDay', {
 app.http('deleteDay', {
   methods: ['DELETE'],
   authLevel: 'anonymous',
-  route: 'plan/days/{date}',
+  route: 'plan/days/{week}/{day}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requirePassword(req);
     if (denied) return denied;
 
-    const date = req.params['date'];
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return { status: 400, jsonBody: { error: 'Invalid date format. Expected YYYY-MM-DD.' } };
+    const weekParam = req.params['week'];
+    const dayParam = req.params['day'];
+
+    const week = Number(weekParam);
+    if (!weekParam || isNaN(week) || week < 1 || !Number.isInteger(week)) {
+      return { status: 400, jsonBody: { error: 'Invalid week number. Expected a positive integer.' } };
+    }
+    if (!dayParam || !/^[A-G]$/.test(dayParam)) {
+      return { status: 400, jsonBody: { error: 'Invalid day label. Expected a single uppercase letter A-G.' } };
     }
 
     try {
@@ -143,25 +113,31 @@ app.http('deleteDay', {
 
       // Refuse to delete a completed day
       const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
-      const targetDay = plan?.phases.flatMap(p => p.weeks.flatMap(w => w.days)).find(d => d.date === date);
+      const targetDay = plan?.phases
+        .flatMap(p => p.weeks.flatMap(w => w.weekNumber === week ? w.days : []))
+        .find(d => d.label === dayParam);
       if (targetDay?.completed) {
         return { status: 409, jsonBody: { error: 'Cannot remove a completed day' } };
       }
 
-      // Convert to rest day rather than removing — weeks always keep 7 days
+      // Convert to rest day rather than removing — weeks always have rest day slots
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] } },
         {
           $set: {
-            'phases.$[].weeks.$[].days.$[day].type': 'rest',
-            'phases.$[].weeks.$[].days.$[day].guidelines': 'Rest day',
-            'phases.$[].weeks.$[].days.$[day].completed': false,
-            'phases.$[].weeks.$[].days.$[day].skipped': false,
+            'phases.$[].weeks.$[week].days.$[day].type': 'rest',
+            'phases.$[].weeks.$[week].days.$[day].guidelines': 'Rest day',
+            'phases.$[].weeks.$[week].days.$[day].label': '',
+            'phases.$[].weeks.$[week].days.$[day].completed': false,
+            'phases.$[].weeks.$[week].days.$[day].skipped': false,
           },
-          $unset: { 'phases.$[].weeks.$[].days.$[day].objective': '' },
+          $unset: { 'phases.$[].weeks.$[week].days.$[day].objective': '' },
           $currentDate: { updatedAt: true },
         } as any,
-        { arrayFilters: [{ 'day.date': date }], returnDocument: 'after' },
+        {
+          arrayFilters: [{ 'week.weekNumber': week }, { 'day.label': dayParam }],
+          returnDocument: 'after',
+        },
       );
 
       if (!result) return { status: 404, jsonBody: { error: 'Plan not found' } };
@@ -182,7 +158,8 @@ app.http('addDay', {
     if (denied) return denied;
 
     let body: {
-      date?: string;
+      weekNumber?: number;
+      label?: string;
       type?: string;
       guidelines?: string;
       objective_kind?: string;
@@ -190,9 +167,7 @@ app.http('addDay', {
       objective_unit?: string;
       completed?: string | boolean;
       skipped?: string | boolean;
-      // phaseName and weekNumber accepted but not used for DB lookup (date is unique within plan)
       phaseName?: string;
-      weekNumber?: number;
     };
 
     try {
@@ -201,40 +176,34 @@ app.http('addDay', {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } };
     }
 
-    const { date, type, guidelines } = body;
+    const { weekNumber, label, type, guidelines } = body;
 
-    if (!date || !type) {
-      return { status: 400, jsonBody: { error: 'date and type are required' } };
+    if (!weekNumber || !label || !type) {
+      return { status: 400, jsonBody: { error: 'weekNumber, label, and type are required' } };
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      return { status: 400, jsonBody: { error: 'Invalid date format. Expected YYYY-MM-DD.' } };
+    if (typeof weekNumber !== 'number' || weekNumber < 1 || !Number.isInteger(weekNumber)) {
+      return { status: 400, jsonBody: { error: 'weekNumber must be a positive integer' } };
+    }
+    if (!/^[A-G]$/.test(label)) {
+      return { status: 400, jsonBody: { error: 'label must be a single uppercase letter A-G' } };
     }
     if (type !== 'run' && type !== 'cross-train') {
       return { status: 400, jsonBody: { error: 'type must be run or cross-train' } };
     }
 
-    // Refuse to add a pending day on a past date; allow past dates with completed/skipped flags
-    const today = new Date().toISOString().split('T')[0];
-    if (date < today) {
-      const completed = body.completed === 'true' || (body.completed as unknown) === true;
-      const skipped = body.skipped === 'true' || (body.skipped as unknown) === true;
-      if (!completed && !skipped) {
-        return { status: 400, jsonBody: { error: `Cannot add a pending training day in the past (${date} is before today ${today}). Past dates require completed or skipped status.` } };
-      }
-    }
-
     const completedVal = body.completed === 'true' || (body.completed as unknown) === true ? true : false;
     const skippedVal = body.skipped === 'true' || (body.skipped as unknown) === true ? true : false;
 
-    const $set: Record<string, unknown> = {
-      'phases.$[].weeks.$[].days.$[day].type': type,
-      'phases.$[].weeks.$[].days.$[day].guidelines': guidelines ?? '',
-      'phases.$[].weeks.$[].days.$[day].completed': completedVal,
-      'phases.$[].weeks.$[].days.$[day].skipped': skippedVal,
+    const newDay: Record<string, unknown> = {
+      label,
+      type,
+      guidelines: guidelines ?? '',
+      completed: completedVal,
+      skipped: skippedVal,
     };
 
     if (body.objective_kind && body.objective_value && body.objective_unit) {
-      $set['phases.$[].weeks.$[].days.$[day].objective'] = {
+      newDay['objective'] = {
         kind: body.objective_kind,
         value: Number(body.objective_value),
         unit: body.objective_unit,
@@ -243,13 +212,30 @@ app.http('addDay', {
 
     try {
       const db = await getDb();
+
+      // Verify the week exists and the label isn't already taken
+      const plan = await db.collection<Plan>('plans').findOne({ status: 'active' });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+
+      const targetWeek = plan.phases.flatMap(p => p.weeks).find(w => w.weekNumber === weekNumber);
+      if (!targetWeek) return { status: 404, jsonBody: { error: `Week ${weekNumber} not found` } };
+      if (targetWeek.days.some(d => d.label === label)) {
+        return { status: 409, jsonBody: { error: `Day ${label} already exists in week ${weekNumber}` } };
+      }
+
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: 'active' },
-        { $set, $currentDate: { updatedAt: true } },
-        { arrayFilters: [{ 'day.date': date }], returnDocument: 'after' },
+        { status: 'active', 'phases.weeks.weekNumber': weekNumber },
+        {
+          $push: { 'phases.$[].weeks.$[week].days': newDay } as any,
+          $currentDate: { updatedAt: true },
+        },
+        {
+          arrayFilters: [{ 'week.weekNumber': weekNumber }],
+          returnDocument: 'after',
+        },
       );
 
-      if (!result) return { status: 404, jsonBody: { error: 'Plan or day not found' } };
+      if (!result) return { status: 404, jsonBody: { error: 'Plan or week not found' } };
       return { status: 201, jsonBody: { plan: result } };
     } catch (err) {
       context.log('Error adding day:', err);

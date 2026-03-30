@@ -17,8 +17,7 @@ const testPhases = [
     weeks: [
       {
         weekNumber: 1,
-        startDate: '2026-04-07',
-        days: [{ date: '2026-04-07', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
+        days: [{ label: 'A', type: 'run', guidelines: 'Easy run', completed: false, skipped: false }],
       },
     ],
   },
@@ -58,7 +57,7 @@ describe('sendMessage — planState in request body', () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ messages: [] }) })
   })
 
-  it('sends planId, message, and currentDate in the /api/chat request body', async () => {
+  it('sends planId and message in the /api/chat request body (no currentDate)', async () => {
     const { result } = renderHook(() => useChat(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -79,7 +78,8 @@ describe('sendMessage — planState in request body', () => {
     const body = JSON.parse(chatCall![1].body as string)
     expect(body.planId).toBe('plan1')
     expect(body.message).toBe('hi')
-    expect(body.currentDate).toBeDefined()
+    // currentDate is no longer sent
+    expect(body.currentDate).toBeUndefined()
   })
 
   it('does NOT call /api/plan/generate when server signals planGenerated', async () => {
@@ -157,10 +157,10 @@ describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST'
     const { result } = renderHook(() => useChat(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const tag = '<plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    const tag = '<plan:add week="1" day="D" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
     mockFetch.mockReturnValueOnce(
       makeStreamResponse([
-        `data: ${JSON.stringify({ text: `Added Friday! ${tag}` })}\n\n`,
+        `data: ${JSON.stringify({ text: `Added Day D! ${tag}` })}\n\n`,
         `data: ${JSON.stringify({ done: true })}\n\n`,
       ])
     )
@@ -172,28 +172,29 @@ describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST'
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
 
     await act(async () => {
-      await result.current.sendMessage('Add a run on Friday')
+      await result.current.sendMessage('Add a run on Day D')
     })
 
     // plan:add tag should not appear in the displayed message
     const lastMsg = result.current.messages[result.current.messages.length - 1]
     expect(lastMsg.role).toBe('assistant')
     expect(lastMsg.content).not.toContain('<plan:add')
-    expect(lastMsg.content).toContain('Added Friday!')
+    expect(lastMsg.content).toContain('Added Day D!')
 
     // POST to /api/plan/days should have been called
     const postCall = mockFetch.mock.calls.find(([url]: string[]) => url === '/api/plan/days')
     expect(postCall).toBeDefined()
     const body = JSON.parse(postCall![1].body as string)
-    expect(body.date).toBe('2026-04-10')
+    expect(body.weekNumber).toBe(1)
+    expect(body.label).toBe('D')
     expect(body.type).toBe('run')
   })
 
-  it('includes completed="true" in POST body for past-date plan:add with completed flag', async () => {
+  it('includes completed="true" in POST body for plan:add with completed flag', async () => {
     const { result } = renderHook(() => useChat(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const tag = '<plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+    const tag = '<plan:add week="2" day="B" type="run" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
     mockFetch.mockReturnValueOnce(
       makeStreamResponse([
         `data: ${JSON.stringify({ text: `Logged past run! ${tag}` })}\n\n`,
@@ -211,7 +212,8 @@ describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST'
     const postCall = mockFetch.mock.calls.find(([url]: string[]) => url === '/api/plan/days')
     expect(postCall).toBeDefined()
     const body = JSON.parse(postCall![1].body as string)
-    expect(body.date).toBe('2026-01-12')
+    expect(body.weekNumber).toBe(2)
+    expect(body.label).toBe('B')
     expect(body.completed).toBe('true')
   })
 
@@ -219,7 +221,7 @@ describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST'
     const { result } = renderHook(() => useChat(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    const tag = '<plan:update date="2026-04-07" guidelines="Updated!" />'
+    const tag = '<plan:update week="1" day="A" guidelines="Updated!" />'
     mockFetch.mockReturnValueOnce(
       makeStreamResponse([
         `data: ${JSON.stringify({ text: `Updated! ${tag}` })}\n\n`,
@@ -227,7 +229,7 @@ describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST'
       ])
     )
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
-    // PATCH /api/plan/days/2026-04-07
+    // PATCH /api/plan/days/1/A
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
     // GET /api/plan after updates
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
@@ -261,39 +263,39 @@ const stripPlanTagsLive = (content: string): string =>
 
 describe('plan:update live-stream stripping', () => {
   it('strips a self-closing plan:update tag from display', () => {
-    const text = 'I updated Monday\'s run! <plan:update date="2026-04-07" guidelines="Easy run" />'
-    expect(stripPlanUpdateLive(text)).toBe("I updated Monday's run!")
+    const text = 'I updated Week 1 Day A! <plan:update week="1" day="A" guidelines="Easy run" />'
+    expect(stripPlanUpdateLive(text)).toBe("I updated Week 1 Day A!")
   })
 
   it('strips multiple plan:update tags', () => {
-    const text = 'Updated two days! <plan:update date="2026-04-07" completed="true" /> <plan:update date="2026-04-09" skipped="true" />'
+    const text = 'Updated two days! <plan:update week="1" day="A" completed="true" /> <plan:update week="1" day="C" skipped="true" />'
     expect(stripPlanUpdateLive(text)).toBe('Updated two days!')
   })
 
   it('returns content unchanged when no plan:update tag', () => {
-    const text = 'Your next run is on Monday!'
+    const text = 'Your next run is on Day A!'
     expect(stripPlanUpdateLive(text)).toBe(text)
   })
 })
 
 describe('plan:add live-stream stripping', () => {
   it('strips a self-closing plan:add tag from display', () => {
-    const text = 'Added a Friday run! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
-    expect(stripPlanAddLive(text)).toBe('Added a Friday run!')
+    const text = 'Added a run to Week 1! <plan:add week="1" day="D" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    expect(stripPlanAddLive(text)).toBe('Added a run to Week 1!')
   })
 
-  it('strips a plan:add tag with completed="true" for a past run', () => {
-    const text = 'Logged your past run! <plan:add date="2026-01-12" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30\' Z2" completed="true" />'
+  it('strips a plan:add tag with completed="true"', () => {
+    const text = 'Logged your past run! <plan:add week="2" day="B" type="run" objective_kind="time" objective_value="30" objective_unit="min" guidelines="30 Z2" completed="true" />'
     expect(stripPlanAddLive(text)).toBe("Logged your past run!")
   })
 
-  it('strips a plan:add tag with skipped="true" for a missed run', () => {
-    const text = 'Marked as skipped! <plan:add date="2026-03-05" objective_kind="time" objective_value="40" objective_unit="min" guidelines="40\' Z2" skipped="true" />'
+  it('strips a plan:add tag with skipped="true"', () => {
+    const text = 'Marked as skipped! <plan:add week="1" day="C" type="run" objective_kind="time" objective_value="40" objective_unit="min" guidelines="40 Z2" skipped="true" />'
     expect(stripPlanAddLive(text)).toBe('Marked as skipped!')
   })
 
   it('strips multiple plan:add tags', () => {
-    const text = 'Added two runs! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <plan:add date="2026-04-12" objective_kind="distance" objective_value="8" objective_unit="km" guidelines="Tempo" />'
+    const text = 'Added two runs! <plan:add week="1" day="D" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <plan:add week="1" day="E" type="run" objective_kind="distance" objective_value="8" objective_unit="km" guidelines="Tempo" />'
     expect(stripPlanAddLive(text)).toBe('Added two runs!')
   })
 
@@ -305,12 +307,12 @@ describe('plan:add live-stream stripping', () => {
 
 describe('combined plan tag live-stream stripping', () => {
   it('strips both plan:update and plan:add tags from one response', () => {
-    const text = 'Updated Monday and added Friday! <plan:update date="2026-04-07" completed="true" /> <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
-    expect(stripPlanTagsLive(text)).toBe('Updated Monday and added Friday!')
+    const text = 'Updated Week 1 Day A and added Day D! <plan:update week="1" day="A" completed="true" /> <plan:add week="1" day="D" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy run" />'
+    expect(stripPlanTagsLive(text)).toBe('Updated Week 1 Day A and added Day D!')
   })
 
   it('strips training_plan block even when plan:add tag also present', () => {
-    const text = 'Here is your plan! <plan:add date="2026-04-10" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <training_plan>{"phases":[]}'
+    const text = 'Here is your plan! <plan:add week="1" day="D" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Easy" /> <training_plan>{"phases":[]}'
     expect(stripPlanTagsLive(text)).toBe('Here is your plan!')
   })
 })
@@ -355,20 +357,20 @@ describe('training_plan tag stripping', () => {
   it('strips a <training_plan> block leaving only the human-readable text', () => {
     const raw =
       'Great news! Here is your 8-week plan.\n\n' +
-      '<training_plan>[{"date":"2025-01-06","distance":3,"notes":"Easy run"}]</training_plan>'
+      '<training_plan>[{"label":"A","type":"run","guidelines":"Easy run"}]</training_plan>'
 
     const result = stripTrainingPlan(raw)
     expect(result).toBe('Great news! Here is your 8-week plan.')
     expect(result).not.toContain('<training_plan>')
-    expect(result).not.toContain('2025-01-06')
+    expect(result).not.toContain('"label":"A"')
   })
 
   it('strips a multiline <training_plan> block', () => {
     const raw =
       'Here is your plan:\n\n' +
       '<training_plan>[\n' +
-      '  {"date":"2025-01-06","distance":3},\n' +
-      '  {"date":"2025-01-08","distance":4}\n' +
+      '  {"label":"A","type":"run"},\n' +
+      '  {"label":"B","type":"run"}\n' +
       ']</training_plan>\n\n' +
       'Good luck!'
 
@@ -376,7 +378,7 @@ describe('training_plan tag stripping', () => {
     // Surrounding newlines remain after stripping the tag block
     expect(result).toBe('Here is your plan:\n\n\n\nGood luck!')
     expect(result).not.toContain('<training_plan>')
-    expect(result).not.toContain('2025-01-06')
+    expect(result).not.toContain('"label":"A"')
   })
 
   it('returns content unchanged when no <training_plan> tag is present', () => {
@@ -386,8 +388,8 @@ describe('training_plan tag stripping', () => {
 
   it('strips multiple <training_plan> blocks if present', () => {
     const raw =
-      'Plan A: <training_plan>[{"date":"2025-01-01"}]</training_plan> ' +
-      'Plan B: <training_plan>[{"date":"2025-02-01"}]</training_plan> Done.'
+      'Plan A: <training_plan>[{"label":"A"}]</training_plan> ' +
+      'Plan B: <training_plan>[{"label":"B"}]</training_plan> Done.'
 
     const result = stripTrainingPlan(raw)
     expect(result).toBe('Plan A:  Plan B:  Done.')
@@ -399,8 +401,8 @@ describe('training_plan tag stripping', () => {
       "You're all set! Here's your personalized 8-week 5K plan:\n\n" +
       '**Week 1-2**: Base building\n' +
       '**Week 7**: Taper week\n\n' +
-      '<training_plan>[{"date":"2025-01-06","distance":3,"duration":20,"avgPace":"6:40","notes":"Easy run"},' +
-      '{"date":"2025-01-08","distance":3.5,"duration":24,"avgPace":"6:50","notes":"Easy run"}]</training_plan>\n\n' +
+      '<training_plan>[{"label":"A","type":"run","objective":{"kind":"distance","value":5,"unit":"km"},"guidelines":"Easy run"},' +
+      '{"label":"B","type":"run","objective":{"kind":"distance","value":5,"unit":"km"},"guidelines":"Easy run"}]</training_plan>\n\n' +
       "You're going to do great!"
 
     const result = stripTrainingPlan(raw)
@@ -408,6 +410,6 @@ describe('training_plan tag stripping', () => {
     expect(result).toContain('**Week 1-2**: Base building')
     expect(result).toContain("You're going to do great!")
     expect(result).not.toContain('<training_plan>')
-    expect(result).not.toContain('"avgPace"')
+    expect(result).not.toContain('"label"')
   })
 })

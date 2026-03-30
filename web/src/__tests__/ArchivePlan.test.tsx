@@ -44,9 +44,8 @@ const mockPlan = {
       weeks: [
         {
           weekNumber: 1,
-          startDate: '2026-04-07',
           days: [
-            { date: '2026-04-07', type: 'run' as const, guidelines: 'Easy run', completed: false, skipped: false },
+            { label: 'A', type: 'run' as const, guidelines: 'Easy run', completed: false, skipped: false },
           ],
         },
       ],

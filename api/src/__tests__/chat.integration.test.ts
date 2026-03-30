@@ -41,33 +41,37 @@ import { requirePassword } from '../middleware/auth.js';
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
 /**
- * Creates a mock Anthropic stream emitter that fires text + message events after all
- * three event listeners (text, message, error) have been registered by start().
+ * Creates a mock Anthropic stream that:
+ * - Exposes `on('text', cb)` to register text-chunk listeners
+ * - Implements `finalMessage()` which emits text to registered listeners then
+ *   resolves with a complete Message object (stop_reason='end_turn').
  *
- * Using Promise microtasks instead of setTimeout avoids a race condition where setTimeout
- * fires during the handler's async database operations (before start() runs).
+ * This matches the new tool-use loop in chat.ts which uses:
+ *   stream.on('text', cb)
+ *   finalMessage = await stream.finalMessage()
  */
 function createMockStream(responseText: string) {
-  const listeners = new Map<string, Array<(...args: any[]) => void>>();
+  const textListeners: Array<(text: string) => void> = [];
 
   return {
     on(event: string, cb: (...args: any[]) => void) {
-      if (!listeners.has(event)) listeners.set(event, []);
-      listeners.get(event)!.push(cb);
-      // The chat handler registers exactly 3 listeners: 'text', 'message', 'error'.
-      // Once all three are registered (i.e. start() has completed), schedule delivery.
-      if (listeners.size === 3) {
-        Promise.resolve()
-          .then(() => {
-            // Enqueue the text chunk — controller buffers it for the waiting reader
-            for (const textCb of listeners.get('text') ?? []) textCb(responseText);
-          })
-          .then(() => {
-            // Trigger the message handler (async: inserts to DB, closes stream)
-            for (const msgCb of listeners.get('message') ?? []) msgCb();
-          });
-      }
+      if (event === 'text') textListeners.push(cb as (text: string) => void);
       return this;
+    },
+    finalMessage(): Promise<any> {
+      return Promise.resolve().then(() => {
+        for (const cb of textListeners) cb(responseText);
+        return {
+          id: 'msg_test',
+          type: 'message',
+          role: 'assistant',
+          content: [{ type: 'text', text: responseText }],
+          model: 'claude-sonnet-4-20250514',
+          stop_reason: 'end_turn',
+          stop_sequence: null,
+          usage: { input_tokens: 10, output_tokens: 10 },
+        };
+      });
     },
   };
 }

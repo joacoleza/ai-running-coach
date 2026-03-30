@@ -1,36 +1,42 @@
-import type { PlanWeek, PlanDay } from './types.js';
-
-/** Returns the 7 ISO date strings (Mon–Sun) for the calendar week containing startDate */
-export function getWeekDates(startDate: string): string[] {
-  const d = new Date(startDate + 'T12:00:00');
-  const dow = d.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
-  const daysFromMon = dow === 0 ? 6 : dow - 1;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - daysFromMon);
-  return Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(monday);
-    day.setDate(monday.getDate() + i);
-    const y = day.getFullYear();
-    const m = String(day.getMonth() + 1).padStart(2, '0');
-    const dd = String(day.getDate()).padStart(2, '0');
-    return `${y}-${m}-${dd}`;
-  });
-}
+import type { PlanPhase } from './types.js';
 
 /**
- * Ensures a week has exactly 7 days (Mon–Sun based on startDate).
- * Missing dates are filled with rest days. Extra days outside the Mon–Sun range are dropped.
+ * Assigns globally sequential week numbers and day labels (A-G) to all phases.
+ *
+ * Algorithm:
+ * 1. Walk phases in order. Week numbers are globally sequential: phase 1 gets 1,2,3;
+ *    phase 2 continues from where phase 1 left off (4,5,6); etc.
+ * 2. Within each week, assign labels "A","B","C",... to non-rest days in array order.
+ *    Rest days get label: "" (empty string — they are hidden in the UI).
+ * 3. Returns a new phases array with weekNumber and label fields populated.
  */
-export function normalizeWeekDays(week: PlanWeek): PlanWeek {
-  const allDates = getWeekDates(week.startDate);
-  const byDate = new Map<string, PlanDay>(week.days.map(d => [d.date, d]));
-  const days: PlanDay[] = allDates.map(date => byDate.get(date) ?? {
-    date,
-    type: 'rest' as const,
-    guidelines: 'Rest day',
-    completed: false,
-    skipped: false,
+export function assignPlanStructure(phases: PlanPhase[]): PlanPhase[] {
+  if (phases.length === 0) return phases;
+
+  let globalWeekCounter = 0;
+
+  return phases.map(phase => {
+    const newWeeks = phase.weeks.map(week => {
+      globalWeekCounter++;
+      const LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      let labelIndex = 0;
+
+      const newDays = week.days.map(day => {
+        if (day.type === 'rest') {
+          return { ...day, label: '' };
+        }
+        const label = LABELS[labelIndex] ?? String.fromCharCode(65 + labelIndex);
+        labelIndex++;
+        return { ...day, label };
+      });
+
+      return {
+        ...week,
+        weekNumber: globalWeekCounter,
+        days: newDays,
+      };
+    });
+
+    return { ...phase, weeks: newWeeks };
   });
-  // Always normalise startDate to the actual Monday of the week, regardless of what Claude provided
-  return { ...week, startDate: allDates[0], days };
 }
