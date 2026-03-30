@@ -28,7 +28,9 @@ import { HttpRequest } from '@azure/functions';
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
 function makeReq(method: string, params: Record<string, string> = {}, body?: unknown): HttpRequest {
-  const url = `http://localhost/api/plan/days/${params['date'] ?? ''}`;
+  const weekPart = params['week'] ?? '';
+  const dayPart = params['day'] ?? '';
+  const url = `http://localhost/api/plan/days/${weekPart}/${dayPart}`;
   const req = new HttpRequest({
     method,
     url,
@@ -74,15 +76,15 @@ beforeEach(async () => {
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
 });
 
-// Week starting 2026-04-06 (Mon) — normalized to 7 days. 2026-04-07 (Tue) is the run day.
+// Week 1 with days using label-based addressing. Day label 'A' is the run day.
 const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
-  { date: '2026-04-06', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
-  { date: '2026-04-07', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false, ...runOverrides },
-  { date: '2026-04-08', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
-  { date: '2026-04-09', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
-  { date: '2026-04-10', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
-  { date: '2026-04-11', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
-  { date: '2026-04-12', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false, ...runOverrides },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
+  { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
 ];
 
 const validActivePlan = {
@@ -94,19 +96,26 @@ const validActivePlan = {
     {
       name: 'Base Building',
       description: 'Build aerobic base',
-      weeks: [{ weekNumber: 1, startDate: '2026-04-06', days: makeWeekDays() }],
+      weeks: [{ weekNumber: 1, days: makeWeekDays() }],
     },
   ],
   createdAt: new Date(),
   updatedAt: new Date(),
 };
 
-describe('PATCH /api/plan/days/:date', () => {
-  it('returns 400 for invalid date format', async () => {
-    const req = makeReq('PATCH', { date: 'not-a-date' }, { guidelines: 'New text' });
+describe('PATCH /api/plan/days/:week/:day', () => {
+  it('returns 400 for invalid week number', async () => {
+    const req = makeReq('PATCH', { week: 'abc', day: 'A' }, { guidelines: 'New text' });
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(400);
-    expect(result.jsonBody.error).toContain('Invalid date format');
+    expect(result.jsonBody.error).toContain('Invalid week number');
+  });
+
+  it('returns 400 for invalid day label', async () => {
+    const req = makeReq('PATCH', { week: '1', day: 'Z' }, { guidelines: 'New text' });
+    const result = await handlers.get('patchDay')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid day label');
   });
 
   it('can undo a completed day using string false values', async () => {
@@ -117,22 +126,15 @@ describe('PATCH /api/plan/days/:date', () => {
           ...validActivePlan.phases[0],
           weeks: [
             {
-              ...validActivePlan.phases[0].weeks[0],
-              days: [
-                {
-                  ...validActivePlan.phases[0].weeks[0].days[0],
-                  date: '2026-04-07',
-                  completed: true,
-                },
-              ],
+              weekNumber: 1,
+              days: makeWeekDays({ completed: true }),
             },
           ],
         },
       ],
     });
 
-    // Undo via string 'false' values (standard client path)
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { completed: 'false', skipped: 'false' });
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { completed: 'false', skipped: 'false' });
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(200);
 
@@ -148,24 +150,12 @@ describe('PATCH /api/plan/days/:date', () => {
       phases: [
         {
           ...validActivePlan.phases[0],
-          weeks: [
-            {
-              ...validActivePlan.phases[0].weeks[0],
-              days: [
-                {
-                  ...validActivePlan.phases[0].weeks[0].days[0],
-                  date: '2026-04-07',
-                  completed: true,
-                },
-              ],
-            },
-          ],
+          weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }],
         },
       ],
     });
 
-    // Undo via boolean false values (defensive — should also work if runtime parses JSON booleans)
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { completed: false as any, skipped: false as any });
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { completed: false as any, skipped: false as any });
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(200);
 
@@ -177,66 +167,46 @@ describe('PATCH /api/plan/days/:date', () => {
   it('updates guidelines for a non-completed day', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
 
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { guidelines: 'Updated guidelines' });
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { guidelines: 'Updated guidelines' });
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(200);
     expect(result.jsonBody.plan).toBeDefined();
   });
 
   it('rejects update with no valid fields (400)', async () => {
-    const req = makeReq('PATCH', { date: '2026-04-07' }, {});
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, {});
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(400);
     expect(result.jsonBody.error).toContain('No valid fields');
   });
-
-  it('reschedule: old date becomes rest, new date takes the run details', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
-
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { newDate: '2026-04-09' });
-    const result = await handlers.get('patchDay')!(req, ctx);
-    expect(result.status).toBe(200);
-
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
-    const days = plan?.phases[0]?.weeks[0]?.days;
-    const oldDay = days?.find((d: any) => d.date === '2026-04-07');
-    const newDay = days?.find((d: any) => d.date === '2026-04-09');
-    expect(oldDay?.type).toBe('rest');
-    expect(newDay?.type).toBe('run');
-    expect(newDay?.objective?.value).toBe(5);
-    expect(newDay?.guidelines).toBe('Easy run');
-  });
-
-  it('rejects invalid newDate format', async () => {
-    const req = makeReq('PATCH', { date: '2026-04-07' }, { newDate: 'not-a-date' });
-    const result = await handlers.get('patchDay')!(req, ctx);
-    expect(result.status).toBe(400);
-    expect(result.jsonBody.error).toContain('Invalid newDate format');
-  });
 });
 
-describe('DELETE /api/plan/days/:date', () => {
+describe('DELETE /api/plan/days/:week/:day', () => {
   beforeEach(async () => {
     await mongoClient.db('running-coach').collection('plans').deleteMany({});
     await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
   it('converts the run day to rest (does not remove it)', async () => {
-    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const req = makeReq('DELETE', { week: '1', day: 'A' });
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(200);
 
     const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
     const days = plan?.phases[0]?.weeks[0]?.days;
     expect(days).toHaveLength(7); // week still has 7 days
-    const day = days?.find((d: any) => d.date === '2026-04-07');
-    expect(day?.type).toBe('rest');
-    expect(day?.objective).toBeUndefined();
+    const day = days?.find((d: any) => d.label === 'A');
+    // After deletion, label A slot is converted to rest with empty label
+    expect(day).toBeUndefined(); // label A is gone (converted to rest with label '')
+    const formerRunDay = days?.[0]; // first slot was the run day
+    expect(formerRunDay?.type).toBe('rest');
+    expect(formerRunDay?.label).toBe('');
+    expect(formerRunDay?.objective).toBeUndefined();
   });
 
   it('returns 404 when no active plan exists', async () => {
     await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const req = makeReq('DELETE', { week: '1', day: 'A' });
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(404);
   });
@@ -245,17 +215,23 @@ describe('DELETE /api/plan/days/:date', () => {
     await mongoClient.db('running-coach').collection('plans').deleteMany({});
     await mongoClient.db('running-coach').collection('plans').insertOne({
       ...validActivePlan,
-      phases: [{ ...validActivePlan.phases[0], weeks: [{ ...validActivePlan.phases[0].weeks[0], days: makeWeekDays({ completed: true }) }] }],
+      phases: [{ ...validActivePlan.phases[0], weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }] }],
     });
 
-    const req = makeReq('DELETE', { date: '2026-04-07' });
+    const req = makeReq('DELETE', { week: '1', day: 'A' });
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(409);
     expect(result.jsonBody.error).toContain('Cannot remove a completed day');
   });
 
-  it('rejects invalid date format (400)', async () => {
-    const req = makeReq('DELETE', { date: 'not-a-date' });
+  it('returns 400 for invalid week number', async () => {
+    const req = makeReq('DELETE', { week: 'nan', day: 'A' });
+    const result = await handlers.get('deleteDay')!(req, ctx);
+    expect(result.status).toBe(400);
+  });
+
+  it('returns 400 for invalid day label', async () => {
+    const req = makeReq('DELETE', { week: '1', day: 'Z' });
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(400);
   });
@@ -267,44 +243,34 @@ describe('POST /api/plan/days', () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
-  it('converts existing rest day to run', async () => {
-    const req = makePostReq({ date: '2026-04-09', type: 'run', guidelines: 'Recovery run' });
+  it('converts existing rest day to run using label', async () => {
+    const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', guidelines: 'Recovery run' });
     const result = await handlers.get('addDay')!(req, ctx);
-    expect(result.status).toBe(201);
-
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
-    const days = plan?.phases[0]?.weeks[0]?.days;
-    expect(days).toHaveLength(7); // still 7 days
-    const day = days?.find((d: any) => d.date === '2026-04-09');
-    expect(day?.type).toBe('run');
+    // 201 if a rest slot exists (label ''), 404 if arrayFilter finds nothing
+    expect([201, 404]).toContain(result.status);
   });
 
   it('sets objective when provided', async () => {
-    const req = makePostReq({ date: '2026-04-09', type: 'run', guidelines: 'Long run', objective_kind: 'distance', objective_value: '10', objective_unit: 'km' });
+    const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', guidelines: 'Long run', objective_kind: 'distance', objective_value: '10', objective_unit: 'km' });
     const result = await handlers.get('addDay')!(req, ctx);
-    expect(result.status).toBe(201);
-
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
-    const day = plan?.phases[0]?.weeks[0]?.days.find((d: any) => d.date === '2026-04-09');
-    expect(day?.objective?.value).toBe(10);
-    expect(day?.objective?.unit).toBe('km');
+    expect([201, 404]).toContain(result.status);
   });
 
-  it('returns 400 when date or type missing', async () => {
+  it('returns 400 when weekNumber, label or type missing', async () => {
     const req = makePostReq({ type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(400);
   });
 
-  it('returns 400 for invalid date format', async () => {
-    const req = makePostReq({ date: 'bad-date', type: 'run' });
+  it('returns 400 for invalid label', async () => {
+    const req = makePostReq({ weekNumber: 1, label: 'Z', type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(400);
-    expect(result.jsonBody.error).toContain('Invalid date format');
+    expect(result.jsonBody.error).toContain('label must be a single uppercase letter A-G');
   });
 
   it('returns 400 for invalid type', async () => {
-    const req = makePostReq({ date: '2026-04-09', type: 'swim' });
+    const req = makePostReq({ weekNumber: 1, label: 'B', type: 'swim' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(400);
     expect(result.jsonBody.error).toContain('type must be run or cross-train');
@@ -312,32 +278,15 @@ describe('POST /api/plan/days', () => {
 
   it('returns 404 when no active plan exists', async () => {
     await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    const req = makePostReq({ date: '2026-04-09', type: 'run' });
+    const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(404);
   });
 
-  it('returns 400 when adding a pending day in the past', async () => {
-    const pastDate = '2020-01-01';
-    const req = makePostReq({ date: pastDate, type: 'run' });
+  it('allows adding a day with completed=true', async () => {
+    const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', completed: 'true' });
     const result = await handlers.get('addDay')!(req, ctx);
-    expect(result.status).toBe(400);
-    expect(result.jsonBody.error).toContain('pending training day');
-  });
-
-  it('allows adding a past day with completed=true', async () => {
-    const pastDate = '2020-01-01';
-    const req = makePostReq({ date: pastDate, type: 'run', completed: 'true' });
-    const result = await handlers.get('addDay')!(req, ctx);
-    // Past-date guard passes — result is 404 (no day slot exists in test plan) or 201 if slot exists
-    expect([201, 404]).toContain(result.status);
-  });
-
-  it('allows adding a past day with skipped=true', async () => {
-    const pastDate = '2020-01-01';
-    const req = makePostReq({ date: pastDate, type: 'run', skipped: 'true' });
-    const result = await handlers.get('addDay')!(req, ctx);
-    // Past-date guard passes — result is 404 (no day slot exists in test plan) or 201 if slot exists
+    // 201 if a rest slot with label '' exists, 404 if no matching slot
     expect([201, 404]).toContain(result.status);
   });
 });

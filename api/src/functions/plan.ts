@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { Plan, PlanGoal, PlanPhase } from '../shared/types.js';
-import { normalizePlanPhases } from '../shared/planUtils.js';
+import { assignPlanStructure } from '../shared/planUtils.js';
 
 app.http('getPlan', {
   methods: ['GET'],
@@ -162,7 +162,7 @@ app.http('generatePlan', {
       // Only future sessions without completed/skipped flags count as upcoming training.
 
       // Global normalization: redistribute days to calendar-correct weeks
-      const normalizedPhases = normalizePlanPhases(parsedPlan.phases);
+      const normalizedPhases = assignPlanStructure(parsedPlan.phases);
 
       const db = await getDb();
 

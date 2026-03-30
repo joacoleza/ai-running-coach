@@ -4,7 +4,7 @@ import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
-import { normalizePlanPhases } from '../shared/planUtils.js';
+import { assignPlanStructure } from '../shared/planUtils.js';
 import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 
 const anthropic = new Anthropic();
@@ -22,10 +22,10 @@ app.http('chat', {
       return { status: 500, jsonBody: { error: 'ANTHROPIC_API_KEY not configured' } };
     }
 
-    const { planId, message, currentDate } = await req.json() as {
+    const { planId, message } = await req.json() as {
       planId: string;
       message: string;
-      currentDate?: string;
+      currentDate?: string; // kept for backward compat but no longer forwarded to prompt
     };
     if (!planId || !message) {
       return { status: 400, jsonBody: { error: 'planId and message are required' } };
@@ -52,30 +52,30 @@ app.http('chat', {
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
     const phases = plan?.phases;
 
-    // Resolve today's date for status labeling in synthetic plan context
-    const isoDate = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const today = currentDate ?? isoDate(new Date());
-
     // Build context
     const contextMessages = await buildContextMessages(planId, db);
-    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases, currentDate);
+    const systemPrompt = buildSystemPrompt(summary, onboardingStep, phases);
 
     // Inject current plan state as a synthetic message pair right before the user's message.
     // This makes the current plan appear as recent conversation context, overriding stale
     // references in older history (e.g. days the user later deleted or un-completed).
     if (phases && phases.length > 0 && contextMessages.length > 0) {
       const trainingDays = phases
-        .flatMap(p => p.weeks.flatMap(w => w.days))
-        .filter(d => d.type !== 'rest')
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .flatMap(p => p.weeks.flatMap(w =>
+          w.days
+            .filter(d => d.type !== 'rest')
+            .map(d => ({ ...d, weekNumber: w.weekNumber }))
+        ))
+        .sort((a, b) => {
+          if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
+          return a.label.localeCompare(b.label);
+        });
 
       if (trainingDays.length > 0) {
         const lines = trainingDays.map(d => {
-          const dow = new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' });
-          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : (d.date < today ? '[PAST/UPCOMING]' : '[UPCOMING]');
+          const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : '[UPCOMING]';
           const obj = d.objective ? ` ${d.objective.value}${d.objective.unit}` : '';
-          return `- ${dow} ${d.date} ${status}:${obj} — ${d.guidelines}`;
+          return `- Week ${d.weekNumber} Day ${d.label} ${status}:${obj} — ${d.guidelines}`;
         });
         const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${lines.join('\n')}`;
 
@@ -157,8 +157,8 @@ app.http('chat', {
                     return undefined;
                   }
                   const resolvedObjective = deriveObjective(resolvedGoal?.eventType);
-                  // Global normalization: redistribute days to calendar-correct weeks
-                  const normalizedPhases = normalizePlanPhases(parsed.phases);
+                  // Assign globally sequential week numbers and A-G labels
+                  const normalizedPhases = assignPlanStructure(parsed.phases);
                   await db.collection<Plan>('plans').findOneAndUpdate(
                     { _id: new ObjectId(planId) as any },
                     {
