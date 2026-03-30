@@ -150,12 +150,12 @@ Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/
 
 ## Roadmap
 
+See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
+
 - ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
 - ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
 - ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
 - ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
-- ~~**Phase 2.1 UAT fixes** — Undo skip/complete, delete day, add run to rest day, day-name dates, chat scroll, plan:update live refresh, XML stripped from history, sidebar fixed height~~ ✓
-- ~~**Plan adjustment fixes** — Allow plan regeneration with completed days, add past completed/skipped days via plan:add, surface plan update errors in chat~~ ✓
 - **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
