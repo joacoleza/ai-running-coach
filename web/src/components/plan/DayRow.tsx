@@ -3,58 +3,29 @@ import type { PlanDay } from '../../hooks/usePlan';
 
 interface DayRowProps {
   day: PlanDay;
-  onUpdate: (date: string, updates: Record<string, string>) => Promise<void>;
-  onDelete: (date: string) => Promise<void>;
+  weekNumber: number;
+  onUpdate: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
+  onDelete: (weekNumber: number, label: string) => Promise<void>;
   readonly?: boolean;
-  /** Dates of other (non-rest) workouts in the same week — used to disable taken days in the move-date picker */
-  weekExistingDates?: string[];
 }
 
-function formatDayDate(dateStr: string): string {
-  // Use noon to avoid timezone-shift issues when parsing date-only strings
-  const d = new Date(dateStr + 'T12:00:00');
-  const weekday = d.toLocaleDateString('en-CA', { weekday: 'long' });
-  return `${weekday} ${dateStr}`;
-}
-
-/** Returns Mon–Sun dates for the calendar week containing dateStr */
-function getWeekDays(dateStr: string): { date: string; label: string }[] {
-  const d = new Date(dateStr + 'T12:00:00');
-  const dow = d.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
-  const daysFromMon = dow === 0 ? 6 : dow - 1;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - daysFromMon);
-  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
-    const day = new Date(monday);
-    day.setDate(monday.getDate() + i);
-    const y = day.getFullYear();
-    const m = String(day.getMonth() + 1).padStart(2, '0');
-    const dd = String(day.getDate()).padStart(2, '0');
-    return { date: `${y}-${m}-${dd}`, label };
-  });
-}
-
-export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }: DayRowProps) {
+export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRowProps) {
   const [editingField, setEditingField] = useState<'guidelines' | 'objective' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editUnit, setEditUnit] = useState<'km' | 'min'>('km');
-  const [addingRun, setAddingRun] = useState(false);
-  const [newRunMinutes, setNewRunMinutes] = useState('');
-  const [newRunGuidelines, setNewRunGuidelines] = useState('');
-  const [movingDate, setMovingDate] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const isReadOnly = readonly || day.completed || day.skipped;
-  const isEditing = editingField !== null || movingDate;
+  const isEditing = editingField !== null;
 
   // Shared error-catching wrappers
   const update = async (updates: Record<string, string>) => {
     setError(null);
     setIsSaving(true);
     try {
-      await onUpdate(day.date, updates);
+      await onUpdate(weekNumber, day.label, updates);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Update failed');
     } finally {
@@ -66,7 +37,7 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
     setError(null);
     setIsSaving(true);
     try {
-      await onDelete(day.date);
+      await onDelete(weekNumber, day.label);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
       setIsSaving(false);
@@ -105,110 +76,6 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
     setEditValue('');
   };
 
-  const startMoveDate = () => {
-    if (isReadOnly) return;
-    setConfirmingDelete(false);
-    setMovingDate(true);
-  };
-
-  const moveToDate = async (newDate: string) => {
-    setMovingDate(false);
-    if (newDate !== day.date) {
-      await update({ newDate });
-    }
-  };
-
-  const saveNewRun = async () => {
-    if (!newRunMinutes || isNaN(Number(newRunMinutes))) return;
-    await update({
-      type: 'run',
-      objective_kind: 'time',
-      objective_value: newRunMinutes,
-      objective_unit: 'min',
-      guidelines: newRunGuidelines,
-    });
-    setAddingRun(false);
-    setNewRunMinutes('');
-    setNewRunGuidelines('');
-  };
-
-  if (day.type === 'rest') {
-    if (addingRun) {
-      return (
-        <div className="flex items-center gap-2 py-1 px-2 text-sm bg-blue-50 rounded">
-          <span className="font-semibold text-gray-500 mr-1">{formatDayDate(day.date)}</span>
-          <input
-            autoFocus
-            type="number"
-            placeholder="min"
-            value={newRunMinutes}
-            onChange={(e) => setNewRunMinutes(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void saveNewRun(); if (e.key === 'Escape') { setAddingRun(false); setNewRunMinutes(''); setNewRunGuidelines(''); } }}
-            className="w-16 border border-blue-400 rounded px-1 text-sm"
-          />
-          <span className="text-gray-400 text-xs">min</span>
-          <input
-            type="text"
-            placeholder="guidelines (optional)"
-            value={newRunGuidelines}
-            onChange={(e) => setNewRunGuidelines(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') void saveNewRun(); if (e.key === 'Escape') { setAddingRun(false); setNewRunMinutes(''); setNewRunGuidelines(''); } }}
-            className="flex-1 border border-blue-400 rounded px-1 text-sm"
-          />
-          <button onClick={() => void saveNewRun()} className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs font-medium">Save</button>
-          <button onClick={() => { setAddingRun(false); setNewRunMinutes(''); setNewRunGuidelines(''); }} className="cursor-pointer text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex items-center gap-2 py-1 px-2 text-sm text-gray-400 group">
-        <span className="font-semibold text-gray-500">{formatDayDate(day.date)}</span>
-        <span className="italic">Rest</span>
-        {!readonly && (
-          <div className={`flex items-center gap-1 ml-auto ${confirmingDelete ? '' : 'opacity-0 group-hover:opacity-100 transition-opacity'}`}>
-            {!confirmingDelete && (
-              <button
-                onClick={() => setAddingRun(true)}
-                className="cursor-pointer p-1 text-gray-300 hover:text-blue-500 transition-colors text-xs"
-                title="Add a run to this day"
-              >
-                + run
-              </button>
-            )}
-            {confirmingDelete ? (
-              <>
-                <span className="text-xs text-gray-500">Remove?</span>
-                <button
-                  onClick={() => { setConfirmingDelete(false); void remove(); }}
-                  className="cursor-pointer p-1 text-red-500 hover:text-red-700 text-xs font-medium"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setConfirmingDelete(false)}
-                  className="cursor-pointer p-1 text-gray-400 hover:text-gray-600 text-xs"
-                >
-                  No
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => setConfirmingDelete(true)}
-                className="cursor-pointer p-1 text-gray-300 hover:text-red-500 transition-colors"
-                title="Delete day"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className={`group flex items-start gap-2 py-1 px-2 text-sm rounded ${day.completed ? 'bg-green-50' : day.skipped ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
       {/* Status indicator */}
@@ -221,46 +88,10 @@ export function DayRow({ day, onUpdate, onDelete, readonly, weekExistingDates }:
       )}
 
       <div className={`flex-1 min-w-0 ${day.completed || day.skipped ? 'line-through text-gray-400' : ''}`}>
-        {/* Date — click to open day-of-week picker (only on active days) */}
-        {movingDate ? (
-          <span className="inline-flex flex-wrap items-center gap-1 mr-2">
-            {getWeekDays(day.date).map(({ date, label }) => {
-              const taken = (weekExistingDates ?? []).includes(date);
-              const isCurrent = date === day.date;
-              return (
-                <button
-                  key={date}
-                  disabled={taken && !isCurrent}
-                  onClick={() => { void moveToDate(date); }}
-                  title={date}
-                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                    isCurrent
-                      ? 'cursor-pointer bg-blue-600 text-white'
-                      : taken
-                      ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-                      : 'cursor-pointer bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
-                  }`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setMovingDate(false)}
-              className="cursor-pointer text-xs text-gray-400 hover:text-gray-600 ml-1"
-            >
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <span
-            className={`font-semibold text-gray-700 mr-1 ${!isReadOnly ? 'cursor-pointer hover:bg-blue-50 rounded px-0.5' : ''}`}
-            onClick={startMoveDate}
-            title={!isReadOnly ? 'Click to move to a different date' : undefined}
-          >
-            {formatDayDate(day.date)}
-          </span>
-        )}
+        {/* Day label — static display */}
+        <span className="font-semibold text-gray-700 mr-1">
+          Day {day.label}
+        </span>
 
         {/* Objective — edit value and unit together */}
         {day.objective && (

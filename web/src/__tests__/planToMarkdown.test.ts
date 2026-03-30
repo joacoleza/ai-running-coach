@@ -23,10 +23,9 @@ function makePlan(overrides: Partial<PlanData> = {}): PlanData {
         weeks: [
           {
             weekNumber: 1,
-            startDate: '2026-04-07',
             days: [
               {
-                date: '2026-04-07',
+                label: 'A',
                 type: 'run',
                 objective: { kind: 'distance', value: 5, unit: 'km' },
                 guidelines: 'Easy run',
@@ -34,7 +33,7 @@ function makePlan(overrides: Partial<PlanData> = {}): PlanData {
                 skipped: false,
               },
               {
-                date: '2026-04-08',
+                label: '',
                 type: 'rest',
                 guidelines: 'Rest day',
                 completed: false,
@@ -66,15 +65,16 @@ describe('planToMarkdown', () => {
     expect(result).toContain('### Week 1');
   });
 
-  it('renders run day with objective and guidelines', () => {
+  it('renders run day with Day label, objective and guidelines', () => {
     const result = planToMarkdown(makePlan());
+    expect(result).toContain('Day A');
     expect(result).toContain('5 km');
     expect(result).toContain('Easy run');
   });
 
-  it('renders rest day with Rest label', () => {
+  it('renders rest day with Rest label (no Day label)', () => {
     const result = planToMarkdown(makePlan());
-    expect(result).toContain('Rest');
+    expect(result).toContain('- Rest');
   });
 
   it('renders completed day with strikethrough and checkmark', () => {

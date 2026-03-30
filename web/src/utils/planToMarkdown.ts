@@ -18,16 +18,17 @@ export function planToMarkdown(plan: PlanData): string {
       lines.push(`### Week ${week.weekNumber}`);
       for (const day of week.days) {
         if (day.type === 'rest') {
-          lines.push(`- **${day.date}** -- Rest`);
+          lines.push(`- Rest`);
           continue;
         }
+        const dayLabel = day.label ? `Day ${day.label}` : '';
         const obj = day.objective
           ? `${day.objective.value} ${day.objective.unit}`
           : '';
         const status = day.completed ? ' ✓' : day.skipped ? ' _(skipped)_' : '';
         const text = `${obj}${obj && day.guidelines ? ' -- ' : ''}${day.guidelines}`;
         const wrapped = (day.completed || day.skipped) ? `~~${text}~~` : text;
-        lines.push(`- **${day.date}**${status} ${wrapped}`);
+        lines.push(`- **${dayLabel}**${status} ${wrapped}`);
       }
     }
   }

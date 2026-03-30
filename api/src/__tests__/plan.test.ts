@@ -77,10 +77,9 @@ const validPhases = [
     weeks: [
       {
         weekNumber: 1,
-        startDate: '2026-04-01',
         days: [
           {
-            date: '2026-04-01',
+            label: 'A',
             type: 'run',
             objective: { kind: 'distance', value: 5, unit: 'km' },
             guidelines: 'Easy run',
@@ -170,9 +169,10 @@ describe('Plan Generation - JSON extraction (PLAN-01)', () => {
     const phase = result.jsonBody.plan.phases[0];
     expect(phase.name).toBe('Base Building');
     expect(phase.weeks).toHaveLength(1);
-    expect(phase.weeks[0].days).toHaveLength(7); // normalized to 7 days
+    // assignPlanStructure assigns labels — run day gets label 'A'
     const runDay = phase.weeks[0].days.find((d: any) => d.type === 'run');
     expect(runDay).toBeDefined();
+    expect(runDay.label).toBe('A');
     expect(runDay.completed).toBe(false);
   });
 
@@ -234,10 +234,10 @@ describe('Plan Schema (PLAN-02)', () => {
 
     const result = await handlers.get('generatePlan')!(req, ctx);
     const days = result.jsonBody.plan.phases[0].weeks[0].days;
-    // After normalization, week has 7 days — find run day by date
-    const day = days.find((d: any) => d.date === '2026-04-01');
+    // Find run day by label (assignPlanStructure assigns 'A' to first non-rest day)
+    const day = days.find((d: any) => d.label === 'A');
 
-    expect(day.date).toBe('2026-04-01');
+    expect(day.label).toBe('A');
     expect(day.type).toBe('run');
     expect(day.objective.kind).toBe('distance');
     expect(day.objective.value).toBe(5);
@@ -247,9 +247,7 @@ describe('Plan Schema (PLAN-02)', () => {
   });
 });
 
-describe('Plan Generation - past dates allowed on initial creation', () => {
-  const pastDate = '2026-03-25'; // Tuesday of the current week (before today 2026-03-28)
-
+describe('Plan Generation - past completed/skipped days allowed on initial creation', () => {
   const phasesWithPastCompleted = [
     {
       name: 'Base Building',
@@ -257,10 +255,9 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
       weeks: [
         {
           weekNumber: 1,
-          startDate: '2026-03-23',
           days: [
             {
-              date: pastDate,
+              label: 'A',
               type: 'run',
               objective: { kind: 'distance', value: 5, unit: 'km' },
               guidelines: 'Easy run (already done)',
@@ -280,10 +277,9 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
       weeks: [
         {
           weekNumber: 1,
-          startDate: '2026-03-23',
           days: [
             {
-              date: pastDate,
+              label: 'A',
               type: 'run',
               objective: { kind: 'distance', value: 5, unit: 'km' },
               guidelines: 'Easy run (missed)',
@@ -303,10 +299,9 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
       weeks: [
         {
           weekNumber: 1,
-          startDate: '2026-03-23',
           days: [
             {
-              date: pastDate,
+              label: 'A',
               type: 'run',
               objective: { kind: 'distance', value: 5, unit: 'km' },
               guidelines: 'Easy run',
@@ -319,7 +314,7 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
     },
   ];
 
-  it('preserves past run days with completed: true (training history)', async () => {
+  it('preserves run days with completed: true (training history)', async () => {
     const planId = await createTestPlan();
     const req = makeReq('POST', {
       planId,
@@ -331,14 +326,14 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
 
     expect(result.status).toBe(200);
     const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
-    const pastDay = allDays.find((d: any) => d.date === pastDate);
-    expect(pastDay).toBeDefined();
-    expect(pastDay.type).toBe('run');
-    expect(pastDay.completed).toBe(true);
-    expect(pastDay.skipped).toBe(false);
+    const day = allDays.find((d: any) => d.label === 'A');
+    expect(day).toBeDefined();
+    expect(day.type).toBe('run');
+    expect(day.completed).toBe(true);
+    expect(day.skipped).toBe(false);
   });
 
-  it('preserves past run days with skipped: true (missed session)', async () => {
+  it('preserves run days with skipped: true (missed session)', async () => {
     const planId = await createTestPlan();
     const req = makeReq('POST', {
       planId,
@@ -350,14 +345,14 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
 
     expect(result.status).toBe(200);
     const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
-    const pastDay = allDays.find((d: any) => d.date === pastDate);
-    expect(pastDay).toBeDefined();
-    expect(pastDay.type).toBe('run');
-    expect(pastDay.completed).toBe(false);
-    expect(pastDay.skipped).toBe(true);
+    const day = allDays.find((d: any) => d.label === 'A');
+    expect(day).toBeDefined();
+    expect(day.type).toBe('run');
+    expect(day.completed).toBe(false);
+    expect(day.skipped).toBe(true);
   });
 
-  it('preserves past run days without flags (not converted to rest)', async () => {
+  it('preserves run days without flags (not converted to rest)', async () => {
     const planId = await createTestPlan();
     const req = makeReq('POST', {
       planId,
@@ -369,24 +364,10 @@ describe('Plan Generation - past dates allowed on initial creation', () => {
 
     expect(result.status).toBe(200);
     const allDays = result.jsonBody.plan.phases.flatMap((p: any) => p.weeks.flatMap((w: any) => w.days));
-    const pastDay = allDays.find((d: any) => d.date === pastDate);
-    expect(pastDay).toBeDefined();
-    // Must remain a run day, NOT converted to rest
-    expect(pastDay.type).toBe('run');
-  });
-
-  it('plan with past completed days still normalizes weeks to 7 days', async () => {
-    const planId = await createTestPlan();
-    const req = makeReq('POST', {
-      planId,
-      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithPastCompleted })}</training_plan>`,
-      goal: validGoal,
-    });
-
-    const result = await handlers.get('generatePlan')!(req, ctx);
-
-    expect(result.status).toBe(200);
-    expect(result.jsonBody.plan.phases[0].weeks[0].days).toHaveLength(7);
+    const day = allDays.find((d: any) => d.label === 'A');
+    expect(day).toBeDefined();
+    // Must remain a run day
+    expect(day.type).toBe('run');
   });
 });
 
@@ -460,37 +441,6 @@ describe('Plan Generation - completed-day guard removed', () => {
   });
 });
 
-describe('Plan Generation - startDate normalization', () => {
-  it('corrects wrong startDate (e.g. Tuesday) to Monday of same week via generatePlan', async () => {
-    const planId = await createTestPlan();
-    const phasesWithWrongStartDate = [
-      {
-        name: 'Base',
-        description: '',
-        weeks: [
-          {
-            weekNumber: 1,
-            startDate: '2026-01-13', // Tuesday — Claude sometimes generates this instead of Monday
-            days: [
-              { date: '2026-01-14', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
-            ],
-          },
-        ],
-      },
-    ];
-    const req = makeReq('POST', {
-      planId,
-      claudeResponseText: `<training_plan>${JSON.stringify({ phases: phasesWithWrongStartDate })}</training_plan>`,
-      goal: validGoal,
-    });
-
-    const result = await handlers.get('generatePlan')!(req, ctx);
-
-    expect(result.status).toBe(200);
-    // startDate corrected to the Monday of the week containing 2026-01-13
-    expect(result.jsonBody.plan.phases[0].weeks[0].startDate).toBe('2026-01-12');
-  });
-});
 
 describe('createPlan - no completed-day guard', () => {
   it('allows creating a new plan even when active plan has completed days', async () => {

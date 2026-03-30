@@ -2,48 +2,28 @@ import { useState } from 'react';
 import type { PlanData } from '../../hooks/usePlan';
 import { DayRow } from './DayRow';
 
-// Compute Mon–Sun dates for the calendar week containing startDate
-function getWeekDays(startDate: string): { date: string; label: string }[] {
-  const d = new Date(startDate + 'T12:00:00');
-  const dow = d.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
-  const daysFromMon = dow === 0 ? 6 : dow - 1;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - daysFromMon);
-
-  return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label, i) => {
-    const day = new Date(monday);
-    day.setDate(monday.getDate() + i);
-    const y = day.getFullYear();
-    const m = String(day.getMonth() + 1).padStart(2, '0');
-    const dd = String(day.getDate()).padStart(2, '0');
-    return { date: `${y}-${m}-${dd}`, label };
-  });
-}
+const ALL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
 interface AddDayFormProps {
-  weekStartDate: string;
-  existingDates: string[];
+  weekNumber: number;
+  existingLabels: string[];
   onSave: (fields: Record<string, string>) => Promise<void>;
   onCancel: () => void;
 }
 
-function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFormProps) {
-  const [selectedDate, setSelectedDate] = useState('');
+function AddDayForm({ existingLabels, onSave, onCancel }: AddDayFormProps) {
+  const [selectedLabel, setSelectedLabel] = useState('');
   const [objectiveValue, setObjectiveValue] = useState('');
   const [objectiveUnit, setObjectiveUnit] = useState<'km' | 'min'>('km');
   const [guidelines, setGuidelines] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const weekDays = getWeekDays(weekStartDate);
-  // Use local date to avoid UTC offset pushing "today" to tomorrow on the client
-  const todayLocal = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-
   const hasValidObjective = objectiveValue.trim() !== '' && !isNaN(Number(objectiveValue)) && Number(objectiveValue) > 0;
 
   const handleSave = async () => {
-    if (!selectedDate || !hasValidObjective || isSaving) return;
+    if (!selectedLabel || !hasValidObjective || isSaving) return;
     const fields: Record<string, string> = {
-      date: selectedDate,
+      label: selectedLabel,
       type: 'run',
       guidelines,
       objective_kind: objectiveUnit === 'min' ? 'time' : 'distance',
@@ -60,25 +40,24 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-1 px-2 text-sm bg-blue-50 rounded mt-1">
-      {/* Day-of-week selector — disabled for days that already have a workout or are in the past */}
+      {/* Label selector — A through G, disabled for labels already taken by non-rest days */}
       <div className="flex gap-1">
-        {weekDays.map(({ date, label }) => {
-          const taken = existingDates.includes(date);
-          const isPast = date < todayLocal;
-          const selected = selectedDate === date;
+        {ALL_LABELS.map((label) => {
+          const taken = existingLabels.includes(label);
+          const selected = selectedLabel === label;
           return (
             <button
-              key={date}
-              disabled={taken || isPast}
-              onClick={() => setSelectedDate(date)}
+              key={label}
+              disabled={taken}
+              onClick={() => setSelectedLabel(label)}
               className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${
-                taken || isPast
+                taken
                   ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
                   : selected
                   ? 'cursor-pointer bg-blue-600 text-white'
                   : 'cursor-pointer bg-white border border-blue-300 text-blue-700 hover:bg-blue-50'
               }`}
-              title={taken ? `${date} already has a workout` : isPast ? `${date} is in the past` : date}
+              title={taken ? `Day ${label} already has a workout` : `Day ${label}`}
             >
               {label}
             </button>
@@ -110,7 +89,7 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
       />
       <button
         onClick={() => void handleSave()}
-        disabled={!selectedDate || !hasValidObjective || isSaving}
+        disabled={!selectedLabel || !hasValidObjective || isSaving}
         className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
       >
         {isSaving && (
@@ -134,17 +113,14 @@ function AddDayForm({ weekStartDate, existingDates, onSave, onCancel }: AddDayFo
 
 interface PlanViewProps {
   plan: PlanData;
-  onUpdateDay: (date: string, updates: Record<string, string>) => Promise<void>;
-  onDeleteDay: (date: string) => Promise<void>;
+  onUpdateDay: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
+  onDeleteDay: (weekNumber: number, label: string) => Promise<void>;
   onAddDay?: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
   readonly?: boolean;
 }
 
 export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
-
-  // Use local date to avoid UTC offset issues
-  const todayLocal = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
 
   return (
     <div>
@@ -153,21 +129,19 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }:
           <h2 className="text-xl font-bold text-gray-900">{phase.name}</h2>
           {phase.description && <p className="text-gray-600 italic mb-2">{phase.description}</p>}
           {phase.weeks.map(week => {
-            // Filter out rest days and sort by date
+            // Filter out rest days and sort by label alphabetically
             const activeDays = week.days
               .filter(d => d.type !== 'rest')
               .slice()
-              .sort((a, b) => a.date.localeCompare(b.date));
+              .sort((a, b) => a.label.localeCompare(b.label));
 
             const isAddingHere =
               addingDayTo?.phaseName === phase.name &&
               addingDayTo?.weekNumber === week.weekNumber;
 
-            // Disable "+ Add day" if every slot in the week is either past or already has a workout
-            const takenDates = new Set(activeDays.map(d => d.date));
-            const hasAvailableDay = getWeekDays(week.startDate).some(
-              ({ date }) => date >= todayLocal && !takenDates.has(date)
-            );
+            // Show "+ Add day" if there's at least one label slot available (fewer than 7 non-rest days)
+            const takenLabels = activeDays.map(d => d.label);
+            const hasAvailableLabel = takenLabels.length < 7;
 
             return (
               <div key={week.weekNumber} className="mb-4">
@@ -175,20 +149,20 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }:
                 <div className="space-y-1">
                   {activeDays.map(day => (
                     <DayRow
-                      key={day.date}
+                      key={day.label}
                       day={day}
+                      weekNumber={week.weekNumber}
                       onUpdate={onUpdateDay}
                       onDelete={onDeleteDay}
                       readonly={readonly}
-                      weekExistingDates={activeDays.filter(d => d.date !== day.date).map(d => d.date)}
                     />
                   ))}
                 </div>
-                {!readonly && onAddDay && hasAvailableDay && (
+                {!readonly && onAddDay && hasAvailableLabel && (
                   isAddingHere ? (
                     <AddDayForm
-                      weekStartDate={week.startDate}
-                      existingDates={week.days.filter(d => d.type !== 'rest').map(d => d.date)}
+                      weekNumber={week.weekNumber}
+                      existingLabels={takenLabels}
                       onSave={async (fields) => {
                         await onAddDay(phase.name, week.weekNumber, fields);
                         setAddingDayTo(null);

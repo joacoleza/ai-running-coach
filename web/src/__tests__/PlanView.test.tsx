@@ -3,9 +3,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { PlanView } from '../components/plan/PlanView';
 import type { PlanData } from '../hooks/usePlan';
 
-// 2026-04-07 is a Tuesday.
-// Week 1 existing days: Tue 2026-04-07 (run) + Wed 2026-04-08 (rest).
-// Free slots in Week 1: Mon 2026-04-06, Thu 2026-04-09, Fri 2026-04-10, Sat, Sun.
+// Week 1: Day A (run), plus rest days (no label)
+// Week 2: Day A (run)
 const plan: PlanData = {
   _id: 'p1',
   status: 'active',
@@ -19,17 +18,15 @@ const plan: PlanData = {
       weeks: [
         {
           weekNumber: 1,
-          startDate: '2026-04-07',
           days: [
-            { date: '2026-04-07', type: 'run', guidelines: 'Easy 5k', completed: false, skipped: false },
-            { date: '2026-04-08', type: 'rest', guidelines: '', completed: false, skipped: false },
+            { label: 'A', type: 'run', guidelines: 'Easy 5k', completed: false, skipped: false },
+            { label: '', type: 'rest', guidelines: '', completed: false, skipped: false },
           ],
         },
         {
           weekNumber: 2,
-          startDate: '2026-04-14',
           days: [
-            { date: '2026-04-14', type: 'run', guidelines: 'Tempo run', completed: false, skipped: false },
+            { label: 'A', type: 'run', guidelines: 'Tempo run', completed: false, skipped: false },
           ],
         },
       ],
@@ -68,7 +65,7 @@ describe('PlanView', () => {
     expect(screen.queryByText('Rest')).not.toBeInTheDocument();
   });
 
-  it('sorts days within a week by date', () => {
+  it('sorts days within a week by label alphabetically', () => {
     const outOfOrderPlan: PlanData = {
       ...plan,
       phases: [
@@ -78,10 +75,9 @@ describe('PlanView', () => {
           weeks: [
             {
               weekNumber: 1,
-              startDate: '2026-04-07',
               days: [
-                { date: '2026-04-09', type: 'run', guidelines: 'Thursday run', completed: false, skipped: false },
-                { date: '2026-04-07', type: 'run', guidelines: 'Tuesday run', completed: false, skipped: false },
+                { label: 'B', type: 'run', guidelines: 'Thursday run', completed: false, skipped: false },
+                { label: 'A', type: 'run', guidelines: 'Tuesday run', completed: false, skipped: false },
               ],
             },
           ],
@@ -90,7 +86,7 @@ describe('PlanView', () => {
     };
     render(<PlanView plan={outOfOrderPlan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     const items = screen.getAllByText(/run$/);
-    // Tuesday run (2026-04-07) should appear before Thursday run (2026-04-09)
+    // Tuesday run (label A) should appear before Thursday run (label B)
     const texts = items.map(el => el.textContent);
     expect(texts.indexOf('Tuesday run')).toBeLessThan(texts.indexOf('Thursday run'));
   });
@@ -98,7 +94,7 @@ describe('PlanView', () => {
   it('shows + Add day button per week when onAddDay is provided', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
-    // Two weeks in Base Phase + one empty week in Peak Phase = 2 weeks total (Peak has no weeks)
+    // Two weeks in Base Phase (both have available label slots)
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
@@ -107,39 +103,41 @@ describe('PlanView', () => {
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
-  it('clicking + Add day opens inline form with weekday buttons', () => {
+  it('clicking + Add day opens inline form with label buttons A-G', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
     fireEvent.click(addButtons[0]);
-    // Should show Mon-Sun weekday buttons
-    expect(screen.getByText('Mon')).toBeInTheDocument();
-    expect(screen.getByText('Tue')).toBeInTheDocument();
+    // Should show A through G label buttons
+    expect(screen.getByText('A')).toBeInTheDocument();
+    expect(screen.getByText('B')).toBeInTheDocument();
+    expect(screen.getByText('G')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('distance/time')).toBeInTheDocument();
   });
 
-  it('weekday buttons: only run/cross-train days are disabled, rest days are available', () => {
+  it('label buttons: only labels taken by non-rest days are disabled', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    // Week 1 has 2026-04-07 (Tue, run — disabled) and 2026-04-08 (Wed, rest — NOT disabled)
-    const tueBtns = screen.getAllByText('Tue');
-    expect(tueBtns[0]).toBeDisabled();
-    // Rest day on Wed should NOT be disabled — user can overwrite a rest day with a run
-    const wedBtns = screen.getAllByText('Wed');
-    expect(wedBtns[0]).not.toBeDisabled();
-    // Mon, Thu, Fri, Sat, Sun are also free
-    expect(screen.getAllByText('Mon')[0]).not.toBeDisabled();
-    expect(screen.getAllByText('Thu')[0]).not.toBeDisabled();
+    // Week 1 has label 'A' taken by a run day — A button should be disabled
+    const aBtns = screen.getAllByText('A');
+    // Find the one that's a button (inside the add form)
+    const aBtn = aBtns.find(el => el.tagName === 'BUTTON');
+    expect(aBtn).toBeDisabled();
+    // Label B is free — should be enabled
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON');
+    expect(bBtn).not.toBeDisabled();
   });
 
   it('saving add day form calls onAddDay with correct args', async () => {
     const onAddDay = vi.fn().mockResolvedValue(undefined);
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
-    fireEvent.click(addButtons[0]); // Week 1 of Base Phase (startDate 2026-04-07, Tuesday)
+    fireEvent.click(addButtons[0]); // Week 1 of Base Phase
 
-    // Click Thu — maps to 2026-04-09 (Mon 2026-04-06 + 3 days)
-    const thuBtns = screen.getAllByText('Thu');
-    fireEvent.click(thuBtns[0]);
+    // Click label B (free slot)
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
 
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '8' } });
 
@@ -148,30 +146,34 @@ describe('PlanView', () => {
     });
 
     expect(onAddDay).toHaveBeenCalledWith('Base Phase', 1, expect.objectContaining({
-      date: '2026-04-09',
+      label: 'B',
       type: 'run',
     }));
   });
 
-  it('Add button is disabled until a weekday is selected', () => {
+  it('Add button is disabled until a label is selected', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     expect(screen.getByText('Add')).toBeDisabled();
   });
 
-  it('Add button remains disabled when a day is selected but no objective value', () => {
+  it('Add button remains disabled when a label is selected but no objective value', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    // Select Thursday — a free slot in week 1
-    fireEvent.click(screen.getAllByText('Thu')[0]);
+    // Select label B — a free slot in week 1
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
     // No objective filled in → still disabled
     expect(screen.getByText('Add')).toBeDisabled();
   });
 
-  it('Add button becomes enabled only after both day and objective value are filled', () => {
+  it('Add button becomes enabled only after both label and objective value are filled', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    fireEvent.click(screen.getAllByText('Thu')[0]);
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
     // Still disabled with no value
     expect(screen.getByText('Add')).toBeDisabled();
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '5' } });
@@ -182,7 +184,9 @@ describe('PlanView', () => {
   it('Add button is disabled when objective value is zero or non-numeric', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    fireEvent.click(screen.getAllByText('Thu')[0]);
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '0' } });
     expect(screen.getByText('Add')).toBeDisabled();
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: 'abc' } });
@@ -193,7 +197,9 @@ describe('PlanView', () => {
     const onAddDay = vi.fn().mockResolvedValue(undefined);
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    fireEvent.click(screen.getAllByText('Thu')[0]);
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '8' } });
     await act(async () => {
       fireEvent.click(screen.getByText('Add'));
@@ -218,13 +224,17 @@ describe('PlanView', () => {
     expect(screen.getByText('Cancel').className).toContain('cursor-pointer');
   });
 
-  it('available weekday buttons in AddDayForm have cursor-pointer', () => {
+  it('available label buttons in AddDayForm have cursor-pointer', () => {
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    // Mon is a free slot in week 1
-    expect(screen.getAllByText('Mon')[0].className).toContain('cursor-pointer');
-    // Tue is taken — should NOT have cursor-pointer (has cursor-not-allowed instead)
-    expect(screen.getAllByText('Tue')[0].className).not.toContain('cursor-pointer');
+    // B is a free slot — should have cursor-pointer
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    expect(bBtn.className).toContain('cursor-pointer');
+    // A is taken — should NOT have cursor-pointer (has cursor-not-allowed instead)
+    const aBtns = screen.getAllByText('A');
+    const aBtn = aBtns.find(el => el.tagName === 'BUTTON')!;
+    expect(aBtn.className).not.toContain('cursor-pointer');
   });
 
   it('does not show + Add day button in readonly mode', () => {
@@ -232,28 +242,27 @@ describe('PlanView', () => {
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
-  it('hides + Add day button when all 7 days of the week are in the past', () => {
-    // A plan where all training days are in a fully past week (well before today)
-    const pastPlan: PlanData = {
+  it('shows + Add day button when week has fewer than 7 non-rest days', () => {
+    // A plan with a week that has only 1 run day (labels A-F still available)
+    const planWithSpace: PlanData = {
       ...plan,
       phases: [
         {
-          name: 'Past Phase',
+          name: 'Phase',
           description: '',
           weeks: [
             {
               weekNumber: 1,
-              startDate: '2020-01-06', // Mon 6 Jan 2020 — entire week is in the past
               days: [
-                { date: '2020-01-06', type: 'run', guidelines: 'Old run', completed: true, skipped: false },
+                { label: 'A', type: 'run', guidelines: 'Only run', completed: true, skipped: false },
               ],
             },
           ],
         },
       ],
     };
-    render(<PlanView plan={pastPlan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
-    expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
+    render(<PlanView plan={planWithSpace} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    expect(screen.queryByTitle('Add a day to this week')).toBeInTheDocument();
   });
 
   it('Add button shows spinner and "Adding…" text while save is in flight', async () => {
@@ -263,7 +272,9 @@ describe('PlanView', () => {
     );
     render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
-    fireEvent.click(screen.getAllByText('Thu')[0]);
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
     fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '5' } });
 
     fireEvent.click(screen.getByText('Add'));
