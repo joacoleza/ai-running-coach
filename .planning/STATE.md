@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** plan-day-management — `<plan:add>` tag, plan-replace guard, saving spinners, date fixes; PR open against master
+**Current focus:** feature/fix-calendar-date-accuracy — remove dates from plan model, use A-G day labels and global sequential week numbers; PR pending
 
 ## Current Phase
 
