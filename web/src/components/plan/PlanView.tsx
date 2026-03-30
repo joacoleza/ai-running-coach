@@ -17,6 +17,7 @@ function AddDayForm({ existingLabels, onSave, onCancel }: AddDayFormProps) {
   const [objectiveUnit, setObjectiveUnit] = useState<'km' | 'min'>('km');
   const [guidelines, setGuidelines] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const hasValidObjective = objectiveValue.trim() !== '' && !isNaN(Number(objectiveValue)) && Number(objectiveValue) > 0;
 
@@ -31,8 +32,11 @@ function AddDayForm({ existingLabels, onSave, onCancel }: AddDayFormProps) {
       objective_unit: objectiveUnit,
     };
     setIsSaving(true);
+    setSaveError(null);
     try {
       await onSave(fields);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to add day');
     } finally {
       setIsSaving(false);
     }
@@ -107,6 +111,7 @@ function AddDayForm({ existingLabels, onSave, onCancel }: AddDayFormProps) {
       >
         Cancel
       </button>
+      {saveError && <span className="text-red-500 text-xs w-full">{saveError}</span>}
     </div>
   );
 }
@@ -133,7 +138,7 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }:
             const activeDays = week.days
               .filter(d => d.type !== 'rest')
               .slice()
-              .sort((a, b) => a.label.localeCompare(b.label));
+              .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
 
             const isAddingHere =
               addingDayTo?.phaseName === phase.name &&

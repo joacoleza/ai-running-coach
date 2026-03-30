@@ -265,6 +265,22 @@ describe('PlanView', () => {
     expect(screen.queryByTitle('Add a day to this week')).toBeInTheDocument();
   });
 
+  it('shows inline error message when onAddDay rejects', async () => {
+    const onAddDay = vi.fn().mockRejectedValue(new Error('Day C already exists in week 1'));
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
+    const bBtns = screen.getAllByText('B');
+    const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
+    fireEvent.click(bBtn);
+    fireEvent.change(screen.getByPlaceholderText('distance/time'), { target: { value: '5' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Add'));
+    });
+
+    expect(screen.getByText('Day C already exists in week 1')).toBeInTheDocument();
+  });
+
   it('Add button shows spinner and "Adding…" text while save is in flight', async () => {
     let resolveAdd!: () => void;
     const onAddDay = vi.fn().mockImplementation(

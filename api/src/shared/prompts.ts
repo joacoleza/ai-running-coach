@@ -121,7 +121,7 @@ When generating the plan, if the user has been training recently, include those 
       ))
       .sort((a, b) => {
         if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
-        return a.label.localeCompare(b.label);
+        return (a.label ?? '').localeCompare(b.label ?? '');
       });
 
     if (trainingDays.length > 0) {

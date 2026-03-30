@@ -243,17 +243,42 @@ describe('POST /api/plan/days', () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
-  it('converts existing rest day to run using label', async () => {
+  it('pushes a new day into the week and returns 201', async () => {
     const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', guidelines: 'Recovery run' });
     const result = await handlers.get('addDay')!(req, ctx);
-    // 201 if a rest slot exists (label ''), 404 if arrayFilter finds nothing
-    expect([201, 404]).toContain(result.status);
+    expect(result.status).toBe(201);
+
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const days = plan?.phases[0]?.weeks[0]?.days;
+    const newDay = days?.find((d: any) => d.label === 'B');
+    expect(newDay?.type).toBe('run');
+    expect(newDay?.guidelines).toBe('Recovery run');
   });
 
   it('sets objective when provided', async () => {
     const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', guidelines: 'Long run', objective_kind: 'distance', objective_value: '10', objective_unit: 'km' });
     const result = await handlers.get('addDay')!(req, ctx);
-    expect([201, 404]).toContain(result.status);
+    expect(result.status).toBe(201);
+
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const newDay = plan?.phases[0]?.weeks[0]?.days?.find((d: any) => d.label === 'B');
+    expect(newDay?.objective?.value).toBe(10);
+    expect(newDay?.objective?.unit).toBe('km');
+  });
+
+  it('returns 409 when the label already exists in that week', async () => {
+    // Label 'A' already exists in week 1 from the fixture
+    const req = makePostReq({ weekNumber: 1, label: 'A', type: 'run', guidelines: 'Duplicate' });
+    const result = await handlers.get('addDay')!(req, ctx);
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('already exists');
+  });
+
+  it('returns 404 when the week number does not exist', async () => {
+    const req = makePostReq({ weekNumber: 99, label: 'B', type: 'run' });
+    const result = await handlers.get('addDay')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('Week 99 not found');
   });
 
   it('returns 400 when weekNumber, label or type missing', async () => {
@@ -286,7 +311,10 @@ describe('POST /api/plan/days', () => {
   it('allows adding a day with completed=true', async () => {
     const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run', completed: 'true' });
     const result = await handlers.get('addDay')!(req, ctx);
-    // 201 if a rest slot with label '' exists, 404 if no matching slot
-    expect([201, 404]).toContain(result.status);
+    expect(result.status).toBe(201);
+
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const newDay = plan?.phases[0]?.weeks[0]?.days?.find((d: any) => d.label === 'B');
+    expect(newDay?.completed).toBe(true);
   });
 });

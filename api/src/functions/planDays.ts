@@ -194,16 +194,16 @@ app.http('addDay', {
     const completedVal = body.completed === 'true' || (body.completed as unknown) === true ? true : false;
     const skippedVal = body.skipped === 'true' || (body.skipped as unknown) === true ? true : false;
 
-    const $set: Record<string, unknown> = {
-      'phases.$[].weeks.$[week].days.$[day].type': type,
-      'phases.$[].weeks.$[week].days.$[day].label': label,
-      'phases.$[].weeks.$[week].days.$[day].guidelines': guidelines ?? '',
-      'phases.$[].weeks.$[week].days.$[day].completed': completedVal,
-      'phases.$[].weeks.$[week].days.$[day].skipped': skippedVal,
+    const newDay: Record<string, unknown> = {
+      label,
+      type,
+      guidelines: guidelines ?? '',
+      completed: completedVal,
+      skipped: skippedVal,
     };
 
     if (body.objective_kind && body.objective_value && body.objective_unit) {
-      $set['phases.$[].weeks.$[week].days.$[day].objective'] = {
+      newDay['objective'] = {
         kind: body.objective_kind,
         value: Number(body.objective_value),
         unit: body.objective_unit,
@@ -212,16 +212,30 @@ app.http('addDay', {
 
     try {
       const db = await getDb();
+
+      // Verify the week exists and the label isn't already taken
+      const plan = await db.collection<Plan>('plans').findOne({ status: 'active' });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+
+      const targetWeek = plan.phases.flatMap(p => p.weeks).find(w => w.weekNumber === weekNumber);
+      if (!targetWeek) return { status: 404, jsonBody: { error: `Week ${weekNumber} not found` } };
+      if (targetWeek.days.some(d => d.label === label)) {
+        return { status: 409, jsonBody: { error: `Day ${label} already exists in week ${weekNumber}` } };
+      }
+
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: 'active' },
-        { $set, $currentDate: { updatedAt: true } },
+        { status: 'active', 'phases.weeks.weekNumber': weekNumber },
         {
-          arrayFilters: [{ 'week.weekNumber': weekNumber }, { 'day.label': '' }],
+          $push: { 'phases.$[].weeks.$[week].days': newDay } as any,
+          $currentDate: { updatedAt: true },
+        },
+        {
+          arrayFilters: [{ 'week.weekNumber': weekNumber }],
           returnDocument: 'after',
         },
       );
 
-      if (!result) return { status: 404, jsonBody: { error: 'Plan or rest-day slot not found' } };
+      if (!result) return { status: 404, jsonBody: { error: 'Plan or week not found' } };
       return { status: 201, jsonBody: { plan: result } };
     } catch (err) {
       context.log('Error adding day:', err);

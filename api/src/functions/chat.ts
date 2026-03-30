@@ -9,6 +9,28 @@ import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
 
 const anthropic = new Anthropic();
 
+// Extract the first balanced JSON object from a string, ignoring any trailing content.
+// Claude occasionally emits stray characters after the closing brace (e.g. an extra `}`)
+// which makes JSON.parse throw "Unexpected non-whitespace character after JSON".
+export function extractFirstJson(text: string): string {
+  const start = text.indexOf('{');
+  if (start === -1) throw new Error('No JSON object found in text');
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (!inString) {
+      if (ch === '{') depth++;
+      else if (ch === '}') { if (--depth === 0) return text.slice(start, i + 1); }
+    }
+  }
+  throw new Error('Unbalanced JSON object in training plan');
+}
+
 app.http('chat', {
   methods: ['POST'],
   authLevel: 'anonymous',
@@ -68,7 +90,7 @@ app.http('chat', {
         ))
         .sort((a, b) => {
           if (a.weekNumber !== b.weekNumber) return a.weekNumber - b.weekNumber;
-          return a.label.localeCompare(b.label);
+          return (a.label ?? '').localeCompare(b.label ?? '');
         });
 
       if (trainingDays.length > 0) {
@@ -143,7 +165,7 @@ app.http('chat', {
             const planMatch = fullText.match(/<training_plan>([\s\S]*?)<\/training_plan>/);
             if (planMatch) {
               try {
-                const parsed = JSON.parse(planMatch[1]) as { goal?: PlanGoal; phases: PlanPhase[] };
+                const parsed = JSON.parse(extractFirstJson(planMatch[1])) as { goal?: PlanGoal; phases: PlanPhase[] };
                 if (parsed.phases && Array.isArray(parsed.phases) && parsed.phases.length > 0) {
                   const resolvedGoal: PlanGoal = parsed.goal ?? plan?.goal ?? ({} as PlanGoal);
                   function deriveObjective(eventType?: string): Plan['objective'] | undefined {
@@ -174,8 +196,11 @@ app.http('chat', {
                   );
                   planGenerated = true;
                 }
-              } catch {
-                context.error('Failed to parse/save training plan from chat response');
+              } catch (saveErr) {
+                const msg = saveErr instanceof Error ? saveErr.message : String(saveErr);
+                context.error('Failed to parse/save training plan from chat response:', msg);
+                // Surface the error to the client so it shows in the chat
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Plan save failed: ${msg}` })}\n\n`));
               }
             }
           }
