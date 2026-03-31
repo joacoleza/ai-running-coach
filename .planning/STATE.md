@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1
-milestone_name: Personal AI Running Coach
-status: complete
-last_updated: "2026-03-26T00:00:00.000Z"
+milestone: v1.1
+milestone_name: milestone
+status: executing
+last_updated: "2026-03-31T10:00:08.730Z"
 progress:
   total_phases: 6
-  completed_phases: 6
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  completed_phases: 5
+  total_plans: 28
+  completed_plans: 23
+  percent: 82
 ---
 
 # State
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** feature/fix-calendar-date-accuracy — remove dates from plan model, use A-G day labels and global sequential week numbers; PR pending
+**Current focus:** Phase 03 — run-logging
 
 ## Current Phase
 
 **Phase:** 02.1 (training-plan-redesign + UAT fixes)
-**Status:** Complete — PR open, awaiting merge
+**Status:** Executing Phase 03
 **Plans:** 5/5
-**Progress:** [██████████] 100%
+**Progress:** [████████░░] 82%
 
 ## Milestone
 
@@ -129,6 +129,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [260329-ws0]: get_week_dates tool removed from chat.ts entirely — 26-week pre-computed calendar in system prompt (offsets -13 to +12) eliminates tool-call latency and tool misuse errors
 - [260329-ws0]: normalizePlanPhases replaces per-week normalizeWeekDays for plan saves in chat.ts and plan.ts — global pass redistributes days placed in wrong week objects by Claude
 - [260330-07e]: Training plan model now uses globally sequential week numbers + A-G day labels instead of calendar dates; plan:update/plan:add XML tags use week="N" day="X"; system prompt calendar block removed entirely; assignPlanStructure() replaces normalizePlanPhases()
+- [Phase 03-01]: Run unlinked filter uses planId exists-false for TypeScript type compatibility
 
 ## Accumulated Context
 
@@ -151,6 +152,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 _Initialized: 2026-03-21_
 _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/description and delete last phase with confirmation_
+| Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
 
 ### Quick Tasks Completed
 
