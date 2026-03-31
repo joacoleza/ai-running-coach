@@ -1,10 +1,11 @@
 ---
 phase: 3
 slug: run-logging
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-28
+updated: 2026-03-31
 ---
 
 # Phase 3 — Validation Strategy
@@ -36,30 +37,22 @@ created: 2026-03-28
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | RUN-01 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | RUN-01 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 1 | RUN-02 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-02-02 | 02 | 2 | RUN-02 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-03-01 | 03 | 2 | RUN-03 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-04-01 | 04 | 3 | RUN-04 | integration | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-05-01 | 05 | 3 | RUN-05 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-06-01 | 06 | 4 | COACH-03 | unit | `cd api && npm test -- --run` | ❌ W0 | ⬜ pending |
-| 03-07-01 | 07 | 4 | COACH-04 | e2e | `npx playwright test` | ❌ W0 | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Test Type | Test File | Status |
+|---------|------|------|-------------|-----------|-----------|--------|
+| 03-01-01 | 01 | 1 | RUN-01 (create run) | unit | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-01-02 | 01 | 1 | RUN-01 (list/delete runs) | unit | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-02-01 | 01 | 1 | RUN-02 (storage + pace) | unit | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-02-02 | 01 | 1 | RUN-02 (HR optional, pace computed) | unit | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-03-01 | 01 | 1 | RUN-04 (link run → day complete) | unit | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-04-01 | 01 | 2 | RUN-04 (undo unlinks run) | integration | `api/src/__tests__/runs.test.ts` | ✅ green |
+| 03-05-01 | 03 | 2 | RUN-01 frontend (RunEntryForm) | unit | `web/src/__tests__/RunEntryForm.test.tsx` | ✅ green |
+| 03-05-02 | 03 | 2 | RUN-01 frontend (complete → form) | unit | `web/src/__tests__/DayRow.test.tsx` | ✅ green |
+| 03-06-01 | 02 | 2 | COACH-03 (run data in chat context) | integration | `api/src/__tests__/chat.integration.test.ts` | ✅ green |
+| 03-07-01 | 06 | 4 | COACH-03/COACH-04 (E2E run flows) | e2e | `e2e/runs.spec.ts` | ✅ green |
+
+*Note: RUN-03 and RUN-05 removed — ZIP/Apple Health upload approach dropped (2026-03-29 rethink).*
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-
----
-
-## Wave 0 Requirements
-
-- [ ] `api/src/functions/__tests__/parseBlobTrigger.test.ts` — stubs for RUN-01 (blob trigger + XML parsing)
-- [ ] `api/src/functions/__tests__/uploadSas.test.ts` — stubs for RUN-01 (SAS token endpoint)
-- [ ] `api/src/__tests__/runMatching.test.ts` — stubs for RUN-03 (plan matching logic)
-- [ ] `api/src/__tests__/hrZones.test.ts` — stubs for RUN-02 (HR zone computation)
-- [ ] `api/src/__tests__/uploadStatus.test.ts` — stubs for RUN-04 (status polling endpoint)
-- [ ] `api/src/__tests__/coachFeedback.test.ts` — stubs for COACH-03/COACH-04
 
 ---
 
@@ -74,11 +67,23 @@ created: 2026-03-28
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have automated verification
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 complete — all required test files exist
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** 2026-03-31
+
+---
+
+## Validation Audit 2026-03-31
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
+
+**Gap resolved:** COACH-03 — added 3 integration tests to `chat.integration.test.ts` verifying run data injection (distance, pace in M:SS), progressFeedback preamble, and graceful no-run fallback.
