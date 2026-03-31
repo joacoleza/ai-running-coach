@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-31T10:00:08.730Z"
+last_updated: "2026-03-31T10:04:30.125Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 28
-  completed_plans: 23
-  percent: 82
+  completed_plans: 24
+  percent: 86
 ---
 
 # State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 02.1 (training-plan-redesign + UAT fixes)
 **Status:** Executing Phase 03
 **Plans:** 5/5
-**Progress:** [████████░░] 82%
+**Progress:** [█████████░] 86%
 
 ## Milestone
 
@@ -130,6 +130,9 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [260329-ws0]: normalizePlanPhases replaces per-week normalizeWeekDays for plan saves in chat.ts and plan.ts — global pass redistributes days placed in wrong week objects by Claude
 - [260330-07e]: Training plan model now uses globally sequential week numbers + A-G day labels instead of calendar dates; plan:update/plan:add XML tags use week="N" day="X"; system prompt calendar block removed entirely; assignPlanStructure() replaces normalizePlanPhases()
 - [Phase 03-01]: Run unlinked filter uses planId exists-false for TypeScript type compatibility
+- [Phase 03-02]: Run lookup uses Map<weekNumber-dayLabel, Run> for O(1) access during synthetic context line building
+- [Phase 03-02]: Run fetch in chat.ts is non-fatal (try/catch) to avoid blocking chat flow if runs collection unavailable
+- [Phase 03-02]: Insight text truncated at 150 chars to keep context compact
 
 ## Accumulated Context
 
@@ -153,6 +156,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 _Initialized: 2026-03-21_
 _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/description and delete last phase with confirmation_
 | Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
+| Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
 
 ### Quick Tasks Completed
 
