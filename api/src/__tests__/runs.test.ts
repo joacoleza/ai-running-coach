@@ -263,9 +263,9 @@ describe('GET /api/runs - listRuns', () => {
   });
 });
 
-// ── GET /api/runs/unlinked - getUnlinkedRuns ───────────────────────────────
+// ── GET /api/runs?unlinked=true - listRuns (unlinked filter) ──────────────
 
-describe('GET /api/runs/unlinked - getUnlinkedRuns', () => {
+describe('GET /api/runs?unlinked=true - listRuns unlinked filter', () => {
   it('returns only runs where planId does not exist', async () => {
     const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
     const planId = planInsert.insertedId;
@@ -292,8 +292,8 @@ describe('GET /api/runs/unlinked - getUnlinkedRuns', () => {
       },
     ]);
 
-    const req = makeGetReq('http://localhost/api/runs/unlinked');
-    const result = await handlers.get('getUnlinkedRuns')!(req, ctx);
+    const req = makeGetReq('http://localhost/api/runs?unlinked=true');
+    const result = await handlers.get('listRuns')!(req, ctx);
     expect(result.status).toBe(200);
     const runs = result.jsonBody.runs;
     expect(runs).toHaveLength(1);
@@ -316,8 +316,8 @@ describe('GET /api/runs/unlinked - getUnlinkedRuns', () => {
       updatedAt: new Date(),
     });
 
-    const req = makeGetReq('http://localhost/api/runs/unlinked');
-    const result = await handlers.get('getUnlinkedRuns')!(req, ctx);
+    const req = makeGetReq('http://localhost/api/runs?unlinked=true');
+    const result = await handlers.get('listRuns')!(req, ctx);
     expect(result.status).toBe(200);
     expect(result.jsonBody.runs).toHaveLength(0);
   });

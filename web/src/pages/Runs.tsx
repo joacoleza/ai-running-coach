@@ -29,7 +29,7 @@ function RunRow({ run, onClick }: RunRowProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-100 flex items-center justify-between"
+      className="w-full text-left p-4 hover:bg-gray-50 border-b border-gray-100 flex items-center justify-between cursor-pointer"
     >
       <div>
         <div className="font-medium text-gray-900">{formatRunDate(run.date)}</div>

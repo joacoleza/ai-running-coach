@@ -21,30 +21,6 @@ function computePace(distance: number, duration: string): number {
   return Math.round((totalMinutes / distance) * 100) / 100;
 }
 
-// ── GET /api/runs/unlinked ─────────────────────────────────────────────────
-// MUST be registered before 'runs/{id}' so it doesn't match as an ID.
-app.http('getUnlinkedRuns', {
-  methods: ['GET'],
-  authLevel: 'anonymous',
-  route: 'runs/unlinked',
-  handler: async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
-    if (denied) return denied;
-
-    try {
-      const db = await getDb();
-      const runs = await db
-        .collection('runs')
-        .find({ planId: { $exists: false } })
-        .sort({ date: -1 })
-        .toArray();
-      return { status: 200, jsonBody: { runs } };
-    } catch (err) {
-      _context.log('Error fetching unlinked runs:', err);
-      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
-    }
-  },
-});
 
 // ── POST /api/runs ─────────────────────────────────────────────────────────
 app.http('createRun', {
@@ -183,6 +159,10 @@ app.http('listRuns', {
       const planIdParam = params.get('planId');
       if (planIdParam) {
         filter['planId'] = new ObjectId(planIdParam);
+      }
+
+      if (params.get('unlinked') === 'true') {
+        filter['planId'] = { $exists: false };
       }
 
       const db = await getDb();

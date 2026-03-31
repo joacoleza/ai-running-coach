@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { updateRun, deleteRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
@@ -249,7 +250,9 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
           {run.insight && (
             <div className="bg-gray-50 rounded-lg p-3">
               <p className="text-xs font-medium text-gray-500 mb-1">Coach Insight</p>
-              <p className="text-sm text-gray-700 italic">{run.insight}</p>
+              <div className="text-sm text-gray-700 prose prose-sm max-w-none">
+                <ReactMarkdown>{run.insight}</ReactMarkdown>
+              </div>
             </div>
           )}
 

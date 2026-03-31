@@ -65,9 +65,9 @@ export async function fetchRuns(params?: {
 }
 
 export async function fetchUnlinkedRuns(): Promise<Run[]> {
-  const res = await fetch('/api/runs/unlinked', { headers: authHeaders() });
+  const res = await fetch('/api/runs?unlinked=true', { headers: authHeaders() });
   if (!res.ok) throw new Error('Failed to fetch unlinked runs');
-  const data = await res.json() as { runs: Run[] };
+  const data = await res.json() as { runs: Run[]; total: number };
   return data.runs;
 }
 
