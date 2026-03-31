@@ -25,6 +25,8 @@ function defaultUsePlan(overrides: Partial<ReturnType<typeof usePlan>> = {}) {
     deleteDay: vi.fn(),
     addDay: vi.fn(),
     archivePlan: mockArchivePlan,
+    updatePhase: vi.fn().mockResolvedValue(undefined),
+    deleteLastPhase: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   });
 }

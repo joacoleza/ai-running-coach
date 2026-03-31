@@ -48,6 +48,8 @@ interface UsePlanReturn {
   deleteDay: (weekNumber: number, label: string) => Promise<void>;
   addDay: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
   archivePlan: () => Promise<void>;
+  updatePhase: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
+  deleteLastPhase: () => Promise<void>;
 }
 
 function authHeaders(): Record<string, string> {
@@ -113,6 +115,31 @@ export function usePlan(): UsePlanReturn {
     await refreshPlan();
   }, [refreshPlan]);
 
+  const updatePhase = useCallback(async (phaseIndex: number, updates: { name?: string; description?: string }) => {
+    const res = await fetch(`/api/plan/phases/${phaseIndex}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(updates),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to update phase' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to update phase');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
+  const deleteLastPhase = useCallback(async () => {
+    const res = await fetch('/api/plan/phases/last', {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to delete phase' }));
+      throw new Error((errData as { error?: string }).error ?? 'Failed to delete phase');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
   const archivePlan = useCallback(async () => {
     const res = await fetch('/api/plan/archive', {
       method: 'POST',
@@ -131,5 +158,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan };
+  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase };
 }
