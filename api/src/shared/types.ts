@@ -63,6 +63,24 @@ export interface Plan {
   phases: PlanPhase[];
   objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
   targetDate?: string;
+  progressFeedback?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Run {
+  _id?: ObjectId;
+  date: string;            // ISO YYYY-MM-DD (actual run date, user-entered)
+  distance: number;        // in user's preferred unit (km or miles)
+  duration: string;        // "MM:SS" or "HH:MM:SS"
+  pace: number;            // computed: minutes per km/mile (decimal)
+  avgHR?: number;          // optional beats per minute
+  notes?: string;          // optional free text
+  planId?: ObjectId;       // linked plan ID (if linked to a training plan day)
+  weekNumber?: number;     // linked week number (if linked)
+  dayLabel?: string;       // linked day label A-G (if linked)
+  insight?: string;        // coaching insight text (set after feedback)
+  userId?: string;         // reserved for future multi-user
   createdAt: Date;
   updatedAt: Date;
 }
