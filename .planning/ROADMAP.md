@@ -226,6 +226,46 @@ Plans:
 
 ---
 
+## Phase 3.1 — Fix Coach Feedback Quality (GAP CLOSURE)
+
+**Goal:** Fix two warning-severity integration issues identified in the v1.1 audit — stale closure in run insight save and raw XML in progressFeedback storage.
+
+**Requirements:** COACH-03, COACH-04
+**Gap Closure:** Closes integration warnings from v1.1 audit
+
+**Deliverables:**
+- `RunDetailModal.handleAddFeedback`: use `sendMessage()` return value directly instead of reading stale `messages` closure — ensures the saved insight is always the just-received response
+- `TrainingPlan.handleGetFeedback`: strip XML tags from `accumulatedText` before storing as `progressFeedback` — prevents raw `<plan:update>` or `<app:navigate>` tags from rendering in the feedback section
+- Unit tests updated to cover both fix paths
+
+**UAT:**
+- Add feedback to a run → insight saved matches the assistant response just received (no stale message captured)
+- Coach responds to plan feedback with a plan adjustment → `progressFeedback` displays clean text, no raw XML visible
+
+---
+
+## Phase 3.2 — Tech Debt Cleanup (GAP CLOSURE)
+
+**Goal:** Remove dead code endpoints, deduplicate the SSE streaming loop, and fix stale documentation inconsistencies found in the v1.1 audit.
+
+**Gap Closure:** Closes tech debt items from v1.1 audit
+
+**Deliverables:**
+- Remove `PATCH /api/sessions/:sessionId` — dead code, superseded by `PATCH /api/plan/days/:week/:day`, no frontend callers
+- Remove `POST /api/plan/generate` — superseded by server-side plan saving in `chat.ts`; client no longer calls it
+- Deduplicate `startPlan()` SSE streaming loop: extract shared streaming logic used by both `startPlan()` and `sendMessage()` in `useChat.ts`
+- Fix AUTH-01/02/03 descriptions in REQUIREMENTS.md — update from "GitHub OAuth + SWA custom role" to password auth (Phase 1.1 superseded this)
+- Fix planImport.ts docs inconsistency — remove planImport.ts references from VERIFICATION.md since it was subsequently deleted
+- Fix `act()` warning in `App.auth.test.tsx` from CoachPanel async state update
+- Update tests for removed endpoints
+
+**UAT:**
+- `PATCH /api/sessions/:sessionId` returns 404 (route removed)
+- `POST /api/plan/generate` returns 404 (route removed)
+- `npm test` in `api/` passes with no `act()` warnings; all existing tests green
+
+---
+
 ## Phase 4 — Dashboard & Plan Import
 
 **Goal:** Full dashboard showing progress, run history, and plan import from an existing LLM conversation.
