@@ -71,6 +71,10 @@ app.http('patchDay', {
       return { status: 400, jsonBody: { error: 'No valid fields to update' } };
     }
 
+    // Detect undo-completion so we can unlink the associated run after the plan update
+    const isUndoComplete =
+      body.completed === 'false' || (body.completed as unknown) === false;
+
     try {
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] } },
@@ -81,6 +85,16 @@ app.http('patchDay', {
         },
       );
       if (!result) return { status: 404, jsonBody: { error: 'Day not found' } };
+
+      // Unlink the associated run (if any) when undoing a completed day
+      if (isUndoComplete) {
+        const runsCol = db.collection('runs');
+        await runsCol.updateOne(
+          { planId: result._id, weekNumber: week, dayLabel: dayParam },
+          { $unset: { planId: '', weekNumber: '', dayLabel: '' }, $set: { updatedAt: new Date() } },
+        );
+      }
+
       return { status: 200, jsonBody: { plan: result } };
     } catch (err) {
       context.log('Error patching day:', err);

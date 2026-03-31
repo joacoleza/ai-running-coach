@@ -95,6 +95,41 @@ app.http('createPlan', {
   },
 });
 
+app.http('patchPlan', {
+  methods: ['PATCH'],
+  authLevel: 'anonymous',
+  route: 'plan',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requirePassword(req);
+    if (denied) return denied;
+
+    let body: { progressFeedback?: string };
+    try {
+      body = (await req.json()) as typeof body;
+    } catch {
+      return { status: 400, jsonBody: { error: 'Invalid JSON body' } };
+    }
+
+    if (body.progressFeedback === undefined) {
+      return { status: 400, jsonBody: { error: 'No updatable fields provided' } };
+    }
+
+    try {
+      const db = await getDb();
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { status: { $in: ['active', 'onboarding'] } },
+        { $set: { progressFeedback: body.progressFeedback, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      if (!result) return { status: 404, jsonBody: { error: 'No active plan found' } };
+      return { status: 200, jsonBody: result };
+    } catch (err) {
+      context.log('Error patching plan:', err);
+      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
+    }
+  },
+});
+
 app.http('generatePlan', {
   methods: ['POST'],
   authLevel: 'anonymous',
@@ -119,6 +154,22 @@ app.http('generatePlan', {
           status: 400,
           jsonBody: { error: 'planId, claudeResponseText, and goal are required' },
         };
+      }
+
+      // D-16: Block plan regeneration if linked runs exist (training history protection)
+      {
+        const db = await getDb();
+        const existingLinkedRun = await db.collection('runs').findOne(
+          { planId: { $exists: true, $ne: null } },
+        );
+        if (existingLinkedRun) {
+          return {
+            status: 409,
+            jsonBody: {
+              error: 'Cannot regenerate plan: you have logged runs linked to the current plan. Ask the coach to adjust specific days instead.',
+            },
+          };
+        }
       }
 
       // Extract JSON from <training_plan> XML tags (Research Pitfall 3)
