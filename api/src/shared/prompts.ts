@@ -149,7 +149,7 @@ When generating the plan, if the user has been training recently, include those 
       });
 
     if (trainingDays.length > 0) {
-      prompt += `\n\n---\n\n## Current Training Schedule (authoritative)\n\nThis is the **live, current state of the plan** — every training day with its week number and day label. This supersedes any earlier description in the conversation. Use these week numbers and day labels when emitting \`<plan:update>\` or \`<plan:add>\` commands.\n\n`;
+      prompt += `\n\n---\n\n## Current Training Schedule (authoritative)\n\nThis is the **live, current state of the plan** — every training day with its week number and day label. This supersedes any earlier description in the conversation. Use these week numbers and day labels when emitting \`<plan:update>\` or \`<plan:add>\` commands.\n\nCompleted days may include actual run data: date (DD/MM/YYYY), distance, pace, and a previous coaching insight (truncated to ~150 chars). **Use this data when providing feedback — do not ask the user to repeat information that is already in the context.**\n\nIf a "Coach's previous progress assessment" is shown in the plan state context, you have already given high-level plan feedback. **Build on it rather than repeating the same observations.**\n\n`;
       for (const d of trainingDays) {
         const obj = d.objective ? `${d.objective.value} ${d.objective.unit}` : '';
         const status = d.completed ? ' [COMPLETED]' : d.skipped ? ' [SKIPPED]' : '';
