@@ -27,7 +27,7 @@ interface UseChatReturn {
   isLoading: boolean;
   isBusy: boolean;
   error: string | null;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string) => Promise<string>;
   startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
   startOver: () => void;
   clearError: () => void;
@@ -150,8 +150,8 @@ export function useChat(): UseChatReturn {
     };
   }, [fetchPlan]);
 
-  const sendMessage = useCallback(async (text: string): Promise<void> => {
-    if (!plan) return;
+  const sendMessage = useCallback(async (text: string): Promise<string> => {
+    if (!plan) return '';
 
     // Optimistic: add user message immediately
     const userMessage: Message = {
@@ -184,7 +184,7 @@ export function useChat(): UseChatReturn {
         setIsStreaming(false);
         // Remove placeholder
         setMessages((prev) => prev.slice(0, -1));
-        return;
+        return '';
       }
 
       const reader = response.body!.getReader();
@@ -445,6 +445,7 @@ export function useChat(): UseChatReturn {
           }
         }
       }
+      return accumulatedText;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
@@ -457,6 +458,7 @@ export function useChat(): UseChatReturn {
         }
         return prev;
       });
+      return '';
     }
   }, [plan, fetchPlan, navigate]);
 
