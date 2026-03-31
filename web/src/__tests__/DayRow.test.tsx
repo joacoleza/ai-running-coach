@@ -140,14 +140,13 @@ describe('DayRow', () => {
     });
   });
 
-  it('clicking complete button calls onUpdate with completed true', async () => {
-    const onUpdate = vi.fn().mockResolvedValue(undefined);
-    render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
+  it('clicking complete button opens RunEntryForm instead of directly marking complete', async () => {
+    render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
     const completeBtn = screen.getByTitle('Mark as completed');
     fireEvent.click(completeBtn);
-    await vi.waitFor(() => {
-      expect(onUpdate).toHaveBeenCalledWith(1, 'A', { completed: 'true' });
-    });
+    // RunEntryForm should be shown — look for the Save run button
+    expect(await screen.findByText('Save run')).toBeInTheDocument();
+    expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
   it('readonly mode hides all action controls', () => {
@@ -220,11 +219,11 @@ describe('DayRow', () => {
     expect(screen.getByTitle('Undo').className).toContain('cursor-pointer');
   });
 
-  it('shows inline error when onUpdate rejects', async () => {
+  it('shows inline error when onUpdate rejects (skip path)', async () => {
     const onUpdate = vi.fn().mockRejectedValue(new Error('Day not found'));
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Mark as completed'));
+      fireEvent.click(screen.getByTitle('Mark as skipped'));
     });
     expect(await screen.findByText('Day not found')).toBeInTheDocument();
   });
@@ -241,14 +240,14 @@ describe('DayRow', () => {
 });
 
 describe('DayRow — saving state', () => {
-  it('shows saving spinner while update is in flight', async () => {
+  it('shows saving spinner while update is in flight (skip path)', async () => {
     let resolveUpdate!: () => void;
     const onUpdate = vi.fn().mockImplementation(
       () => new Promise<void>((resolve) => { resolveUpdate = resolve; })
     );
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
-    // Trigger an update — do not await so it stays pending
-    fireEvent.click(screen.getByTitle('Mark as completed'));
+    // Trigger a skip update — do not await so it stays pending
+    fireEvent.click(screen.getByTitle('Mark as skipped'));
     // Saving spinner should be visible
     expect(await screen.findByLabelText('Saving')).toBeInTheDocument();
     // Action buttons should be hidden while saving
@@ -261,20 +260,20 @@ describe('DayRow — saving state', () => {
     expect(screen.getByTitle('Mark as completed')).toBeInTheDocument();
   });
 
-  it('clears saving state after update resolves', async () => {
+  it('clears saving state after update resolves (skip path)', async () => {
     const onUpdate = vi.fn().mockResolvedValue(undefined);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Mark as completed'));
+      fireEvent.click(screen.getByTitle('Mark as skipped'));
     });
     expect(screen.queryByLabelText('Saving')).not.toBeInTheDocument();
   });
 
-  it('clears saving state after update rejects', async () => {
+  it('clears saving state after update rejects (skip path)', async () => {
     const onUpdate = vi.fn().mockRejectedValue(new Error('fail'));
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
     await act(async () => {
-      fireEvent.click(screen.getByTitle('Mark as completed'));
+      fireEvent.click(screen.getByTitle('Mark as skipped'));
     });
     expect(screen.queryByLabelText('Saving')).not.toBeInTheDocument();
     expect(screen.getByText('fail')).toBeInTheDocument();

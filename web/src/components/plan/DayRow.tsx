@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { PlanDay } from '../../hooks/usePlan';
+import type { Run } from '../../hooks/useRuns';
+import { RunEntryForm } from '../runs/RunEntryForm';
 
 interface DayRowProps {
   day: PlanDay;
@@ -7,15 +9,28 @@ interface DayRowProps {
   onUpdate: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
   onDelete: (weekNumber: number, label: string) => Promise<void>;
   readonly?: boolean;
+  linkedRun?: Run | null;     // run linked to this day (fetched by parent PlanView)
+  onRunLinked?: () => void;   // called after linking a run — parent refreshes plan
 }
 
-export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRowProps) {
+function formatRunDate(isoDate: string): string {
+  // Format as "Monday 03/04/2026" (day-of-week + DD/MM/YYYY)
+  const d = new Date(isoDate + 'T12:00:00');
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'long' });
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${weekday} ${dd}/${mm}/${yyyy}`;
+}
+
+export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRun, onRunLinked }: DayRowProps) {
   const [editingField, setEditingField] = useState<'guidelines' | 'objective' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editUnit, setEditUnit] = useState<'km' | 'min'>('km');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [completingRun, setCompletingRun] = useState(false);
 
   const isReadOnly = readonly || day.completed || day.skipped;
   const isEditing = editingField !== null;
@@ -75,6 +90,24 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRow
     setEditingField(null);
     setEditValue('');
   };
+
+  if (completingRun) {
+    return (
+      <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <RunEntryForm
+          weekNumber={weekNumber}
+          dayLabel={day.label}
+          dayGuidelines={day.guidelines}
+          onSave={() => {
+            setCompletingRun(false);
+            // Refresh plan so day shows as completed
+            window.dispatchEvent(new Event('plan-updated'));
+          }}
+          onCancel={() => setCompletingRun(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`group flex items-start gap-2 py-1 px-2 text-sm rounded ${day.completed ? 'bg-green-50' : day.skipped ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
@@ -161,6 +194,13 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRow
 
         {day.skipped && <span className="ml-1 text-xs text-gray-400">(skipped)</span>}
 
+        {/* Run date for completed days */}
+        {day.completed && linkedRun && (
+          <span className="ml-1 text-xs text-green-600 no-underline not-italic" style={{ textDecoration: 'none' }}>
+            {formatRunDate(linkedRun.date)}
+          </span>
+        )}
+
         {/* Saving indicator */}
         {isSaving && (
           <span className="inline-flex items-center gap-1 ml-2 align-middle text-xs text-gray-400" aria-label="Saving">
@@ -190,7 +230,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRow
             {!isReadOnly && !confirmingDelete && (
               <>
                 <button
-                  onClick={() => { void update({ completed: 'true' }); }}
+                  onClick={() => setCompletingRun(true)}
                   className="cursor-pointer p-1 text-gray-400 hover:text-green-600 transition-colors"
                   title="Mark as completed"
                 >
@@ -205,6 +245,14 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly }: DayRow
                 >
                   Skip
                 </button>
+                {onRunLinked && (
+                  <button
+                    onClick={() => onRunLinked()}
+                    className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                  >
+                    Link run
+                  </button>
+                )}
               </>
             )}
 
