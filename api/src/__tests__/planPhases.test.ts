@@ -170,6 +170,15 @@ describe('PATCH /api/plan/phases/:phaseIndex', () => {
     expect(result.status).toBe(200);
     expect(result.jsonBody.plan.phases[0].description).toBe('');
   });
+
+  it('returns 400 when JSON body is invalid', async () => {
+    const req = makePatchReq('0');
+    vi.spyOn(req, 'json').mockRejectedValue(new SyntaxError('Invalid JSON'));
+    const result = await handlers.get('patchPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid JSON body');
+  });
+
 });
 
 describe('DELETE /api/plan/phases/last', () => {
@@ -227,4 +236,5 @@ describe('DELETE /api/plan/phases/last', () => {
     expect(result.status).toBe(404);
     expect(result.jsonBody.error).toContain('No active plan found');
   });
+
 });
