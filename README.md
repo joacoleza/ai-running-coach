@@ -15,7 +15,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)
 ![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_API-D97757?logo=anthropic&logoColor=white)
 
-A personal web app that acts as an AI running coach. Set a goal, get a training plan, log runs from Apple Watch, and receive coaching feedback that adapts the plan over time.
+A personal web app that acts as an AI running coach. Set a goal, get a training plan, log your runs, and receive coaching feedback that adapts the plan over time.
 
 ## What it does
 
@@ -26,7 +26,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
 - **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
-- **Run logging** — Upload an Apple Health export after each run; the coach parses your data and provides feedback
+- **Run logging** — Log a run manually after each session (date, distance, duration, heart rate, notes); the coach provides feedback and can adjust the plan
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
@@ -39,7 +39,6 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 | Hosting | Azure Static Web Apps (free tier) |
 | Backend | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
 | Database | Azure Cosmos DB for MongoDB (free tier) |
-| File storage | Azure Blob Storage |
 | AI | Claude API (Anthropic) |
 | Auth | Pre-shared password (stored in Azure config) |
 
@@ -69,7 +68,6 @@ cd api && npm install && cd ..
 {
   "IsEncrypted": false,
   "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "MONGODB_CONNECTION_STRING": "mongodb://localhost:27017",
     "APP_PASSWORD": "localdev123",
@@ -146,7 +144,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 ## Built with
 
-Planned and built using [Get Your Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
+Planned and built using [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
 
 ## Roadmap
 
@@ -157,5 +155,5 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
 - ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
 - ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
-- **Phase 3** — Run Logging & Feedback (Apple Health parsing, post-run coaching)
+- ~~**Phase 3** — Run Logging & Feedback (manual run entry, post-run coaching, plan feedback)~~ ✓
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

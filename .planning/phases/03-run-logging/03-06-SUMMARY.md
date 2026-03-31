@@ -108,6 +108,16 @@ None - no external service configuration required.
 - Ready to open PR for Phase 3 feature branch
 - Phase 4 (Dashboard & Plan Import) is next
 
+## Self-Check: PASSED
+
+- FOUND: api/src/__tests__/runs.test.ts
+- FOUND: web/src/__tests__/RunEntryForm.test.tsx
+- FOUND: e2e/runs.spec.ts
+- FOUND: .planning/phases/03-run-logging/03-06-SUMMARY.md
+- FOUND: commit 747b04b (API tests)
+- FOUND: commit c400480 (web unit tests)
+- FOUND: commit a50e1f9 (E2E tests)
+
 ---
 *Phase: 03-run-logging*
 *Completed: 2026-03-31*
