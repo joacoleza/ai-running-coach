@@ -233,6 +233,11 @@ Plans:
 **Requirements:** COACH-03, COACH-04
 **Gap Closure:** Closes integration warnings from v1.1 audit
 
+**Plans:** 1 plan
+
+Plans:
+- [ ] 03.1-01-PLAN.md — Fix stale closure in RunDetailModal + strip XML from TrainingPlan progressFeedback
+
 **Deliverables:**
 - `RunDetailModal.handleAddFeedback`: use `sendMessage()` return value directly instead of reading stale `messages` closure — ensures the saved insight is always the just-received response
 - `TrainingPlan.handleGetFeedback`: strip XML tags from `accumulatedText` before storing as `progressFeedback` — prevents raw `<plan:update>` or `<app:navigate>` tags from rendering in the feedback section
