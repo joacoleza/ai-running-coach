@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PlanData } from '../../hooks/usePlan';
 import { DayRow } from './DayRow';
+import { PhaseHeader } from './PhaseHeader';
 
 const ALL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
 
@@ -121,18 +122,27 @@ interface PlanViewProps {
   onUpdateDay: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
   onDeleteDay: (weekNumber: number, label: string) => Promise<void>;
   onAddDay?: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
+  onUpdatePhase?: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
+  onDeletePhase?: () => Promise<void>;
   readonly?: boolean;
 }
 
-export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, readonly }: PlanViewProps) {
+export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
 
   return (
     <div>
-      {plan.phases.map(phase => (
+      {plan.phases.map((phase, idx) => (
         <section key={phase.name} className="mb-8">
-          <h2 className="text-xl font-bold text-gray-900">{phase.name}</h2>
-          {phase.description && <p className="text-gray-600 italic mb-2">{phase.description}</p>}
+          <PhaseHeader
+            phase={phase}
+            phaseIndex={idx}
+            isLastPhase={idx === plan.phases.length - 1}
+            totalPhases={plan.phases.length}
+            onUpdatePhase={onUpdatePhase ?? (async () => {})}
+            onDeletePhase={onDeletePhase}
+            readonly={readonly || !onUpdatePhase}
+          />
           {phase.weeks.map(week => {
             // Filter out rest days and sort by label alphabetically
             const activeDays = week.days

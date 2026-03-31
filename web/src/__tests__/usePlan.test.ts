@@ -149,6 +149,74 @@ describe('usePlan', () => {
     })).rejects.toThrow('Delete failed');
   });
 
+  it('updatePhase calls PATCH /api/plan/phases/:index and refreshes plan', async () => {
+    const updatedPlan = { ...mockPlan, _id: 'p1-phase-updated' };
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) }) // initial fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })                // PATCH
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }); // refresh
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.updatePhase(0, { name: 'New Phase Name' });
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/plan/phases/0',
+      expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ name: 'New Phase Name' }) }),
+    );
+    expect(result.current.plan).toEqual(updatedPlan);
+  });
+
+  it('updatePhase throws when PATCH fails', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Phase update failed' }) });
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(act(async () => {
+      await result.current.updatePhase(0, { name: 'New Name' });
+    })).rejects.toThrow('Phase update failed');
+  });
+
+  it('deleteLastPhase calls DELETE /api/plan/phases/last and refreshes plan', async () => {
+    const updatedPlan = { ...mockPlan, _id: 'p1-phase-deleted' };
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) }) // initial fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })                 // DELETE
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }); // refresh
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.deleteLastPhase();
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/plan/phases/last',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(result.current.plan).toEqual(updatedPlan);
+  });
+
+  it('deleteLastPhase throws when DELETE fails', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Cannot delete the only phase' }) });
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(act(async () => {
+      await result.current.deleteLastPhase();
+    })).rejects.toThrow('Cannot delete the only phase');
+  });
+
   it('refreshes plan when plan-updated event fires', async () => {
     const updatedPlan = { ...mockPlan, _id: 'after-event' };
     mockFetch

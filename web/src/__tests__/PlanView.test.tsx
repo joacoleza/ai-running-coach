@@ -242,6 +242,28 @@ describe('PlanView', () => {
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
+  it('renders PhaseHeader with editable title when onUpdatePhase is provided', () => {
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} />);
+    // Phase names should appear and have hover edit styling
+    const titleEl = screen.getByText('Base Phase');
+    expect(titleEl).toBeInTheDocument();
+    expect(titleEl.tagName).toBe('H2');
+    expect(titleEl.className).toContain('cursor-pointer');
+  });
+
+  it('shows delete button only on last phase when multiple phases exist', () => {
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} />);
+    // plan has 2 phases: Base Phase (idx 0) and Peak Phase (idx 1, last)
+    // Delete phase button should only appear for the last phase
+    const deleteButtons = screen.queryAllByTitle('Delete last phase');
+    expect(deleteButtons).toHaveLength(1);
+  });
+
+  it('does not show delete button in readonly mode', () => {
+    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} readonly={true} />);
+    expect(screen.queryByTitle('Delete last phase')).not.toBeInTheDocument();
+  });
+
   it('shows + Add day button when week has fewer than 7 non-rest days', () => {
     // A plan with a week that has only 1 run day (labels A-F still available)
     const planWithSpace: PlanData = {

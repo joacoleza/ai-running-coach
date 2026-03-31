@@ -594,6 +594,158 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
   })
 })
 
+const mockTwoPhasePlan = {
+  ...mockActivePlan,
+  phases: [
+    {
+      name: 'Base Building',
+      description: 'Build your aerobic base',
+      weeks: [
+        {
+          weekNumber: 1,
+          days: [
+            { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy Zone 2 run', completed: false, skipped: false },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'Build Phase',
+      description: 'Increase intensity',
+      weeks: [
+        {
+          weekNumber: 2,
+          days: [
+            { label: 'A', type: 'run', objective: { kind: 'distance', value: 8, unit: 'km' }, guidelines: 'Tempo run', completed: false, skipped: false },
+          ],
+        },
+      ],
+    },
+  ],
+}
+
+test.describe('Phase edit and delete (260331-0vx)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('can edit phase name inline', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // Intercept PATCH request for phase update
+    let patchCalled = false
+    let patchBody: any = null
+    await page.route('**/api/plan/phases/0', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        patchCalled = true
+        patchBody = JSON.parse(route.request().postData() ?? '{}')
+        // Return updated plan with new phase name
+        const updatedPlan = {
+          ...mockActivePlan,
+          phases: [{ ...mockActivePlan.phases[0], name: 'Foundation Phase' }],
+        }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: updatedPlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Click on phase name to enter edit mode
+    await page.getByText('Base Building').click()
+
+    // An input should appear
+    const nameInput = page.locator('input[aria-label="Phase name"]')
+    await expect(nameInput).toBeVisible({ timeout: 5_000 })
+    await nameInput.fill('Foundation Phase')
+    await nameInput.press('Enter')
+
+    // Input should disappear (edit mode exits)
+    await expect(nameInput).not.toBeVisible({ timeout: 5_000 })
+
+    // PATCH was called with the new name
+    await expect(async () => {
+      expect(patchCalled).toBe(true)
+      expect(patchBody).toMatchObject({ name: 'Foundation Phase' })
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('can edit phase description inline', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // Intercept PATCH request for phase description update
+    let patchBody: any = null
+    await page.route('**/api/plan/phases/0', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        patchBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // mockActivePlan only has one phase with no description field set
+    // The description area should exist — click on it to edit
+    const descArea = page.locator('p[title="Click to edit description"]').first()
+    await expect(descArea).toBeVisible({ timeout: 5_000 })
+    await descArea.click()
+
+    const descTextarea = page.locator('textarea[aria-label="Phase description"]')
+    await expect(descTextarea).toBeVisible({ timeout: 5_000 })
+    await descTextarea.fill('Build aerobic base with easy effort runs')
+
+    // Blur to save
+    await descTextarea.blur()
+
+    await expect(async () => {
+      expect(patchBody).toMatchObject({ description: 'Build aerobic base with easy effort runs' })
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('delete button only visible on last phase when plan has multiple phases', async ({ page }) => {
+    await loginWithPlan(page, mockTwoPhasePlan)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Build Phase')).toBeVisible({ timeout: 10_000 })
+
+    // Delete button should exist (one instance for the last phase only)
+    const deleteButtons = page.getByTitle('Delete last phase')
+    await expect(deleteButtons).toHaveCount(1)
+  })
+
+  test('can delete last phase with confirmation dialog', async ({ page }) => {
+    await loginWithPlan(page, mockTwoPhasePlan)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Build Phase')).toBeVisible({ timeout: 10_000 })
+
+    let deleteCalled = false
+    await page.route('**/api/plan/phases/last', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteCalled = true
+        const onePhase = { ...mockActivePlan, phases: [mockTwoPhasePlan.phases[0]] }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: onePhase }) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Accept the confirm dialog
+    page.on('dialog', async (dialog) => {
+      expect(dialog.message()).toContain('Delete the last phase')
+      await dialog.accept()
+    })
+
+    await page.getByTitle('Delete last phase').click()
+
+    await expect(async () => {
+      expect(deleteCalled).toBe(true)
+    }).toPass({ timeout: 5_000 })
+  })
+})
+
 test.describe('Archive section (Phase 2.1)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')

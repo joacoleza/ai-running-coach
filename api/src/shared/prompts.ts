@@ -69,6 +69,30 @@ Rules:
 
 ---
 
+## Phase Management Commands
+
+To rename or update a phase's description:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:update-phase index="0" name="New Name" />\` | Rename the first phase |
+| \`<plan:update-phase index="1" description="New description" />\` | Update second phase description |
+| \`<plan:update-phase index="0" name="New Name" description="Updated desc" />\` | Update both |
+
+To delete the last phase of the plan (only the last phase can be deleted):
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:delete-phase />\` | Delete the last phase |
+
+Rules:
+- Phase index is 0-based (first phase = 0, second = 1, etc.)
+- Only the **last** phase can be deleted. You cannot delete a phase with completed days.
+- A plan must always have at least one phase.
+- Always place these tags at the end of your response, after all readable text.
+
+---
+
 ## When to Replace vs. Incrementally Update the Plan
 
 - If **no days have been completed yet**, you may generate a full new \`<training_plan>\` to replace the current one.

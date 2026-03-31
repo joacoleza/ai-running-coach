@@ -125,6 +125,8 @@ export function useChat(): UseChatReturn {
                   content: m.role === 'assistant'
                     ? m.content
                         .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
+                        .replace(/<plan:update-phase[^/]*\/>/g, '')
+                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
                         .replace(/<app:[^/]*\/>/g, '')
@@ -218,7 +220,7 @@ export function useChat(): UseChatReturn {
           if (payload.text) {
             accumulatedText += payload.text;
             // Show plan-update indicator as soon as plan modification tags are detected
-            if (!planUpdateDetected && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add'))) {
+            if (!planUpdateDetected && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add') || accumulatedText.includes('<plan:update-phase') || accumulatedText.includes('<plan:delete-phase'))) {
               planUpdateDetected = true;
               setIsGeneratingPlan(true);
             }
@@ -232,6 +234,8 @@ export function useChat(): UseChatReturn {
                   ...updated[lastIdx],
                   content: accumulatedText
                     .replace(/<training_plan>[\s\S]*/g, '')
+                    .replace(/<plan:update-phase[^/]*\/>/g, '')
+                    .replace(/<plan:delete-phase[^/]*\/>/g, '')
                     .replace(/<plan:update[^/]*\/>/g, '')
                     .replace(/<plan:add[^/]*\/>/g, '')
                     .trim(),
@@ -292,13 +296,17 @@ export function useChat(): UseChatReturn {
               const updatedPlan = await fetchPlan();
               if (updatedPlan) setPlan(updatedPlan);
 
-              // Handle <plan:update> and <plan:add> tags -- strip from display and apply via API
+              // Handle <plan:update>, <plan:add>, <plan:update-phase>, <plan:delete-phase> tags
               const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
               const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
+              const phaseUpdateRegex = /<plan:update-phase\s+([^/]+)\/>/g;
+              const phaseDeleteRegex = /<plan:delete-phase\s*\/>/g;
               const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
               const planAdds = [...accumulatedText.matchAll(planAddRegex)];
+              const phaseUpdates = [...accumulatedText.matchAll(phaseUpdateRegex)];
+              const phaseDeletes = [...accumulatedText.matchAll(phaseDeleteRegex)];
 
-              if (planUpdates.length > 0 || planAdds.length > 0) {
+              if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0) {
                 // Strip tags from displayed message
                 setMessages((prev) => {
                   const updated = [...prev];
@@ -307,6 +315,8 @@ export function useChat(): UseChatReturn {
                     updated[updated.length - 1] = {
                       ...last,
                       content: last.content
+                        .replace(phaseUpdateRegex, '')
+                        .replace(phaseDeleteRegex, '')
                         .replace(planUpdateRegex, '')
                         .replace(planAddRegex, '')
                         .trim(),
@@ -356,7 +366,49 @@ export function useChat(): UseChatReturn {
                     }
                   }
                 }
-                const allErrors = [...updateErrors, ...addErrors];
+
+                // Apply each phase update via PATCH
+                const phaseUpdateErrors: string[] = [];
+                for (const match of phaseUpdates) {
+                  const attrs = parseXmlAttrs(match[1]);
+                  if (attrs.index !== undefined) {
+                    const updates: { name?: string; description?: string } = {};
+                    if (attrs.name !== undefined) updates.name = attrs.name;
+                    if (attrs.description !== undefined) updates.description = attrs.description;
+                    try {
+                      const res = await fetch(`/api/plan/phases/${attrs.index}`, {
+                        method: 'PATCH',
+                        headers: authHeaders(),
+                        body: JSON.stringify(updates),
+                      });
+                      if (!res.ok) {
+                        const body = await res.json().catch(() => ({}));
+                        phaseUpdateErrors.push(body.error ?? `Could not update phase ${attrs.index}`);
+                      }
+                    } catch {
+                      // Non-fatal
+                    }
+                  }
+                }
+
+                // Apply each phase delete via DELETE
+                const phaseDeleteErrors: string[] = [];
+                for (let i = 0; i < phaseDeletes.length; i++) {
+                  try {
+                    const res = await fetch('/api/plan/phases/last', {
+                      method: 'DELETE',
+                      headers: authHeaders(),
+                    });
+                    if (!res.ok) {
+                      const body = await res.json().catch(() => ({}));
+                      phaseDeleteErrors.push(body.error ?? 'Could not delete last phase');
+                    }
+                  } catch {
+                    // Non-fatal
+                  }
+                }
+
+                const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors];
                 if (allErrors.length > 0) {
                   setMessages((prev) => {
                     const updated = [...prev];
@@ -507,7 +559,7 @@ export function useChat(): UseChatReturn {
               if (payload.text) {
                 accumulatedText += payload.text;
                 // Show plan-update indicator as soon as plan modification tags are detected
-                if (!planUpdateDetected2 && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add'))) {
+                if (!planUpdateDetected2 && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add') || accumulatedText.includes('<plan:update-phase') || accumulatedText.includes('<plan:delete-phase'))) {
                   planUpdateDetected2 = true;
                   if (alive()) setIsGeneratingPlan(true);
                 }
@@ -520,6 +572,8 @@ export function useChat(): UseChatReturn {
                         ...updated[lastIdx],
                         content: accumulatedText
                           .replace(/<training_plan>[\s\S]*/g, '')
+                          .replace(/<plan:update-phase[^/]*\/>/g, '')
+                          .replace(/<plan:delete-phase[^/]*\/>/g, '')
                           .replace(/<plan:update[^/]*\/>/g, '')
                           .replace(/<plan:add[^/]*\/>/g, '')
                           .trim(),
@@ -562,10 +616,14 @@ export function useChat(): UseChatReturn {
 
                   const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
                   const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
+                  const phaseUpdateRegex2 = /<plan:update-phase\s+([^/]+)\/>/g;
+                  const phaseDeleteRegex2 = /<plan:delete-phase\s*\/>/g;
                   const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
                   const planAdds = [...accumulatedText.matchAll(planAddRegex)];
+                  const phaseUpdates2 = [...accumulatedText.matchAll(phaseUpdateRegex2)];
+                  const phaseDeletes2 = [...accumulatedText.matchAll(phaseDeleteRegex2)];
 
-                  if (planUpdates.length > 0 || planAdds.length > 0) {
+                  if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates2.length > 0 || phaseDeletes2.length > 0) {
                     if (alive()) {
                       setMessages((prev) => {
                         const updated = [...prev];
@@ -574,6 +632,8 @@ export function useChat(): UseChatReturn {
                           updated[updated.length - 1] = {
                             ...last,
                             content: last.content
+                              .replace(phaseUpdateRegex2, '')
+                              .replace(phaseDeleteRegex2, '')
                               .replace(planUpdateRegex, '')
                               .replace(planAddRegex, '')
                               .trim(),
@@ -624,7 +684,49 @@ export function useChat(): UseChatReturn {
                         }
                       }
                     }
-                    const allErrors2 = [...updateErrors2, ...addErrors2];
+
+                    const phaseUpdateErrors2: string[] = [];
+                    for (const match of phaseUpdates2) {
+                      if (!alive()) return;
+                      const attrs = parseXmlAttrs(match[1]);
+                      if (attrs.index !== undefined) {
+                        const updates: { name?: string; description?: string } = {};
+                        if (attrs.name !== undefined) updates.name = attrs.name;
+                        if (attrs.description !== undefined) updates.description = attrs.description;
+                        try {
+                          const res = await fetch(`/api/plan/phases/${attrs.index}`, {
+                            method: 'PATCH',
+                            headers: authHeaders(),
+                            body: JSON.stringify(updates),
+                          });
+                          if (!res.ok) {
+                            const body = await res.json().catch(() => ({}));
+                            phaseUpdateErrors2.push(body.error ?? `Could not update phase ${attrs.index}`);
+                          }
+                        } catch {
+                          // Non-fatal
+                        }
+                      }
+                    }
+
+                    const phaseDeleteErrors2: string[] = [];
+                    for (let i = 0; i < phaseDeletes2.length; i++) {
+                      if (!alive()) return;
+                      try {
+                        const res = await fetch('/api/plan/phases/last', {
+                          method: 'DELETE',
+                          headers: authHeaders(),
+                        });
+                        if (!res.ok) {
+                          const body = await res.json().catch(() => ({}));
+                          phaseDeleteErrors2.push(body.error ?? 'Could not delete last phase');
+                        }
+                      } catch {
+                        // Non-fatal
+                      }
+                    }
+
+                    const allErrors2 = [...updateErrors2, ...addErrors2, ...phaseUpdateErrors2, ...phaseDeleteErrors2];
                     if (allErrors2.length > 0 && alive()) {
                       setMessages((prev) => {
                         const updated = [...prev];

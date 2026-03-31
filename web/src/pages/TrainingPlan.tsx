@@ -3,7 +3,7 @@ import { PlanView } from '../components/plan/PlanView';
 import { PlanActions } from '../components/plan/PlanActions';
 
 export function TrainingPlan() {
-  const { plan, isLoading, error, updateDay, deleteDay, addDay, archivePlan } = usePlan();
+  const { plan, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase } = usePlan();
 
   if (isLoading) {
     return <div className="p-6 text-gray-400">Loading plan...</div>;
@@ -37,7 +37,7 @@ export function TrainingPlan() {
               {plan.targetDate && <span className="text-gray-600">Target: {plan.targetDate}</span>}
             </div>
           )}
-          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} />
+          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} />
         </>
       ) : !plan || plan.status === 'onboarding' ? (
         <p className="mt-4 text-gray-600">
