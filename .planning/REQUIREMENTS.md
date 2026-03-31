@@ -35,9 +35,9 @@
 
 ### Run Logging
 
-- [ ] **RUN-01**: User can log a run manually (date, distance, duration, avg HR optional, notes optional) from the Training Plan page or the Runs page
-- [ ] **RUN-02**: Logged run stored with: date, distance, duration, avg HR (optional), notes (optional), computed pace
-- [ ] **RUN-04**: Run linked to the matching active plan day; linked run marks the day completed
+- [x] **RUN-01**: User can log a run manually (date, distance, duration, avg HR optional, notes optional) from the Training Plan page or the Runs page
+- [x] **RUN-02**: Logged run stored with: date, distance, duration, avg HR (optional), notes (optional), computed pace
+- [x] **RUN-04**: Run linked to the matching active plan day; linked run marks the day completed
 
 ### AI Coaching Chat
 
@@ -112,9 +112,9 @@
 | PLAN-02 | Phase 2 | Complete |
 | PLAN-03 | Phase 2 | Complete |
 | PLAN-04 | Phase 2 | Complete |
-| RUN-01 | Phase 3 | Pending |
-| RUN-02 | Phase 3 | Pending |
-| RUN-04 | Phase 3 | Pending |
+| RUN-01 | Phase 3 | Complete |
+| RUN-02 | Phase 3 | Complete |
+| RUN-04 | Phase 3 | Complete |
 | COACH-01 | Phase 2 | Complete |
 | COACH-02 | Phase 2 | Complete |
 | COACH-03 | Phase 3 | Complete |
