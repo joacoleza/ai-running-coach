@@ -62,9 +62,9 @@ result: pass
 
 ## Summary
 
-total: 10
+total: 12
 passed: 6
-issues: 4
+issues: 6
 pending: 0
 skipped: 0
 
@@ -101,3 +101,31 @@ skipped: 0
   test: 4
   artifacts: [web/src/pages/Runs.tsx]
   missing: [stable reset logic that fully prevents stale observer firing after filter resets]
+
+### 10. Log run from Training Plan uses same modal as Runs page
+expected: Clicking "Log run" on a plan day opens the same RunDetailModal/entry experience as logging a run from the Runs page — no separate inline form component. Single shared implementation.
+result: issue
+reported: "Log run from training plan should open the exact same modal as in the run section, no need to duplicate components."
+severity: major
+
+### 11. Clicking outside a modal closes it
+expected: Clicking on the backdrop/overlay behind any modal (RunEntryForm, RunDetailModal, LinkRunModal, etc.) dismisses it, the same as clicking Cancel or pressing Escape.
+result: issue
+reported: "Clicking outside of modals should close them."
+severity: minor
+
+- truth: "Log run from Training Plan uses the same modal component as the Runs page — no duplicate run entry UI"
+  status: failed
+  reason: "User reported: two separate components for the same action — should be one shared modal"
+  severity: major
+  test: 10
+  artifacts: [web/src/components/runs/RunEntryForm.tsx, web/src/components/plan/DayRow.tsx, web/src/components/runs/RunDetailModal.tsx]
+  missing: [unified run entry modal used from both Training Plan and Runs page]
+
+- truth: "Clicking outside any modal (on the backdrop) closes it"
+  status: failed
+  reason: "User reported: clicking outside modals does not close them"
+  severity: minor
+  test: 11
+  artifacts: [web/src/components/runs/RunDetailModal.tsx, web/src/components/runs/LinkRunModal.tsx]
+  missing: [backdrop onClick handler on all modals]
