@@ -171,7 +171,7 @@ test.describe('Run Logging', () => {
 
     // Route GET /api/runs — initially empty
     let runsData: any[] = []
-    await page.route('**/api/runs', async (route: any) => {
+    await page.route('**/api/runs**', async (route: any) => {
       if (route.request().method() === 'POST') {
         // After posting, add the new run to the list
         runsData = [{ ...mockUnlinkedRun, _id: 'run-standalone-001' }]
@@ -180,11 +180,13 @@ test.describe('Run Logging', () => {
           contentType: 'application/json',
           body: JSON.stringify({ ...mockUnlinkedRun, _id: 'run-standalone-001' }),
         })
-      } else {
+      } else if (!route.request().url().includes('unlinked')) {
         await route.fulfill({
           contentType: 'application/json',
           body: JSON.stringify({ runs: runsData, total: runsData.length }),
         })
+      } else {
+        await route.continue()
       }
     })
 
