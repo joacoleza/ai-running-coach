@@ -14,6 +14,7 @@ export async function getDb(): Promise<Db> {
   db = client.db('running-coach');
   await db.collection('messages').createIndex({ planId: 1, timestamp: 1 });
   await db.collection('plans').createIndex({ status: 1, createdAt: -1 });
+  await db.collection('runs').createIndex({ date: -1 });
   return db;
 }
 
