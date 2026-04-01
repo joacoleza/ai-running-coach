@@ -233,7 +233,7 @@ Plans:
 **Requirements:** COACH-03, COACH-04
 **Gap Closure:** Closes integration warnings from v1.1 audit
 
-**Plans:** 1 plan
+**Plans:** 7/7 plans complete
 
 Plans:
 - [ ] 03.1-01-PLAN.md — Fix stale closure in RunDetailModal + strip XML from TrainingPlan progressFeedback

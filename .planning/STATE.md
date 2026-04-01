@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-31T16:46:44.154Z"
+last_updated: "2026-04-01T00:13:46.463Z"
 progress:
-  total_phases: 6
+  total_phases: 8
   completed_phases: 6
-  total_plans: 28
-  completed_plans: 28
-  percent: 100
+  total_plans: 30
+  completed_plans: 29
+  percent: 97
 ---
 
 # State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 02.1 (training-plan-redesign + UAT fixes)
 **Status:** Executing Phase 03
 **Plans:** 5/5
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 97%
 
 ## Milestone
 
@@ -136,6 +136,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03-06]: API tests import runs.js + planDays.js + plan.js together so undo-unlink and patchPlan tests reuse same handler map
 - [Phase 03-06]: E2E tests use route mocking (not real DB) consistent with training-plan.spec.ts pattern
 - [Phase 03-06]: linkRun test uses plain fakeReq object (params + json body spy can't coexist in HttpRequest constructor params option)
+- [Phase 03-run-logging]: offsetRef + totalRef eliminate stale closure in Runs page IntersectionObserver
+- [Phase 03-run-logging]: linkRun 409 guard now checks existing linked run not just completed flag
 
 ## Accumulated Context
 
@@ -161,6 +163,7 @@ _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/descriptio
 | Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
 | Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
 | Phase 03-run-logging P06 | 5min | 4 tasks | 3 files |
+| Phase 03-run-logging P07 | 20 min | 3 tasks | 11 files |
 
 ### Quick Tasks Completed
 
