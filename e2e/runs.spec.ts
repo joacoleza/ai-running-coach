@@ -143,8 +143,8 @@ test.describe('Run Logging', () => {
       }
     })
 
-    // Click "Mark as completed" on Day A (opens RunEntryForm inline)
-    await page.getByTitle('Mark as completed').click()
+    // Click "Log run" on Day A (opens RunEntryForm inline)
+    await page.getByTitle('Log run data').click()
 
     // RunEntryForm should appear (look for distance placeholder)
     await expect(page.getByPlaceholder('5.0')).toBeVisible({ timeout: 5_000 })
@@ -213,11 +213,11 @@ test.describe('Run Logging', () => {
   test('link an unlinked run to a training plan day', async ({ page }) => {
     await loginWithPlan(page)
 
-    // Route GET /api/runs/unlinked to return one unlinked run
-    await page.route('**/api/runs/unlinked', async (route: any) => {
+    // Route GET /api/runs?unlinked=true to return one unlinked run
+    await page.route('**/api/runs?unlinked=true**', async (route: any) => {
       await route.fulfill({
         contentType: 'application/json',
-        body: JSON.stringify({ runs: [mockUnlinkedRun] }),
+        body: JSON.stringify({ runs: [mockUnlinkedRun], total: 1 }),
       })
     })
 
