@@ -168,12 +168,13 @@ app.http('listRuns', {
       const db = await getDb();
       const col = db.collection<Run>('runs');
 
-      const [runs, total] = await Promise.all([
+      const [runs, total, totalAll] = await Promise.all([
         col.find(filter).sort({ date: -1, createdAt: -1 }).skip(offset).limit(limit).toArray(),
         col.countDocuments(filter),
+        col.countDocuments({}),
       ]);
 
-      return { status: 200, jsonBody: { runs, total } };
+      return { status: 200, jsonBody: { runs, total, totalAll } };
     } catch (err) {
       context.log('Error listing runs:', err);
       return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };

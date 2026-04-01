@@ -51,7 +51,7 @@ export async function fetchRuns(params?: {
   dateTo?: string;
   distanceMin?: number;
   distanceMax?: number;
-}): Promise<{ runs: Run[]; total: number }> {
+}): Promise<{ runs: Run[]; total: number; totalAll: number }> {
   const query = new URLSearchParams();
   if (params?.limit !== undefined) query.set('limit', String(params.limit));
   if (params?.offset !== undefined) query.set('offset', String(params.offset));
@@ -61,7 +61,7 @@ export async function fetchRuns(params?: {
   if (params?.distanceMax !== undefined) query.set('distanceMax', String(params.distanceMax));
   const res = await fetch(`/api/runs?${query}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('Failed to fetch runs');
-  return res.json() as Promise<{ runs: Run[]; total: number }>;
+  return res.json() as Promise<{ runs: Run[]; total: number; totalAll: number }>;
 }
 
 export async function fetchUnlinkedRuns(limit = 100): Promise<Run[]> {

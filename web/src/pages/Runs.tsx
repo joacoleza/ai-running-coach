@@ -130,7 +130,7 @@ function FilterPanel({
 
 export function Runs() {
   const [runs, setRuns] = useState<Run[]>([]);
-  const [total, setTotal] = useState(0);
+  const [totalAll, setTotalAll] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -170,8 +170,8 @@ export function Runs() {
           ...filters,
         });
         setRuns((prev) => (reset ? result.runs : [...prev, ...result.runs]));
-        setTotal(result.total);
         totalRef.current = result.total;
+        setTotalAll(result.totalAll);
         offsetRef.current = reset ? result.runs.length : currentOffset + result.runs.length;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load runs');
@@ -295,7 +295,7 @@ export function Runs() {
       {/* Run count */}
       {!isLoading && runs.length > 0 && (
         <p className="text-xs text-gray-400 text-center mt-3">
-          Showing {runs.length} of {total} run{total !== 1 ? 's' : ''}
+          Showing {runs.length} of {totalAll} run{totalAll !== 1 ? 's' : ''}
         </p>
       )}
 
@@ -328,11 +328,8 @@ export function Runs() {
           }}
           onDeleted={(id) => {
             setRuns((prev) => prev.filter((r) => r._id !== id));
-            setTotal((t) => {
-              const newTotal = t - 1;
-              totalRef.current = newTotal;
-              return newTotal;
-            });
+            totalRef.current = Math.max(0, totalRef.current - 1);
+            setTotalAll((t) => Math.max(0, t - 1));
             offsetRef.current = Math.max(0, offsetRef.current - 1);
             setSelectedRun(null);
           }}
