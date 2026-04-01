@@ -263,6 +263,7 @@ Plans:
 - Fix planImport.ts docs inconsistency — remove planImport.ts references from VERIFICATION.md since it was subsequently deleted
 - Fix `act()` warning in `App.auth.test.tsx` from CoachPanel async state update
 - Update tests for removed endpoints
+- Increase API test coverage back above 80% — Phase 3 added `runs.ts` (412 lines) and `chat.ts` run-enrichment code that dropped overall coverage from 84.3% to 68.9%; target the uncovered paths in `chat.ts` (run context injection, `formatPace`, `formatRunDate`) and any untested branches in `runs.ts`
 
 **UAT:**
 - `PATCH /api/sessions/:sessionId` returns 404 (route removed)

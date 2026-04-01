@@ -156,4 +156,6 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
 - ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
 - ~~**Phase 3** — Run Logging & Feedback (manual run entry, post-run coaching, plan feedback)~~ ✓
+- **Phase 3.1** — Fix Coach Feedback Quality (stale closure in insight save, raw XML in progressFeedback)
+- **Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
