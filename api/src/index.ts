@@ -11,3 +11,4 @@ import './functions/planDays.js';
 import './functions/planPhases.js';
 import './functions/planArchive.js';
 import './functions/sessions.js';
+import './functions/runs.js';

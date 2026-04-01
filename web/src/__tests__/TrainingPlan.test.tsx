@@ -11,6 +11,22 @@ vi.mock('../hooks/usePlan', () => ({
   usePlan: vi.fn(),
 }));
 
+vi.mock('../contexts/ChatContext', () => ({
+  useChatContext: vi.fn(() => ({
+    sendMessage: vi.fn().mockResolvedValue(''),
+    messages: [],
+    plan: null,
+    isStreaming: false,
+    isGeneratingPlan: false,
+    isLoading: false,
+    isBusy: false,
+    error: null,
+    startPlan: vi.fn(),
+    startOver: vi.fn(),
+    clearError: vi.fn(),
+  })),
+}));
+
 import { usePlan } from '../hooks/usePlan';
 
 const mockUsePlan = vi.mocked(usePlan);

@@ -18,6 +18,12 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.removeEventListener('open-coach', handler);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setCoachOpen(true);
+    window.addEventListener('open-coach-panel', handler);
+    return () => window.removeEventListener('open-coach-panel', handler);
+  }, []);
+
   // Lock body scroll on mobile when coach panel is open (prevents Safari scrolling the page behind)
   useEffect(() => {
     document.body.style.overflow = coachOpen ? 'hidden' : '';

@@ -1,9 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { PlanData } from '../../hooks/usePlan';
+import type { Run } from '../../hooks/useRuns';
 import { DayRow } from './DayRow';
 import { PhaseHeader } from './PhaseHeader';
+import { LinkRunModal } from '../runs/LinkRunModal';
 
 const ALL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
+
+function authHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'x-app-password': localStorage.getItem('app_password') ?? '',
+  };
+}
 
 interface AddDayFormProps {
   weekNumber: number;
@@ -129,76 +138,132 @@ interface PlanViewProps {
 
 export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
+  const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
+
+  // Fetch runs linked to this plan, keyed by "weekNumber-label"
+  const fetchLinkedRuns = useCallback(async () => {
+    if (!plan?._id) return;
+    try {
+      const res = await fetch(`/api/runs?planId=${plan._id}&limit=500`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json() as { runs: Run[] };
+      const map = new Map<string, Run>();
+      for (const run of data.runs) {
+        if (run.weekNumber && run.dayLabel) {
+          map.set(`${run.weekNumber}-${run.dayLabel}`, run);
+        }
+      }
+      setLinkedRuns(map);
+    } catch {
+      // silently ignore — linked run display is non-critical
+    }
+  }, [plan?._id]);
+
+  // Fetch on mount and when plan ID or refreshKey changes
+  useEffect(() => {
+    void fetchLinkedRuns();
+  }, [fetchLinkedRuns, refreshKey]);
+
+  // Re-fetch when plan-updated event fires (run linked/unlinked)
+  useEffect(() => {
+    const handler = () => setRefreshKey((k) => k + 1);
+    window.addEventListener('plan-updated', handler);
+    return () => window.removeEventListener('plan-updated', handler);
+  }, []);
 
   return (
-    <div>
-      {plan.phases.map((phase, idx) => (
-        <section key={phase.name} className="mb-8">
-          <PhaseHeader
-            phase={phase}
-            phaseIndex={idx}
-            isLastPhase={idx === plan.phases.length - 1}
-            totalPhases={plan.phases.length}
-            onUpdatePhase={onUpdatePhase ?? (async () => {})}
-            onDeletePhase={onDeletePhase}
-            readonly={readonly || !onUpdatePhase}
-          />
-          {phase.weeks.map(week => {
-            // Filter out rest days and sort by label alphabetically
-            const activeDays = week.days
-              .filter(d => d.type !== 'rest')
-              .slice()
-              .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+    <>
+      <div>
+        {plan.phases.map((phase, idx) => (
+          <section key={phase.name} className="mb-8">
+            <PhaseHeader
+              phase={phase}
+              phaseIndex={idx}
+              isLastPhase={idx === plan.phases.length - 1}
+              totalPhases={plan.phases.length}
+              onUpdatePhase={onUpdatePhase ?? (async () => {})}
+              onDeletePhase={onDeletePhase}
+              readonly={readonly || !onUpdatePhase}
+            />
+            {phase.weeks.map(week => {
+              // Filter out rest days and sort by label alphabetically
+              const activeDays = week.days
+                .filter(d => d.type !== 'rest')
+                .slice()
+                .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
 
-            const isAddingHere =
-              addingDayTo?.phaseName === phase.name &&
-              addingDayTo?.weekNumber === week.weekNumber;
+              const isAddingHere =
+                addingDayTo?.phaseName === phase.name &&
+                addingDayTo?.weekNumber === week.weekNumber;
 
-            // Show "+ Add day" if there's at least one label slot available (fewer than 7 non-rest days)
-            const takenLabels = activeDays.map(d => d.label);
-            const hasAvailableLabel = takenLabels.length < 7;
+              // Show "+ Add day" if there's at least one label slot available (fewer than 7 non-rest days)
+              const takenLabels = activeDays.map(d => d.label);
+              const hasAvailableLabel = takenLabels.length < 7;
 
-            return (
-              <div key={week.weekNumber} className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
-                <div className="space-y-1">
-                  {activeDays.map(day => (
-                    <DayRow
-                      key={day.label}
-                      day={day}
-                      weekNumber={week.weekNumber}
-                      onUpdate={onUpdateDay}
-                      onDelete={onDeleteDay}
-                      readonly={readonly}
-                    />
-                  ))}
+              return (
+                <div key={week.weekNumber} className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
+                  <div className="space-y-1">
+                    {activeDays.map(day => (
+                      <DayRow
+                        key={day.label}
+                        day={day}
+                        weekNumber={week.weekNumber}
+                        onUpdate={onUpdateDay}
+                        onDelete={onDeleteDay}
+                        readonly={readonly}
+                        linkedRun={linkedRuns.get(`${week.weekNumber}-${day.label}`) ?? null}
+                        onRunLinked={
+                          !readonly && !day.skipped && (!day.completed || (day.completed && !linkedRuns.get(`${week.weekNumber}-${day.label}`)))
+                            ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines })
+                            : undefined
+                        }
+                      />
+                    ))}
+                  </div>
+                  {!readonly && onAddDay && hasAvailableLabel && (
+                    isAddingHere ? (
+                      <AddDayForm
+                        weekNumber={week.weekNumber}
+                        existingLabels={takenLabels}
+                        onSave={async (fields) => {
+                          await onAddDay(phase.name, week.weekNumber, fields);
+                          setAddingDayTo(null);
+                        }}
+                        onCancel={() => setAddingDayTo(null)}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setAddingDayTo({ phaseName: phase.name, weekNumber: week.weekNumber })}
+                        className="cursor-pointer mt-1 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                        title="Add a day to this week"
+                      >
+                        + Add day
+                      </button>
+                    )
+                  )}
                 </div>
-                {!readonly && onAddDay && hasAvailableLabel && (
-                  isAddingHere ? (
-                    <AddDayForm
-                      weekNumber={week.weekNumber}
-                      existingLabels={takenLabels}
-                      onSave={async (fields) => {
-                        await onAddDay(phase.name, week.weekNumber, fields);
-                        setAddingDayTo(null);
-                      }}
-                      onCancel={() => setAddingDayTo(null)}
-                    />
-                  ) : (
-                    <button
-                      onClick={() => setAddingDayTo({ phaseName: phase.name, weekNumber: week.weekNumber })}
-                      className="cursor-pointer mt-1 text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                      title="Add a day to this week"
-                    >
-                      + Add day
-                    </button>
-                  )
-                )}
-              </div>
-            );
-          })}
-        </section>
-      ))}
-    </div>
+              );
+            })}
+          </section>
+        ))}
+      </div>
+
+      {/* Link Run Modal */}
+      {linkingDay && (
+        <LinkRunModal
+          weekNumber={linkingDay.weekNumber}
+          dayLabel={linkingDay.label}
+          dayGuidelines={linkingDay.guidelines}
+          onLinked={() => {
+            setLinkingDay(null);
+            setRefreshKey((k) => k + 1);
+          }}
+          onClose={() => setLinkingDay(null)}
+        />
+      )}
+    </>
   );
 }

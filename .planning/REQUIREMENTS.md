@@ -35,16 +35,16 @@
 
 ### Run Logging
 
-- [ ] **RUN-01**: User can log a run manually (date, distance, duration, avg HR optional, notes optional) from the Training Plan page or the Runs page
-- [ ] **RUN-02**: Logged run stored with: date, distance, duration, avg HR (optional), notes (optional), computed pace
-- [ ] **RUN-04**: Run linked to the matching active plan day; linked run marks the day completed
+- [x] **RUN-01**: User can log a run manually (date, distance, duration, avg HR optional, notes optional) from the Training Plan page or the Runs page
+- [x] **RUN-02**: Logged run stored with: date, distance, duration, avg HR (optional), notes (optional), computed pace
+- [x] **RUN-04**: Run linked to the matching active plan day; linked run marks the day completed
 
 ### AI Coaching Chat
 
 - [x] **COACH-01**: Chat interface for back-and-forth conversation with the AI coach
 - [x] **COACH-02**: Coach responses stream to the UI in real-time (no waiting for full response)
-- [ ] **COACH-03**: Post-run: coach provides feedback (run summary vs plan, one insight, any plan adjustment)
-- [ ] **COACH-04**: Coach can adjust the training plan based on run history and conversation
+- [x] **COACH-03**: Post-run: coach provides feedback (run summary vs plan, one insight, any plan adjustment)
+- [x] **COACH-04**: Coach can adjust the training plan based on run history and conversation
 - [x] **COACH-05**: Chat history persists across sessions (user can review past coaching conversations)
 - [x] **COACH-06**: Claude context uses rolling 20-message window + condensed memory summary
 
@@ -112,13 +112,13 @@
 | PLAN-02 | Phase 2 | Complete |
 | PLAN-03 | Phase 2 | Complete |
 | PLAN-04 | Phase 2 | Complete |
-| RUN-01 | Phase 3 | Pending |
-| RUN-02 | Phase 3 | Pending |
-| RUN-04 | Phase 3 | Pending |
+| RUN-01 | Phase 3 | Complete |
+| RUN-02 | Phase 3 | Complete |
+| RUN-04 | Phase 3 | Complete |
 | COACH-01 | Phase 2 | Complete |
 | COACH-02 | Phase 2 | Complete |
-| COACH-03 | Phase 3 | Pending |
-| COACH-04 | Phase 3 | Pending |
+| COACH-03 | Phase 3 | Complete |
+| COACH-04 | Phase 3 | Complete |
 | COACH-05 | Phase 2 | Complete |
 | COACH-06 | Phase 2 | Complete |
 | DASH-01 | Phase 4 | Pending |

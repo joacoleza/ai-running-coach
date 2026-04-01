@@ -37,6 +37,7 @@ export interface PlanData {
   objective?: 'marathon' | 'half-marathon' | '15km' | '10km' | '5km';
   targetDate?: string;
   phases: PlanPhase[];
+  progressFeedback?: string;
 }
 
 interface UsePlanReturn {

@@ -3,7 +3,7 @@ status: partial
 phase: 02-coach-chat
 source: [02-VERIFICATION.md]
 started: 2026-03-23T21:50:00Z
-updated: 2026-03-23T21:50:00Z
+updated: 2026-03-31T00:00:00Z
 ---
 
 ## Current Test
@@ -16,19 +16,20 @@ updated: 2026-03-23T21:50:00Z
 expected: Coach asks one question at a time; after question 6, summarizes and offers to generate the plan; onboardingStep increments with each exchange.
 result: [pending]
 
-### 2. Plan Generation and Calendar Navigation
-expected: After onboarding, coach response contains `<training_plan>` JSON; POST /api/plan/generate called automatically; main content navigates to /plan; calendar shows color-coded weekly sessions.
+### 2. Plan Generation and Navigation to /plan
+expected: After onboarding, coach response contains `<training_plan>` JSON; plan is saved automatically; main content navigates to /plan and shows the structured phase/week/day plan view.
 result: [pending]
+note: Updated — "calendar shows color-coded weekly sessions" is stale (calendar removed by Phase 02.1); navigation to /plan and plan generation remain valid.
 
 ### 3. Session Modal Inline Editing
-expected: Clicking a calendar event opens SessionModal with all fields editable (date, distance, duration, pace, BPM, notes). Saving calls PATCH /api/sessions/:id and calendar reflects the update.
-result: [pending]
+expected: [STALE — SessionModal.tsx deleted by Phase 02.1; inline editing now lives in DayRow.tsx, tested in 02.1-HUMAN-UAT.md]
+result: [stale]
 
 ### 4. Mark Session Complete
-expected: Clicking "Mark Complete" turns session green on calendar. Clicking again shows "Mark Incomplete" and reverts color.
-result: [pending]
+expected: [STALE — PlanCalendar.tsx deleted by Phase 02.1; day complete/skip now via DayRow buttons + PATCH /api/plan/days/:week/:day, tested in 02.1-HUMAN-UAT.md]
+result: [stale]
 
-### 5. Chat History After Page Refresh (Gap Closure)
+### 5. Chat History After Page Refresh
 expected: After having a chat conversation and refreshing the page, the History view shows the previously sent messages loaded from MongoDB.
 result: [pending]
 
@@ -37,8 +38,10 @@ result: [pending]
 total: 5
 passed: 0
 issues: 0
-pending: 5
+pending: 3
 skipped: 0
 blocked: 0
+stale: 2
 
 ## Gaps
+

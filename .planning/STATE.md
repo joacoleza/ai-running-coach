@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1
-milestone_name: Personal AI Running Coach
-status: complete
-last_updated: "2026-03-26T00:00:00.000Z"
+milestone: v1.1
+milestone_name: milestone
+status: planning
+last_updated: "2026-04-01T00:20:33.309Z"
 progress:
-  total_phases: 6
+  total_phases: 8
   completed_phases: 6
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  total_plans: 30
+  completed_plans: 29
+  percent: 97
 ---
 
 # State
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** feature/fix-calendar-date-accuracy — remove dates from plan model, use A-G day labels and global sequential week numbers; PR pending
+**Current focus:** Phase 03 — run-logging
 
 ## Current Phase
 
-**Phase:** 02.1 (training-plan-redesign + UAT fixes)
-**Status:** Complete — PR open, awaiting merge
+**Phase:** 03.1
+**Status:** Ready to plan
 **Plans:** 5/5
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 97%
 
 ## Milestone
 
@@ -129,6 +129,15 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [260329-ws0]: get_week_dates tool removed from chat.ts entirely — 26-week pre-computed calendar in system prompt (offsets -13 to +12) eliminates tool-call latency and tool misuse errors
 - [260329-ws0]: normalizePlanPhases replaces per-week normalizeWeekDays for plan saves in chat.ts and plan.ts — global pass redistributes days placed in wrong week objects by Claude
 - [260330-07e]: Training plan model now uses globally sequential week numbers + A-G day labels instead of calendar dates; plan:update/plan:add XML tags use week="N" day="X"; system prompt calendar block removed entirely; assignPlanStructure() replaces normalizePlanPhases()
+- [Phase 03-01]: Run unlinked filter uses planId exists-false for TypeScript type compatibility
+- [Phase 03-02]: Run lookup uses Map<weekNumber-dayLabel, Run> for O(1) access during synthetic context line building
+- [Phase 03-02]: Run fetch in chat.ts is non-fatal (try/catch) to avoid blocking chat flow if runs collection unavailable
+- [Phase 03-02]: Insight text truncated at 150 chars to keep context compact
+- [Phase 03-06]: API tests import runs.js + planDays.js + plan.js together so undo-unlink and patchPlan tests reuse same handler map
+- [Phase 03-06]: E2E tests use route mocking (not real DB) consistent with training-plan.spec.ts pattern
+- [Phase 03-06]: linkRun test uses plain fakeReq object (params + json body spy can't coexist in HttpRequest constructor params option)
+- [Phase 03-run-logging]: offsetRef + totalRef eliminate stale closure in Runs page IntersectionObserver
+- [Phase 03-run-logging]: linkRun 409 guard now checks existing linked run not just completed flag
 
 ## Accumulated Context
 
@@ -151,6 +160,10 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 
 _Initialized: 2026-03-21_
 _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/description and delete last phase with confirmation_
+| Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
+| Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
+| Phase 03-run-logging P06 | 5min | 4 tasks | 3 files |
+| Phase 03-run-logging P07 | 20 min | 3 tasks | 11 files |
 
 ### Quick Tasks Completed
 

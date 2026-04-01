@@ -5,7 +5,27 @@ import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import { assignPlanStructure } from '../shared/planUtils.js';
-import { ChatMessage, Plan, PlanPhase, PlanGoal } from '../shared/types.js';
+import { ChatMessage, Plan, PlanPhase, PlanGoal, Run } from '../shared/types.js';
+
+/**
+ * Format a decimal pace (minutes per km/mile) as "M:SS"
+ * e.g. 5.5 → "5:30", 4.25 → "4:15"
+ */
+function formatPace(paceDecimal: number): string {
+  const minutes = Math.floor(paceDecimal);
+  const seconds = Math.round((paceDecimal - minutes) * 60);
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+/**
+ * Format an ISO date string (YYYY-MM-DD) as DD/MM/YYYY
+ */
+function formatRunDate(isoDate: string): string {
+  const parts = isoDate.split('-');
+  if (parts.length !== 3) return isoDate;
+  const [year, month, day] = parts;
+  return `${day}/${month}/${year}`;
+}
 
 const anthropic = new Anthropic();
 
@@ -94,12 +114,53 @@ app.http('chat', {
         });
 
       if (trainingDays.length > 0) {
+        // Fetch linked runs for completed days to enrich context
+        let runsByKey = new Map<string, Run>();
+        if (plan?._id && ObjectId.isValid(planId)) {
+          try {
+            const linkedRuns = await db.collection<Run>('runs').find({
+              planId: plan._id,
+            }).toArray();
+            for (const run of linkedRuns) {
+              if (run.weekNumber != null && run.dayLabel) {
+                runsByKey.set(`${run.weekNumber}-${run.dayLabel}`, run);
+              }
+            }
+          } catch {
+            // Non-fatal: proceed without run data if fetch fails
+          }
+        }
+
         const lines = trainingDays.map(d => {
           const status = d.completed ? '[COMPLETED]' : d.skipped ? '[SKIPPED]' : '[UPCOMING]';
           const obj = d.objective ? ` ${d.objective.value}${d.objective.unit}` : '';
-          return `- Week ${d.weekNumber} Day ${d.label} ${status}:${obj} — ${d.guidelines}`;
+          let line = `- Week ${d.weekNumber} Day ${d.label} ${status}:${obj} — ${d.guidelines}`;
+
+          // For completed days, append actual run data if available
+          if (d.completed && d.weekNumber != null && d.label) {
+            const run = runsByKey.get(`${d.weekNumber}-${d.label}`);
+            if (run) {
+              const runDate = formatRunDate(run.date);
+              const runPace = run.pace > 0 ? ` @ ${formatPace(run.pace)}/km` : '';
+              line += ` | Ran: ${runDate}, ${run.distance}km${runPace}`;
+              if (run.insight) {
+                const truncatedInsight = run.insight.length > 150
+                  ? run.insight.slice(0, 150) + '...'
+                  : run.insight;
+                line += ` | Insight: ${truncatedInsight}`;
+              }
+            }
+          }
+
+          return line;
         });
-        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${lines.join('\n')}`;
+
+        // Prepend progressFeedback if available
+        const feedbackPrefix = plan?.progressFeedback
+          ? `Coach's previous progress assessment: ${plan.progressFeedback}\n\n`
+          : '';
+
+        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${feedbackPrefix}${lines.join('\n')}`;
 
         // Insert synthetic pair before the last message (the current user message)
         const currentUserMsg = contextMessages.pop()!;

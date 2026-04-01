@@ -10,7 +10,7 @@ interface ChatContextValue {
   isLoading: boolean;
   isBusy: boolean;
   error: string | null;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string) => Promise<string>;
   startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
   startOver: () => void;
   clearError: () => void;

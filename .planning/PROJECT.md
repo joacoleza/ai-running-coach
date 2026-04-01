@@ -21,9 +21,12 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [x] User can set a running goal (event type, target date, current fitness level) — Validated in Phase 2: Coach Chat
 - [x] Coach asks onboarding questions via chat and generates a training plan — Validated in Phase 2: Coach Chat
 - [x] User can view the training plan as a structured hierarchical view (phases/weeks/days) — Validated in Phase 2.1: Training Plan Redesign
+- [x] User can manually log a run (distance, duration, date, notes) — Validated in Phase 3: Run Logging & Feedback
+- [x] User can view logged runs in a filterable, paginated Runs list — Validated in Phase 3: Run Logging & Feedback
+- [x] Coach receives run history in context and can provide feedback via chat — Validated in Phase 3: Run Logging & Feedback
+- [x] Coach can adjust the training plan based on run history — Validated in Phase 3: Run Logging & Feedback
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
-- [ ] Coach parses run data and provides feedback via chat
-- [ ] Coach adjusts the training plan based on run history
+- [ ] Coach parses Apple Health data and provides feedback via chat
 - [ ] Dashboard shows plan calendar, run history/stats, and progress toward goal
 - [ ] Coach chat history is accessible as a dedicated section
 - [ ] User can import a training plan from raw LLM conversation text (Claude parses and structures it)
@@ -84,7 +87,7 @@ Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
 
 ## Current State
 
-Phase 1.2 complete — Full testing pyramid in place: 11 API tests (unit + integration), 9 web unit tests, 6 E2E specs, GitHub Actions CI on every PR, coverage badge pipeline. Auth is simple password + MongoDB lockout. Ready for Phase 2 (Coach Chat & Plan Generation).
+Phase 3 complete — Run logging loop is fully implemented: owner can log runs manually via RunEntryForm, view them in a paginated/filterable Runs list, link runs to training plan days, and quick-complete days without run data. Coach receives full run history in context and can provide feedback that adjusts the plan. 243 web tests, 168 API tests, 45 E2E tests all passing. Ready for Phase 3.1 (Fix Coach Feedback Quality).
 
 ---
-*Last updated: 2026-03-22 after Phase 1.2: Testing Strategy & CI*
+*Last updated: 2026-04-01 after Phase 3: Run Logging & Feedback*

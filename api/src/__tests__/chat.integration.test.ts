@@ -268,6 +268,132 @@ describe('Chat - synthetic plan-state context injection', () => {
   });
 });
 
+describe('Chat - run context injection into synthetic plan-state (COACH-03)', () => {
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  });
+
+  async function insertActivePlanWithCompletedDay() {
+    const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingStep: 6,
+      onboardingMode: 'conversational',
+      goal: { eventType: '5k', targetDate: '2026-06-01', weeklyMileage: 20, availableDays: 3, units: 'km' },
+      phases: [
+        {
+          name: 'Base',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [
+                { label: 'A', type: 'run', guidelines: 'Easy 5km', completed: true, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return insertedId;
+  }
+
+  it('injects run data for completed day into synthetic context', async () => {
+    const { ObjectId } = await import('mongodb');
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+
+    // Insert a run linked to Week 1 Day A
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 5.2,
+      pace: 5.5,
+      duration: '28:36',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockStream.mockReturnValueOnce(createMockStream('Looking good!'));
+    const req = makeReq({ planId, message: 'How am I doing?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+
+    // Synthetic user message is second-to-last (before the actual user message)
+    const syntheticUserMsg = msgs[msgs.length - 3];
+    expect(syntheticUserMsg.role).toBe('user');
+    expect(syntheticUserMsg.content).toContain('Ran:');
+    expect(syntheticUserMsg.content).toContain('5.2km');
+    expect(syntheticUserMsg.content).toContain('5:30');
+  });
+
+  it('injects progressFeedback before day listing when plan has it set', async () => {
+    const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingStep: 6,
+      onboardingMode: 'conversational',
+      goal: { eventType: '5k', targetDate: '2026-06-01', weeklyMileage: 20, availableDays: 3, units: 'km' },
+      progressFeedback: 'Great week overall',
+      phases: [
+        {
+          name: 'Base',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [
+                { label: 'A', type: 'run', guidelines: 'Easy 5km', completed: false, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const planId = insertedId.toString();
+
+    mockStream.mockReturnValueOnce(createMockStream('Keep it up!'));
+    const req = makeReq({ planId, message: 'How is my progress?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+
+    const syntheticUserMsg = msgs[msgs.length - 3];
+    expect(syntheticUserMsg.role).toBe('user');
+    expect(syntheticUserMsg.content).toContain("Coach's previous progress assessment: Great week overall");
+  });
+
+  it('does not fail when no linked runs exist for completed day', async () => {
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+    // No runs inserted — completed day has no linked run
+
+    mockStream.mockReturnValueOnce(createMockStream('Keep training!'));
+    const req = makeReq({ planId, message: 'Any advice?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    // 200 OK — Azure Functions may return 200 explicitly or undefined (treated as 200)
+    expect(result.status === 200 || result.status === undefined).toBe(true);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+
+    const syntheticUserMsg = msgs[msgs.length - 3];
+    expect(syntheticUserMsg.role).toBe('user');
+    expect(syntheticUserMsg.content).toContain('[COMPLETED]');
+  });
+});
+
 describe('Chat Integration (COACH-01)', () => {
   it('POST /api/chat saves user message to messages collection', async () => {
     const planId = await insertOnboardingPlan();

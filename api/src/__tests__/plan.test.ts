@@ -60,6 +60,7 @@ afterAll(async () => {
 beforeEach(async () => {
   _resetDbForTest();
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('running-coach').collection('runs').deleteMany({});
 });
 
 const validGoal = {
@@ -368,6 +369,50 @@ describe('Plan Generation - past completed/skipped days allowed on initial creat
     expect(day).toBeDefined();
     // Must remain a run day
     expect(day.type).toBe('run');
+  });
+});
+
+describe('Plan Generation - linked-run guard (D-16)', () => {
+  it('returns 409 when linked runs exist', async () => {
+    const planId = await createTestPlan();
+    const planObjectId = new ObjectId(planId);
+
+    // Insert a run linked to the active plan
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5.0,
+      planId: planObjectId,
+      weekNumber: 1,
+      dayLabel: 'A',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toMatch(/logged runs linked/i);
+  });
+
+  it('allows generating plan when no linked runs exist', async () => {
+    const planId = await createTestPlan();
+    const req = makeReq('POST', {
+      planId,
+      claudeResponseText: `<training_plan>${JSON.stringify({ phases: validPhases })}</training_plan>`,
+      goal: validGoal,
+    });
+
+    const result = await handlers.get('generatePlan')!(req, ctx);
+
+    expect(result.status).toBe(200);
   });
 });
 
