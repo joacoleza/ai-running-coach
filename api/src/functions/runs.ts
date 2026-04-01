@@ -169,7 +169,7 @@ app.http('listRuns', {
       const col = db.collection<Run>('runs');
 
       const [runs, total, totalAll] = await Promise.all([
-        col.find(filter).sort({ date: -1, createdAt: -1 }).skip(offset).limit(limit).toArray(),
+        col.find(filter).sort({ date: -1 }).skip(offset).limit(limit).toArray(),
         col.countDocuments(filter),
         col.countDocuments({}),
       ]);
