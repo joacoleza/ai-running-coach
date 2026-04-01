@@ -305,15 +305,9 @@ export function Runs() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-semibold text-gray-900 mb-3">Log a run</h2>
             <RunEntryForm
-              onSave={(run) => {
+              onSave={() => {
                 setShowLogForm(false);
-                setRuns((prev) => [run, ...prev]);
-                setTotal((t) => {
-                  const newTotal = t + 1;
-                  totalRef.current = newTotal;
-                  return newTotal;
-                });
-                offsetRef.current += 1;
+                void loadRuns(true, currentFilters());
               }}
               onCancel={() => setShowLogForm(false)}
             />
