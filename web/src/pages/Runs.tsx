@@ -131,7 +131,6 @@ function FilterPanel({
 export function Runs() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,14 +144,18 @@ export function Runs() {
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
 
+  // Use refs for offset and total to avoid stale closures in IntersectionObserver
+  const offsetRef = useRef(0);
+  const totalRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // loadRuns accepts filters as params and reads offset from ref — no stale closure issues
   const loadRuns = useCallback(
-    async (reset = false) => {
-      const currentOffset = reset ? 0 : offset;
+    async (reset: boolean, filters: { dateFrom?: string; dateTo?: string; distanceMin?: number; distanceMax?: number }) => {
+      const currentOffset = reset ? 0 : offsetRef.current;
       if (reset) {
         setIsLoading(true);
-        setOffset(0);
+        offsetRef.current = 0;
       } else {
         setIsLoadingMore(true);
       }
@@ -160,14 +163,12 @@ export function Runs() {
         const result = await fetchRuns({
           limit: PAGE_SIZE,
           offset: currentOffset,
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          distanceMin: distanceMin ? parseFloat(distanceMin) : undefined,
-          distanceMax: distanceMax ? parseFloat(distanceMax) : undefined,
+          ...filters,
         });
         setRuns((prev) => (reset ? result.runs : [...prev, ...result.runs]));
         setTotal(result.total);
-        if (!reset) setOffset(currentOffset + result.runs.length);
+        totalRef.current = result.total;
+        offsetRef.current = reset ? result.runs.length : currentOffset + result.runs.length;
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load runs');
       } finally {
@@ -175,28 +176,34 @@ export function Runs() {
         setIsLoadingMore(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [offset, dateFrom, dateTo, distanceMin, distanceMax]
+    [] // no dependencies — filters come as params, offset is a ref
   );
+
+  // Helper to build current filters from state — stable reference when filters haven't changed
+  const currentFilters = useCallback(() => ({
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    distanceMin: distanceMin ? parseFloat(distanceMin) : undefined,
+    distanceMax: distanceMax ? parseFloat(distanceMax) : undefined,
+  }), [dateFrom, dateTo, distanceMin, distanceMax]);
 
   // Load on mount and filter changes
   useEffect(() => {
-    void loadRuns(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo, distanceMin, distanceMax]);
+    void loadRuns(true, currentFilters());
+  }, [loadRuns, currentFilters]);
 
   // Infinite scroll sentinel
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) return;
     const obs = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting && runs.length < total && !isLoadingMore) {
-        void loadRuns(false);
+      if (entries[0]?.isIntersecting && offsetRef.current < totalRef.current && !isLoadingMore) {
+        void loadRuns(false, currentFilters());
       }
     });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [runs.length, total, isLoadingMore, loadRuns]);
+  }, [isLoadingMore, loadRuns, currentFilters]);
 
   const clearFilters = () => {
     setDateFrom('');
@@ -296,7 +303,12 @@ export function Runs() {
               onSave={(run) => {
                 setShowLogForm(false);
                 setRuns((prev) => [run, ...prev]);
-                setTotal((t) => t + 1);
+                setTotal((t) => {
+                  const newTotal = t + 1;
+                  totalRef.current = newTotal;
+                  return newTotal;
+                });
+                offsetRef.current += 1;
               }}
               onCancel={() => setShowLogForm(false)}
             />
@@ -317,7 +329,12 @@ export function Runs() {
           }}
           onDeleted={(id) => {
             setRuns((prev) => prev.filter((r) => r._id !== id));
-            setTotal((t) => t - 1);
+            setTotal((t) => {
+              const newTotal = t - 1;
+              totalRef.current = newTotal;
+              return newTotal;
+            });
+            offsetRef.current = Math.max(0, offsetRef.current - 1);
             setSelectedRun(null);
           }}
         />
