@@ -364,20 +364,29 @@ app.http('linkRun', {
         return { status: 404, jsonBody: { error: `Day ${dayLabel} not found in week ${weekNumber}` } };
       }
       if (targetDay.completed) {
-        return { status: 409, jsonBody: { error: 'Day is already completed' } };
-      }
-
-      // Mark the plan day as completed
-      await db.collection<Plan>('plans').updateOne(
-        { status: { $in: ['active', 'onboarding'] } },
-        {
-          $set: {
-            'phases.$[].weeks.$[week].days.$[day].completed': true,
+        // Allow linking to completed day ONLY if no run is already linked
+        const existingLinkedRun = await db.collection<Run>('runs').findOne({
+          planId: plan._id,
+          weekNumber,
+          dayLabel,
+        });
+        if (existingLinkedRun) {
+          return { status: 409, jsonBody: { error: 'Day already has a linked run' } };
+        }
+        // Day is completed but has no linked run — allow linking (skip marking completed again)
+      } else {
+        // Mark the plan day as completed (only if not already completed)
+        await db.collection<Plan>('plans').updateOne(
+          { status: { $in: ['active', 'onboarding'] } },
+          {
+            $set: {
+              'phases.$[].weeks.$[week].days.$[day].completed': true,
+            },
+            $currentDate: { updatedAt: true },
           },
-          $currentDate: { updatedAt: true },
-        },
-        { arrayFilters: [{ 'week.weekNumber': weekNumber }, { 'day.label': dayLabel }] },
-      );
+          { arrayFilters: [{ 'week.weekNumber': weekNumber }, { 'day.label': dayLabel }] },
+        );
+      }
 
       // Update the run with link info
       const updated = await db.collection<Run>('runs').findOneAndUpdate(

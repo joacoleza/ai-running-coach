@@ -223,7 +223,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
             {!isReadOnly && !confirmingDelete && (
               <>
                 <button
-                  onClick={() => setCompletingRun(true)}
+                  onClick={() => { void update({ completed: 'true' }); }}
                   className="cursor-pointer p-1 text-gray-400 hover:text-green-600 transition-colors"
                   title="Mark as completed"
                 >
@@ -232,21 +232,30 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                   </svg>
                 </button>
                 <button
+                  onClick={() => setCompletingRun(true)}
+                  className="text-xs text-gray-500 hover:text-green-600 cursor-pointer"
+                  title="Log run data"
+                >
+                  Log run
+                </button>
+                <button
                   onClick={() => { void update({ skipped: 'true' }); }}
                   className="cursor-pointer p-1 text-gray-400 hover:text-amber-500 transition-colors text-xs font-medium"
                   title="Mark as skipped"
                 >
                   Skip
                 </button>
-                {onRunLinked && (
-                  <button
-                    onClick={() => onRunLinked()}
-                    className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                  >
-                    Link run
-                  </button>
-                )}
               </>
+            )}
+
+            {/* Link run — available for active days AND completed days with no linked run */}
+            {!confirmingDelete && onRunLinked && (
+              <button
+                onClick={() => onRunLinked()}
+                className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+              >
+                Link run
+              </button>
             )}
 
             {/* Delete / Confirmation — hidden for completed days (history must not be erased) */}

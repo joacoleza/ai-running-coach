@@ -140,11 +140,22 @@ describe('DayRow', () => {
     });
   });
 
-  it('clicking complete button opens RunEntryForm instead of directly marking complete', async () => {
-    render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
+  it('clicking checkmark (complete button) calls onUpdate directly for quick-complete', async () => {
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={onUpdate} onDelete={noop} />);
     const completeBtn = screen.getByTitle('Mark as completed');
     fireEvent.click(completeBtn);
-    // RunEntryForm should be shown — look for the Save run button
+    await vi.waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith(1, 'A', { completed: 'true' });
+    });
+    // RunEntryForm should NOT appear (quick-complete, no form)
+    expect(screen.queryByText('Save run')).not.toBeInTheDocument();
+  });
+
+  it('clicking Log run button opens RunEntryForm', async () => {
+    render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
+    const logRunBtn = screen.getByTitle('Log run data');
+    fireEvent.click(logRunBtn);
     expect(await screen.findByText('Save run')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });

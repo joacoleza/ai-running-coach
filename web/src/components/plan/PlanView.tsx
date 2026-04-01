@@ -216,7 +216,7 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePha
                         readonly={readonly}
                         linkedRun={linkedRuns.get(`${week.weekNumber}-${day.label}`) ?? null}
                         onRunLinked={
-                          !readonly && !day.completed && !day.skipped
+                          !readonly && !day.skipped && (!day.completed || (day.completed && !linkedRuns.get(`${week.weekNumber}-${day.label}`)))
                             ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines })
                             : undefined
                         }

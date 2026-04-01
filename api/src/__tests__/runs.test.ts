@@ -405,7 +405,7 @@ describe('POST /api/runs/:id/link - linkRun', () => {
     expect(day?.completed).toBe(true);
   });
 
-  it('returns 409 when day is already completed', async () => {
+  it('returns 200 when day is completed but has no linked run (allows retroactive link)', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
@@ -433,8 +433,54 @@ describe('POST /api/runs/:id/link - linkRun', () => {
     } as any;
 
     const result = await handlers.get('linkRun')!(fakeReq, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.weekNumber).toBe(1);
+  });
+
+  it('returns 409 when day is already completed and already has a linked run', async () => {
+    const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [
+        {
+          ...validActivePlan.phases[0],
+          weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }],
+        },
+      ],
+    });
+    const planId = planInsert.insertedId;
+
+    // Insert existing linked run for the same day
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-03-31',
+      distance: 6,
+      duration: '30:00',
+      pace: 5,
+      planId,
+      weekNumber: 1,
+      dayLabel: 'A',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const newRunInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = newRunInsert.insertedId.toHexString();
+
+    const fakeReq = {
+      params: { id: runId },
+      json: async () => ({ weekNumber: 1, dayLabel: 'A' }),
+      headers: { get: () => 'test-pw' },
+    } as any;
+
+    const result = await handlers.get('linkRun')!(fakeReq, ctx);
     expect(result.status).toBe(409);
-    expect(result.jsonBody.error).toContain('already completed');
+    expect(result.jsonBody.error).toContain('already has a linked run');
   });
 });
 

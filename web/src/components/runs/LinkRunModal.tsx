@@ -28,13 +28,14 @@ function formatPace(pace: number): string {
 
 export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, onClose }: LinkRunModalProps) {
   const [runs, setRuns] = useState<Run[]>([]);
+  const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isLinking, setIsLinking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
-    fetchUnlinkedRuns()
+    fetchUnlinkedRuns(100)
       .then(setRuns)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Failed to load runs');
@@ -71,6 +72,19 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* Search input */}
+          {!isLoading && runs.length > 0 && (
+            <div className="mb-3">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by date or distance..."
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
               <svg className="h-5 w-5 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
@@ -83,27 +97,47 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
             <p className="text-sm text-gray-500 text-center py-8">
               No unlinked runs available. Log a run from the Runs page first.
             </p>
-          ) : (
-            <ul className="space-y-2">
-              {runs.map((run) => (
-                <li
-                  key={run._id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                >
-                  <span className="text-sm text-gray-700">
-                    {formatRunDate(run.date)} &middot; {run.distance}km &middot; {formatPace(run.pace)}
-                  </span>
-                  <button
-                    onClick={() => { void handleLink(run); }}
-                    disabled={isLinking}
-                    className="cursor-pointer ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLinking ? 'Linking...' : 'Link'}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          ) : (() => {
+            const filtered = runs.filter(r => {
+              if (!search.trim()) return true;
+              const q = search.toLowerCase();
+              return formatRunDate(r.date).toLowerCase().includes(q)
+                || String(r.distance).includes(q);
+            });
+
+            return filtered.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-8">
+                No runs match your search.
+              </p>
+            ) : (
+              <>
+                {search.trim() && (
+                  <p className="text-xs text-gray-400 mb-2">
+                    Showing {filtered.length} of {runs.length} runs
+                  </p>
+                )}
+                <ul className="space-y-2">
+                  {filtered.map((run) => (
+                    <li
+                      key={run._id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="text-sm text-gray-700">
+                        {formatRunDate(run.date)} &middot; {run.distance}km &middot; {formatPace(run.pace)}
+                      </span>
+                      <button
+                        onClick={() => { void handleLink(run); }}
+                        disabled={isLinking}
+                        className="cursor-pointer ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isLinking ? 'Linking...' : 'Link'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            );
+          })()}
 
           {error && (
             <p className="mt-3 text-sm text-red-600">{error}</p>
