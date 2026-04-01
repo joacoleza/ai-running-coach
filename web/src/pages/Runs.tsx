@@ -148,10 +148,14 @@ export function Runs() {
   const offsetRef = useRef(0);
   const totalRef = useRef(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  // Prevent concurrent loads (reset + observer firing simultaneously on filter change)
+  const loadingRef = useRef(false);
 
   // loadRuns accepts filters as params and reads offset from ref — no stale closure issues
   const loadRuns = useCallback(
     async (reset: boolean, filters: { dateFrom?: string; dateTo?: string; distanceMin?: number; distanceMax?: number }) => {
+      if (loadingRef.current) return; // prevent concurrent loads (race between reset and observer)
+      loadingRef.current = true;
       const currentOffset = reset ? 0 : offsetRef.current;
       if (reset) {
         setIsLoading(true);
@@ -174,6 +178,7 @@ export function Runs() {
       } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
+        loadingRef.current = false;
       }
     },
     [] // no dependencies — filters come as params, offset is a ref
@@ -296,8 +301,8 @@ export function Runs() {
 
       {/* Log a run modal */}
       {showLogForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowLogForm(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-semibold text-gray-900 mb-3">Log a run</h2>
             <RunEntryForm
               onSave={(run) => {

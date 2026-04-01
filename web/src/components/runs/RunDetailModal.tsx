@@ -143,8 +143,8 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">{formatRunDate(run.date)}</h2>
@@ -291,13 +291,17 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
           {/* Delete section */}
           <div className="pt-2 border-t border-gray-100">
             {run.planId ? (
-              <button
-                disabled
+              <span
                 title="Undo the training plan day first to delete this run"
-                className="w-full bg-gray-100 text-gray-400 rounded-lg px-3 py-2 text-sm font-medium cursor-not-allowed"
+                className="block cursor-not-allowed"
               >
-                Delete run
-              </button>
+                <button
+                  disabled
+                  className="w-full bg-gray-100 text-gray-400 rounded-lg px-3 py-2 text-sm font-medium pointer-events-none"
+                >
+                  Delete run
+                </button>
+              </span>
             ) : confirmDelete ? (
               <div className="flex gap-2">
                 <button

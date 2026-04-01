@@ -120,16 +120,6 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           <p className="text-xs text-gray-400 mt-0.5">MM:SS or HH:MM:SS</p>
         </div>
 
-        {/* Pace (computed, read-only) */}
-        {pace && (
-          <div className="col-span-2">
-            <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
-            <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600">
-              {pace}
-            </div>
-          </div>
-        )}
-
         {/* Avg HR (optional) */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -146,6 +136,14 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
               className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
             />
             <span className="text-xs text-gray-500">bpm</span>
+          </div>
+        </div>
+
+        {/* Pace (computed, read-only) — always visible, empty until distance+duration filled */}
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
+          <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 min-h-[2rem]">
+            {pace || <span className="text-gray-400">—</span>}
           </div>
         </div>
       </div>
