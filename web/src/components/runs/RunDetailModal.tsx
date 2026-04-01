@@ -291,9 +291,13 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
           {/* Delete section */}
           <div className="pt-2 border-t border-gray-100">
             {run.planId ? (
-              <p className="text-xs text-gray-400 text-center">
-                Undo the training plan day first to delete this run
-              </p>
+              <button
+                disabled
+                title="Undo the training plan day first to delete this run"
+                className="w-full bg-gray-100 text-gray-400 rounded-lg px-3 py-2 text-sm font-medium cursor-not-allowed"
+              >
+                Delete run
+              </button>
             ) : confirmDelete ? (
               <div className="flex gap-2">
                 <button

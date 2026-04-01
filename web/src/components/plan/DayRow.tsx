@@ -194,13 +194,6 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
         {day.skipped && <span className="ml-1 text-xs text-gray-400">(skipped)</span>}
 
-        {/* Run date for completed days */}
-        {day.completed && linkedRun && (
-          <span className="ml-1 text-xs text-green-600 no-underline not-italic" style={{ textDecoration: 'none' }}>
-            {formatRunDate(linkedRun.date)}
-          </span>
-        )}
-
         {/* Saving indicator */}
         {isSaving && (
           <span className="inline-flex items-center gap-1 ml-2 align-middle text-xs text-gray-400" aria-label="Saving">
@@ -291,6 +284,13 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
         {error && <div className="text-red-500 text-xs mt-0.5">{error}</div>}
       </div>
+
+      {/* Run date for completed days — outside line-through parent so it renders without strikethrough */}
+      {day.completed && linkedRun && (
+        <span className="ml-1 text-xs text-green-600 font-bold flex-shrink-0">
+          {formatRunDate(linkedRun.date)}
+        </span>
+      )}
     </div>
   );
 }

@@ -79,7 +79,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
 
       <div className="grid grid-cols-2 gap-3">
         {/* Date */}
-        <div className="col-span-2">
+        <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
           <input
             type="date"
