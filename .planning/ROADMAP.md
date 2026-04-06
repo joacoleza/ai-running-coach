@@ -255,6 +255,14 @@ Plans:
 
 **Gap Closure:** Closes tech debt items from v1.1 audit
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03.2-01-PLAN.md — Remove dead endpoints (sessions PATCH, plan/generate POST) and update tests
+- [ ] 03.2-02-PLAN.md — Deduplicate SSE streaming loop in useChat.ts (extract shared helper)
+- [ ] 03.2-03-PLAN.md — Fix docs: AUTH descriptions, planImport VERIFICATION refs, act() warning
+- [ ] 03.2-04-PLAN.md — Increase API test coverage to 80%+ (formatPace, formatRunDate, run context injection)
+
 **Deliverables:**
 - Remove `PATCH /api/sessions/:sessionId` — dead code, superseded by `PATCH /api/plan/days/:week/:day`, no frontend callers
 - Remove `POST /api/plan/generate` — superseded by server-side plan saving in `chat.ts`; client no longer calls it
