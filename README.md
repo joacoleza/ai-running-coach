@@ -140,6 +140,6 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 2.1** — Training Plan Redesign (phases/weeks/days, inline editing, archive)~~ ✓
 - ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
 - ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
-- **Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)
+- ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
 - **Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
