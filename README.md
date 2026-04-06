@@ -59,7 +59,7 @@ After 30 consecutive wrong password attempts the app locks itself and shows "Ser
 
 ## Getting started
 
-**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop
+**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop, and an [Anthropic Console](https://console.anthropic.com) account (for the `ANTHROPIC_API_KEY` used in local settings and Azure config)
 
 ```bash
 npm install
