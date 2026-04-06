@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
@@ -123,35 +122,49 @@ export function TrainingPlan() {
                 <span className="font-semibold capitalize">{plan.objective.replace('-', ' ')}</span>
                 {plan.targetDate && <span className="text-gray-600">Target: {plan.targetDate}</span>}
               </div>
-              <div className="mt-2">
-                <button
-                  onClick={() => { void handleGetFeedback(); }}
-                  disabled={isRequestingFeedback}
-                  className="cursor-pointer text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRequestingFeedback ? 'Requesting...' : 'Get plan feedback'}
-                </button>
-              </div>
             </div>
           )}
 
-          {/* Coach Feedback collapsible section */}
-          {plan.progressFeedback && (
-            <div className="mt-4 mb-4 border border-gray-200 rounded-lg overflow-hidden">
+          {/* Coach Feedback Panel */}
+          <div className="mt-2 mb-4 border border-gray-200 rounded-lg overflow-hidden">
+            {/* Panel header — always visible */}
+            <div className="flex items-center justify-between p-3 bg-gray-50">
+              <span className="text-sm font-medium text-gray-700">Coach Feedback</span>
               <button
-                onClick={() => setFeedbackExpanded(!feedbackExpanded)}
-                className="cursor-pointer w-full flex items-center justify-between p-3 bg-gray-50 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => { void handleGetFeedback(); }}
+                disabled={isRequestingFeedback}
+                className="cursor-pointer text-xs text-blue-600 hover:text-blue-800 underline disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Coach Feedback</span>
-                <span>{feedbackExpanded ? '▲' : '▼'}</span>
+                {isRequestingFeedback
+                  ? 'Requesting...'
+                  : plan.progressFeedback
+                  ? 'Refresh feedback'
+                  : 'Get plan feedback'}
               </button>
-              {feedbackExpanded && (
-                <div className="p-3 text-sm text-gray-700 prose prose-sm max-w-none">
-                  <ReactMarkdown>{plan.progressFeedback}</ReactMarkdown>
-                </div>
-              )}
             </div>
-          )}
+
+            {/* Expandable content — only renders when feedback exists */}
+            {plan.progressFeedback && (
+              <>
+                <button
+                  onClick={() => setFeedbackExpanded(!feedbackExpanded)}
+                  className="cursor-pointer w-full flex items-center justify-between px-3 py-1.5 border-t border-gray-100 bg-gray-50 text-xs text-gray-500 hover:bg-gray-100"
+                >
+                  <span>{feedbackExpanded ? 'Hide' : 'Show'}</span>
+                  <span>{feedbackExpanded ? '▲' : '▼'}</span>
+                </button>
+                {feedbackExpanded && (
+                  <div className="p-3 text-sm text-gray-700">
+                    <div className="space-y-3">
+                      {plan.progressFeedback.split('\n\n').map((paragraph, i) => (
+                        <p key={i}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         </>

@@ -236,6 +236,16 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                 </button>
               )}
 
+              {day.completed && !linkedRun && !readonly && !confirmingDelete && (
+                <button
+                  onClick={() => setCompletingRun(true)}
+                  className="text-xs text-gray-500 hover:text-green-600 cursor-pointer"
+                  title="Log run data for this completed day"
+                >
+                  Log run
+                </button>
+              )}
+
               {!isReadOnly && !confirmingDelete && (
                 <>
                   <button
