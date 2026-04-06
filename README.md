@@ -50,7 +50,7 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 
 This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
 
-After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [Useful commands](#useful-commands)).
+After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [docs/useful-commands.md](docs/useful-commands.md)).
 
 ## Cost
 
@@ -108,23 +108,6 @@ npm run dev
 ```
 
 Open the local URL shown in the terminal (typically `http://localhost:5173`).
-
-## Useful commands
-
-**Check lockout state:**
-```bash
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').find().toArray()"
-```
-
-**Unlock the app (PowerShell):**
-```powershell
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{`$set:{failureCount:0,blocked:false}})"
-```
-
-**Unlock the app (bash):**
-```bash
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{\$set:{failureCount:0,blocked:false}})"
-```
 
 ## Deploying
 
