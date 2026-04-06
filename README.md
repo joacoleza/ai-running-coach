@@ -4,9 +4,9 @@
 
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-69%25-yellow)
+![Coverage](https://img.shields.io/badge/coverage-73.8%25-yellow)
 ![API Tests](https://img.shields.io/badge/api_tests-170%2F170-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-243%2F243-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-252%2F252-brightgreen)
 ![E2E Tests](https://img.shields.io/badge/e2e_tests-45%2F45-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
