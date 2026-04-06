@@ -28,6 +28,7 @@ vi.mock('../contexts/ChatContext', () => ({
 }));
 
 import { usePlan } from '../hooks/usePlan';
+import { useChatContext } from '../contexts/ChatContext';
 
 const mockUsePlan = vi.mocked(usePlan);
 
@@ -175,5 +176,104 @@ describe('TrainingPlan', () => {
     defaultUsePlan({ plan: planNoTarget });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     expect(screen.queryByText(/Target:/)).not.toBeInTheDocument();
+  });
+});
+
+describe('handleGetFeedback XML stripping', () => {
+  const chatDefaults = {
+    sendMessage: vi.fn().mockResolvedValue(''),
+    messages: [],
+    plan: null,
+    isStreaming: false,
+    isGeneratingPlan: false,
+    isLoading: false,
+    isBusy: false,
+    error: null,
+    startPlan: vi.fn(),
+    startOver: vi.fn(),
+    clearError: vi.fn(),
+  };
+
+  beforeEach(() => {
+    vi.mocked(useChatContext).mockReturnValue({ ...chatDefaults });
+    vi.unstubAllGlobals();
+  });
+
+  it('strips self-closing XML tags before saving progressFeedback', async () => {
+    const rawResponse = 'Good progress! <plan:update week="1" day="A" guidelines="easy run"/> Keep it up!';
+    const mockSendMessage = vi.fn().mockResolvedValue(rawResponse);
+    vi.mocked(useChatContext).mockReturnValue({ ...chatDefaults, sendMessage: mockSendMessage });
+
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    defaultUsePlan({ plan: activePlan, refreshPlan: vi.fn().mockResolvedValue(undefined) });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: /get plan feedback/i }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+      // Find the call to /api/plan (PATCH) specifically
+      const patchCall = mockFetch.mock.calls.find((c: unknown[]) => c[0] === '/api/plan');
+      expect(patchCall).toBeDefined();
+      const body = JSON.parse((patchCall![1] as { body: string }).body);
+      expect(body.progressFeedback).toBe('Good progress!  Keep it up!');
+    });
+  });
+
+  it('does not call PATCH /api/plan when response is only XML tags', async () => {
+    const mockSendMessage = vi.fn().mockResolvedValue('<plan:update week="1" day="A" guidelines="x"/>');
+    vi.mocked(useChatContext).mockReturnValue({ ...chatDefaults, sendMessage: mockSendMessage });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    defaultUsePlan({ plan: activePlan, refreshPlan: vi.fn().mockResolvedValue(undefined) });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: /get plan feedback/i }));
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
+    // Verify /api/plan (PATCH) was NOT called
+    const planPatchCall = mockFetch.mock.calls.find((c: unknown[]) => c[0] === '/api/plan');
+    expect(planPatchCall).toBeUndefined();
+  });
+
+  it('does not call PATCH /api/plan when response is empty string', async () => {
+    const mockSendMessage = vi.fn().mockResolvedValue('');
+    vi.mocked(useChatContext).mockReturnValue({ ...chatDefaults, sendMessage: mockSendMessage });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    defaultUsePlan({ plan: activePlan, refreshPlan: vi.fn().mockResolvedValue(undefined) });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: /get plan feedback/i }));
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
+    // Verify /api/plan (PATCH) was NOT called
+    const planPatchCall = mockFetch.mock.calls.find((c: unknown[]) => c[0] === '/api/plan');
+    expect(planPatchCall).toBeUndefined();
+  });
+
+  it('passes plain text through unchanged', async () => {
+    const plainText = 'You are making great progress!';
+    const mockSendMessage = vi.fn().mockResolvedValue(plainText);
+    vi.mocked(useChatContext).mockReturnValue({ ...chatDefaults, sendMessage: mockSendMessage });
+
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+
+    defaultUsePlan({ plan: activePlan, refreshPlan: vi.fn().mockResolvedValue(undefined) });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: /get plan feedback/i }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+      // Find the call to /api/plan (PATCH) specifically
+      const patchCall = mockFetch.mock.calls.find((c: unknown[]) => c[0] === '/api/plan');
+      expect(patchCall).toBeDefined();
+      const body = JSON.parse((patchCall![1] as { body: string }).body);
+      expect(body.progressFeedback).toBe(plainText);
+    });
   });
 });

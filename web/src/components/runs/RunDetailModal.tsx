@@ -40,7 +40,7 @@ function openCoachPanel() {
 }
 
 export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetailModalProps) {
-  const { sendMessage, messages } = useChatContext();
+  const { sendMessage } = useChatContext();
 
   const [editDate, setEditDate] = useState(run.date);
   const [editDistance, setEditDistance] = useState(String(run.distance));
@@ -107,12 +107,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
     openCoachPanel();
 
     try {
-      await sendMessage(message);
-      // After sendMessage resolves, get the last assistant message and save as insight
-      const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
-      if (lastAssistant && run._id && lastAssistant.content) {
+      const responseText = await sendMessage(message);
+      if (responseText && run._id) {
         try {
-          const updated = await updateRun(run._id, { insight: lastAssistant.content });
+          const updated = await updateRun(run._id, { insight: responseText });
           onUpdated(updated);
         } catch {
           // Non-fatal: insight save failure doesn't block UI

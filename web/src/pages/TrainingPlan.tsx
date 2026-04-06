@@ -36,14 +36,15 @@ export function TrainingPlan() {
 
     try {
       const responseText = await sendMessage(message);
-      if (responseText) {
+      const cleanedText = responseText ? responseText.replace(/<[^>]+\/>/g, '').trim() : '';
+      if (cleanedText) {
         await fetch('/api/plan', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'x-app-password': localStorage.getItem('app_password') ?? '',
           },
-          body: JSON.stringify({ progressFeedback: responseText }),
+          body: JSON.stringify({ progressFeedback: cleanedText }),
         });
         // Refresh plan so the feedback section shows the new content
         await refreshPlan();

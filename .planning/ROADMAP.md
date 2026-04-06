@@ -236,7 +236,7 @@ Plans:
 **Plans:** 7/7 plans complete
 
 Plans:
-- [ ] 03.1-01-PLAN.md — Fix stale closure in RunDetailModal + strip XML from TrainingPlan progressFeedback
+- [x] 03.1-01-PLAN.md — Fix stale closure in RunDetailModal + strip XML from TrainingPlan progressFeedback
 
 **Deliverables:**
 - `RunDetailModal.handleAddFeedback`: use `sendMessage()` return value directly instead of reading stale `messages` closure — ensures the saved insight is always the just-received response
