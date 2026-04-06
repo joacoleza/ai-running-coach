@@ -31,6 +31,13 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
 
+## Built with
+
+[![Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.ai/code)
+[![GSD](https://img.shields.io/badge/Planned_with-GSD-6366F1?logo=github&logoColor=white)](https://github.com/gsd-build/get-shit-done)
+
+Planned and built using [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
+
 ## Stack
 
 | Layer | Technology |
@@ -141,10 +148,6 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `APP_PASSWORD` — the password used to access the app
    - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
-
-## Built with
-
-Planned and built using [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
 
 ## Roadmap
 
