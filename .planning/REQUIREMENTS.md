@@ -7,9 +7,9 @@
 
 ### Authentication
 
-- [x] **AUTH-01**: App is accessible only to the owner (single-user gate via GitHub OAuth + SWA custom role)
-- [x] **AUTH-02**: Unauthenticated requests are redirected to GitHub login
-- [x] **AUTH-03**: Owner GitHub username is configurable via environment variable (no hardcoding)
+- [x] **AUTH-01**: App is accessible only to the owner (single-user gate via APP_PASSWORD environment variable checked on every API request)
+- [x] **AUTH-02**: Unauthenticated requests (missing or wrong password) receive 401; frontend shows the password prompt page
+- [x] **AUTH-03**: App password is configurable via APP_PASSWORD environment variable (no hardcoding); lockout after repeated failures
 
 ### Testing Infrastructure
 
