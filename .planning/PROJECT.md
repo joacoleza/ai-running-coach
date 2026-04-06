@@ -87,7 +87,7 @@ Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
 
 ## Current State
 
-Phase 3 complete — Run logging loop is fully implemented: owner can log runs manually via RunEntryForm, view them in a paginated/filterable Runs list, link runs to training plan days, and quick-complete days without run data. Coach receives full run history in context and can provide feedback that adjusts the plan. 243 web tests, 168 API tests, 45 E2E tests all passing. Ready for Phase 3.1 (Fix Coach Feedback Quality).
+Phase 3.1 complete — Two coaching data-integrity bugs fixed: run insights now always reflect the actual assistant response received (COACH-03: stale closure fix in RunDetailModal), and plan feedback never stores raw XML tags (COACH-04: XML strip in TrainingPlan.handleGetFeedback). 252 web tests, 170 API tests all passing. Ready for Phase 3.2 (Tech Debt Cleanup).
 
 ---
-*Last updated: 2026-04-01 after Phase 3: Run Logging & Feedback*
+*Last updated: 2026-04-06 after Phase 3.1: Fix Coach Feedback Quality*
