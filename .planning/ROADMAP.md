@@ -255,12 +255,12 @@ Plans:
 
 **Gap Closure:** Closes tech debt items from v1.1 audit
 
-**Plans:** 2/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 - [x] 03.2-01-PLAN.md — Remove dead endpoints (sessions PATCH, plan/generate POST) and update tests
 - [x] 03.2-02-PLAN.md — Deduplicate SSE streaming loop in useChat.ts (extract shared helper)
-- [ ] 03.2-03-PLAN.md — Fix docs: AUTH descriptions, planImport VERIFICATION refs, act() warning
+- [x] 03.2-03-PLAN.md — Fix docs: AUTH descriptions, planImport VERIFICATION refs, act() warning
 - [ ] 03.2-04-PLAN.md — Increase API test coverage to 80%+ (formatPace, formatRunDate, run context injection)
 
 **Deliverables:**
