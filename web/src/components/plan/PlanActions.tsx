@@ -1,10 +1,9 @@
 interface PlanActionsProps {
   hasActivePlan: boolean;
-  onUpdate: () => void;
   onArchive: () => void;
 }
 
-export function PlanActions({ hasActivePlan, onUpdate, onArchive }: PlanActionsProps) {
+export function PlanActions({ hasActivePlan, onArchive }: PlanActionsProps) {
   const handleArchive = () => {
     if (window.confirm('Archive this plan? You can view it later in the Archive section.')) {
       onArchive();
@@ -14,20 +13,11 @@ export function PlanActions({ hasActivePlan, onUpdate, onArchive }: PlanActionsP
   if (!hasActivePlan) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      <button
-        onClick={onUpdate}
-        className="cursor-pointer px-4 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
-      >
-        Update Plan
-      </button>
-
-      <button
-        onClick={handleArchive}
-        className="cursor-pointer px-4 py-2 rounded text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
-      >
-        Close &amp; Archive
-      </button>
-    </div>
+    <button
+      onClick={handleArchive}
+      className="cursor-pointer px-2 py-1 rounded text-xs font-medium text-gray-500 border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-300 transition-colors"
+    >
+      Archive
+    </button>
   );
 }

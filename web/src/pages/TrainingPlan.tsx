@@ -68,10 +68,6 @@ export function TrainingPlan() {
     return <div className="p-6 text-gray-400">Loading plan...</div>;
   }
 
-  const handleUpdate = () => {
-    window.dispatchEvent(new Event('open-coach'));
-  };
-
   const handleGetFeedback = async () => {
     setIsRequestingFeedback(true);
     openCoachPanel();
@@ -107,13 +103,13 @@ export function TrainingPlan() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Training Plan</h1>
-
-      <PlanActions
-        hasActivePlan={hasActivePlan}
-        onUpdate={handleUpdate}
-        onArchive={() => { void archivePlan(); }}
-      />
+      <div className="flex items-center gap-3 mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">Training Plan</h1>
+        <PlanActions
+          hasActivePlan={hasActivePlan}
+          onArchive={() => { void archivePlan(); }}
+        />
+      </div>
 
       {error && (
         <div className="my-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{error}</div>

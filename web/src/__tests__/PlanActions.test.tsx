@@ -6,7 +6,7 @@ beforeEach(() => {
   vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
 });
 
-const base = { onUpdate: vi.fn(), onArchive: vi.fn() };
+const base = { onArchive: vi.fn() };
 
 describe('PlanActions — no active plan', () => {
   it('renders nothing when hasActivePlan is false', () => {
@@ -16,43 +16,33 @@ describe('PlanActions — no active plan', () => {
 });
 
 describe('PlanActions — with active plan', () => {
-  it('shows Update Plan and Archive buttons', () => {
+  it('shows Archive button', () => {
     render(<PlanActions hasActivePlan={true} {...base} />);
-    expect(screen.getByRole('button', { name: /update plan/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /close & archive/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /archive/i })).toBeInTheDocument();
   });
 
-  it('does not show New Plan or Continue Planning buttons', () => {
+  it('does not show Update Plan button', () => {
     render(<PlanActions hasActivePlan={true} {...base} />);
-    expect(screen.queryByRole('button', { name: /new plan/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /continue planning/i })).not.toBeInTheDocument();
-  });
-
-  it('calls onUpdate when Update Plan clicked', () => {
-    const onUpdate = vi.fn();
-    render(<PlanActions hasActivePlan={true} {...base} onUpdate={onUpdate} />);
-    fireEvent.click(screen.getByRole('button', { name: /update plan/i }));
-    expect(onUpdate).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /update plan/i })).not.toBeInTheDocument();
   });
 
   it('calls onArchive after confirm when Archive clicked', () => {
     const onArchive = vi.fn();
-    render(<PlanActions hasActivePlan={true} {...base} onArchive={onArchive} />);
-    fireEvent.click(screen.getByRole('button', { name: /close & archive/i }));
+    render(<PlanActions hasActivePlan={true} onArchive={onArchive} />);
+    fireEvent.click(screen.getByRole('button', { name: /archive/i }));
     expect(onArchive).toHaveBeenCalled();
   });
 
-  it('Update Plan and Close & Archive buttons have cursor-pointer', () => {
+  it('Archive button has cursor-pointer', () => {
     render(<PlanActions hasActivePlan={true} {...base} />);
-    expect(screen.getByRole('button', { name: /update plan/i }).className).toContain('cursor-pointer');
-    expect(screen.getByRole('button', { name: /close & archive/i }).className).toContain('cursor-pointer');
+    expect(screen.getByRole('button', { name: /archive/i }).className).toContain('cursor-pointer');
   });
 
   it('does NOT call onArchive when confirm is cancelled', () => {
     vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
     const onArchive = vi.fn();
-    render(<PlanActions hasActivePlan={true} {...base} onArchive={onArchive} />);
-    fireEvent.click(screen.getByRole('button', { name: /close & archive/i }));
+    render(<PlanActions hasActivePlan={true} onArchive={onArchive} />);
+    fireEvent.click(screen.getByRole('button', { name: /archive/i }));
     expect(onArchive).not.toHaveBeenCalled();
   });
 });
