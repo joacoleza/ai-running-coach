@@ -152,10 +152,11 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 
 - ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
-- ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
-- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
-- ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
-- ~~**Phase 3** — Run Logging & Feedback (manual run entry, post-run coaching, plan feedback)~~ ✓
-- **Phase 3.1** — Fix Coach Feedback Quality (stale closure in insight save, raw XML in progressFeedback)
+- ~~**Phase 1.2** — Testing Strategy & CI (unit, E2E, coverage badges, GitHub Actions)~~ ✓
+- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, plan gen)~~ ✓
+- ~~**Phase 2.1** — Training Plan Redesign (phases/weeks/days, inline editing, archive)~~ ✓
+- ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
+- ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
 - **Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)
+- **Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

@@ -149,6 +149,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - Phase 2 extended with UAT fixes, mobile UI, test isolation, system prompt hardening, app commands
 - Import from Existing Plan and Import from ChatGPT URL removed from frontend during UAT — API endpoint preserved
 - Phase 3 (Run Logging) is the active next phase
+- Phase 3.3 inserted after Phase 3.2 (URGENT): UI Polish & Mobile Fixes — post-Phase-3 UX feedback covering scroll position, favicon, run/plan cross-linking, modal consistency, mobile Safari layout, and coaching feedback panel improvements
 
 ## Performance Metrics
 
