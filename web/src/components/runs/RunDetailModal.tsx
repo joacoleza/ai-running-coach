@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
-import { updateRun, deleteRun } from '../../hooks/useRuns';
+import { updateRun, deleteRun, unlinkRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
 
@@ -52,8 +52,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmUnlink, setConfirmUnlink] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDirty =
@@ -125,6 +127,22 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
     }
   };
 
+  const handleUnlink = async () => {
+    if (!confirmUnlink) { setConfirmUnlink(true); return; }
+    setIsUnlinking(true);
+    setError(null);
+    try {
+      const updated = await unlinkRun(run._id);
+      onUpdated(updated);
+      window.dispatchEvent(new Event('plan-updated'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unlink run');
+    } finally {
+      setIsUnlinking(false);
+      setConfirmUnlink(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirmDelete) {
       setConfirmDelete(true);
@@ -144,7 +162,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">{formatRunDate(run.date)}</h2>
@@ -249,7 +267,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
               <textarea
-                rows={2}
+                rows={4}
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 placeholder="How did it feel?"
@@ -299,6 +317,37 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
               'Add feedback to run'
             )}
           </button>
+
+          {/* Unlink section — only for linked runs */}
+          {run.planId && (
+            <div className="pt-2 border-t border-gray-100">
+              {confirmUnlink ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void handleUnlink()}
+                    disabled={isUnlinking}
+                    className="flex-1 bg-amber-500 text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {isUnlinking ? 'Unlinking...' : 'Yes, unlink'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmUnlink(false)}
+                    disabled={isUnlinking}
+                    className="flex-1 bg-gray-100 text-gray-700 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  >
+                    No, keep it
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => void handleUnlink()}
+                  className="w-full text-amber-600 text-sm hover:text-amber-800 py-1 transition-colors"
+                >
+                  Unlink from plan
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Delete section */}
           <div className="pt-2 border-t border-gray-100">

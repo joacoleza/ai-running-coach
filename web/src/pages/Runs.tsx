@@ -71,8 +71,8 @@ function FilterPanel({
   onClear,
 }: FilterPanelProps) {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-4 space-y-3 overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">From date</label>
           <input
@@ -92,7 +92,7 @@ function FilterPanel({
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Min distance (km)</label>
           <input
@@ -301,8 +301,8 @@ export function Runs() {
 
       {/* Log a run modal */}
       {showLogForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowLogForm(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowLogForm(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 my-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="font-semibold text-gray-900 mb-3">Log a run</h2>
             <RunEntryForm
               onSave={() => {
