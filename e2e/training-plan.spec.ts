@@ -168,29 +168,22 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await expect(editTextarea).not.toBeVisible({ timeout: 5_000 })
   })
 
-  test('plan action buttons — only Update Plan and Close & Archive are shown', async ({ page }) => {
+  test('plan action buttons — compact Archive inline with title, no Update Plan', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
 
-    await expect(page.getByRole('button', { name: 'Update Plan' })).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByRole('button', { name: 'Close & Archive' })).toBeVisible()
+    // Archive button is present (compact, inline with title)
+    await expect(page.getByRole('button', { name: 'Archive' })).toBeVisible({ timeout: 10_000 })
+    // Update Plan button is gone (removed in phase 3.3)
+    await expect(page.getByRole('button', { name: 'Update Plan' })).not.toBeVisible()
     // "New Plan" is hidden when active plan exists
     await expect(page.getByRole('button', { name: 'New Plan' })).not.toBeVisible()
   })
 
-  test('Update Plan button opens coach panel', async ({ page }) => {
+  test('Archive button prompts confirmation and archives', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: 'Plan' }).click()
-    await page.getByRole('button', { name: 'Update Plan' }).click()
-
-    // Coach panel should open (shows chat input or welcome)
-    await expect(page.getByPlaceholder('Type a message...')).toBeVisible({ timeout: 10_000 })
-  })
-
-  test('Close & Archive prompts confirmation and archives', async ({ page }) => {
-    await loginWithPlan(page)
-    await page.getByRole('link', { name: 'Plan' }).click()
-    await expect(page.getByRole('button', { name: 'Close & Archive' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: 'Archive' })).toBeVisible({ timeout: 10_000 })
 
     // Intercept the confirm dialog
     page.on('dialog', async (dialog) => {
@@ -198,9 +191,98 @@ test.describe('Training Plan view (Phase 2.1)', () => {
       await dialog.accept()
     })
 
-    await page.getByRole('button', { name: 'Close & Archive' }).click()
+    await page.getByRole('button', { name: 'Archive' }).click()
     // No error shown after archiving
     await expect(page.locator('[role="alert"]')).not.toBeVisible({ timeout: 5_000 })
+  })
+
+  test('completed day run date is clickable and opens RunDetailModal', async ({ page }) => {
+    const planWithLinkedRun = {
+      ...mockActivePlan,
+      phases: [{
+        name: 'Base Building',
+        weeks: [{
+          weekNumber: 1,
+          days: [
+            {
+              label: 'B',
+              type: 'run',
+              objective: { kind: 'distance', value: 8, unit: 'km' },
+              guidelines: 'Tempo run',
+              completed: true,
+              skipped: false,
+            },
+          ],
+        }],
+      }],
+    }
+
+    const linkedRun = {
+      _id: 'run-linked-001',
+      date: '2026-04-01',
+      distance: 8,
+      duration: '40:00',
+      pace: 5.0,
+      planId: 'plan-001',
+      weekNumber: 1,
+      dayLabel: 'B',
+      createdAt: '2026-04-01T00:00:00.000Z',
+      updatedAt: '2026-04-01T00:00:00.000Z',
+    }
+
+    await loginWithPlan(page, planWithLinkedRun)
+
+    // Provide runs for the plan
+    await page.route('**/api/runs**', async (route: any) => {
+      const url = route.request().url()
+      if (url.includes('/api/runs/run-linked-001')) {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify(linkedRun) })
+      } else {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [linkedRun], total: 1 }) })
+      }
+    })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Tempo run')).toBeVisible({ timeout: 10_000 })
+
+    // The run date button should be visible on the completed day
+    const runDateBtn = page.getByRole('button', { name: /01\/04\/2026|Apr.*2026|2026-04-01/i })
+    await expect(runDateBtn).toBeVisible({ timeout: 5_000 })
+    await runDateBtn.click()
+
+    // RunDetailModal should open showing the run distance
+    await expect(page.getByText(/8.*km|8km/i)).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('completed day without linked run shows Log run button', async ({ page }) => {
+    const planWithCompletedUnlinked = {
+      ...mockActivePlan,
+      phases: [{
+        name: 'Base Building',
+        weeks: [{
+          weekNumber: 1,
+          days: [{
+            label: 'A',
+            type: 'run',
+            objective: { kind: 'distance', value: 5, unit: 'km' },
+            guidelines: 'Easy Zone 2 run',
+            completed: true,
+            skipped: false,
+          }],
+        }],
+      }],
+    }
+
+    await loginWithPlan(page, planWithCompletedUnlinked)
+    await page.route('**/api/runs**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0 }) })
+    })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
+
+    // Completed day without linked run: "Log run" button should be visible in action area
+    await expect(page.getByTitle('Log run data')).toBeVisible({ timeout: 5_000 })
   })
 })
 

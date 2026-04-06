@@ -27,9 +27,12 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Log a run manually after each session (date, distance, duration, heart rate, notes); the coach provides feedback and can adjust the plan
+- **Run/plan cross-navigation** — Click a completed day's run date to open the run detail; click the Week/Day badge in a run to jump back to that training day
+- **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
+- **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
-- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
+- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
 
 ## Built with
 
@@ -141,5 +144,5 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
 - ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
 - ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
-- **Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)
+- ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)~~ ✓
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
