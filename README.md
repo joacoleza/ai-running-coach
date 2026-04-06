@@ -33,10 +33,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 ## Built with
 
-[![Claude Code](https://img.shields.io/badge/Built_with-Claude_Code-D97757?logo=anthropic&logoColor=white)](https://claude.ai/code)
-[![GSD](https://img.shields.io/badge/Planned_with-GSD-6366F1?logo=github&logoColor=white)](https://github.com/gsd-build/get-shit-done)
-
-Planned and built using [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
+Planned and built using [<img src="https://avatars.githubusercontent.com/u/260490621?s=20&v=4" height="16" style="vertical-align:middle"/> Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [<img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg" height="16" style="vertical-align:middle"/> Claude Code](https://claude.ai/code) by Anthropic.
 
 ## Stack
 
