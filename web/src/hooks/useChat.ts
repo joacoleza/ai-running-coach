@@ -53,6 +53,78 @@ export function parseXmlAttrs(attrString: string): Record<string, string> {
   return result;
 }
 
+/** SSE payload shape emitted by the server */
+type SSEPayload = { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
+
+/**
+ * Shared SSE streaming helper. Reads chunks from `response.body`, decodes
+ * them line-by-line, and dispatches to the caller-supplied callbacks.
+ *
+ * @param response  The fetch Response whose body contains the SSE stream.
+ * @param opts.alive          Optional liveness guard — if it returns false the
+ *                            reader is cancelled and streaming stops.
+ * @param opts.onText         Called for every `payload.text` chunk with the
+ *                            running accumulated text so far.
+ * @param opts.onDone         Called once when `payload.done` arrives.
+ * @param opts.onError        Called when `payload.error` arrives.
+ * @returns The fully accumulated text string.
+ */
+async function streamChatResponse(
+  response: Response,
+  opts: {
+    alive?: () => boolean;
+    onText: (accumulatedText: string) => void;
+    onDone: (accumulatedText: string, planGenerated: boolean) => Promise<void>;
+    onError: (message: string) => void;
+  }
+): Promise<string> {
+  const { alive, onText, onDone, onError } = opts;
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let accumulatedText = '';
+
+  while (true) {
+    if (alive && !alive()) { reader.cancel(); return accumulatedText; }
+    const { value, done } = await reader.read();
+    if (alive && !alive()) { reader.cancel(); return accumulatedText; }
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (alive && !alive()) return accumulatedText;
+      if (!line.startsWith('data: ')) continue;
+      const jsonStr = line.slice(6).trim();
+      if (!jsonStr) continue;
+
+      let payload: SSEPayload;
+      try {
+        payload = JSON.parse(jsonStr) as SSEPayload;
+      } catch {
+        // Incomplete JSON — skip
+        continue;
+      }
+
+      if (payload.text) {
+        accumulatedText += payload.text;
+        onText(accumulatedText);
+      } else if (payload.done) {
+        await onDone(accumulatedText, payload.planGenerated ?? false);
+        return accumulatedText;
+      } else if (payload.error) {
+        onError(payload.error);
+        return accumulatedText;
+      }
+    }
+  }
+
+  return accumulatedText;
+}
+
 
 export function useChat(): UseChatReturn {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -150,6 +222,157 @@ export function useChat(): UseChatReturn {
     };
   }, [fetchPlan]);
 
+  /**
+   * Apply plan:update / plan:add / phase-update / phase-delete tags found in
+   * accumulatedText. Updates displayed message, calls APIs, refreshes plan state.
+   * Shared between sendMessage and startPlan done handlers.
+   */
+  const applyPlanOperations = useCallback(async (
+    accumulatedText: string,
+    planUpdateDetected: boolean,
+    aliveCheck?: () => boolean,
+  ): Promise<void> => {
+    const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
+    const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
+    const phaseUpdateRegex = /<plan:update-phase\s+([^/]+)\/>/g;
+    const phaseDeleteRegex = /<plan:delete-phase\s*\/>/g;
+    const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
+    const planAdds = [...accumulatedText.matchAll(planAddRegex)];
+    const phaseUpdates = [...accumulatedText.matchAll(phaseUpdateRegex)];
+    const phaseDeletes = [...accumulatedText.matchAll(phaseDeleteRegex)];
+
+    if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0) {
+      if (!aliveCheck || aliveCheck()) {
+        // Strip tags from displayed message
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === 'assistant') {
+            updated[updated.length - 1] = {
+              ...last,
+              content: last.content
+                .replace(/<plan:update-phase\s+([^/]+)\/>/g, '')
+                .replace(/<plan:delete-phase\s*\/>/g, '')
+                .replace(/<plan:update\s+([^/]+)\/>/g, '')
+                .replace(/<plan:add\s+([^/]+)\/>/g, '')
+                .trim(),
+            };
+          }
+          return updated;
+        });
+      }
+
+      // Apply each update via PATCH — collect errors to surface in chat
+      const updateErrors: string[] = [];
+      for (const match of planUpdates) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (attrs.week && attrs.day) {
+          try {
+            const res = await fetch(`/api/plan/days/${attrs.week}/${attrs.day}`, {
+              method: 'PATCH',
+              headers: authHeaders(),
+              body: JSON.stringify(attrs),
+            });
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({})) as { error?: string };
+              updateErrors.push(body.error ?? `Could not update Week ${attrs.week} Day ${attrs.day}`);
+            }
+          } catch {
+            // Non-fatal: individual day update failure doesn't block others
+          }
+        }
+      }
+
+      // Apply each add via POST — collect errors to surface in chat
+      const addErrors: string[] = [];
+      for (const match of planAdds) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (attrs.week && attrs.day) {
+          try {
+            const res = await fetch('/api/plan/days', {
+              method: 'POST',
+              headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ weekNumber: Number(attrs.week), label: attrs.day, type: 'run', ...attrs }),
+            });
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({})) as { error?: string };
+              addErrors.push(body.error ?? `Could not add Week ${attrs.week} Day ${attrs.day}`);
+            }
+          } catch {
+            // Network error — non-fatal
+          }
+        }
+      }
+
+      // Apply each phase update via PATCH
+      const phaseUpdateErrors: string[] = [];
+      for (const match of phaseUpdates) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (attrs.index !== undefined) {
+          const updates: { name?: string; description?: string } = {};
+          if (attrs.name !== undefined) updates.name = attrs.name;
+          if (attrs.description !== undefined) updates.description = attrs.description;
+          try {
+            const res = await fetch(`/api/plan/phases/${attrs.index}`, {
+              method: 'PATCH',
+              headers: authHeaders(),
+              body: JSON.stringify(updates),
+            });
+            if (!res.ok) {
+              const body = await res.json().catch(() => ({})) as { error?: string };
+              phaseUpdateErrors.push(body.error ?? `Could not update phase ${attrs.index}`);
+            }
+          } catch {
+            // Non-fatal
+          }
+        }
+      }
+
+      // Apply each phase delete via DELETE
+      const phaseDeleteErrors: string[] = [];
+      for (let i = 0; i < phaseDeletes.length; i++) {
+        if (aliveCheck && !aliveCheck()) return;
+        try {
+          const res = await fetch('/api/plan/phases/last', {
+            method: 'DELETE',
+            headers: authHeaders(),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({})) as { error?: string };
+            phaseDeleteErrors.push(body.error ?? 'Could not delete last phase');
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
+
+      const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors];
+      if (allErrors.length > 0 && (!aliveCheck || aliveCheck())) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === 'assistant') {
+            updated[updated.length - 1] = { ...last, content: last.content + `\n\n⚠️ ${allErrors.join('; ')}` };
+          }
+          return updated;
+        });
+      }
+
+      // Re-fetch plan after all updates applied and notify the plan page
+      const refreshedPlan = await fetchPlan();
+      if (aliveCheck && !aliveCheck()) return;
+      if (refreshedPlan) setPlan(refreshedPlan);
+      window.dispatchEvent(new Event('plan-updated'));
+      setIsGeneratingPlan(false);
+    } else if (planUpdateDetected) {
+      // Tags were detected during streaming but not in accumulated text (edge case) — reset
+      setIsGeneratingPlan(false);
+    }
+  }, [fetchPlan]);
+
   const sendMessage = useCallback(async (text: string): Promise<string> => {
     if (!plan) return '';
 
@@ -187,264 +410,107 @@ export function useChat(): UseChatReturn {
         return '';
       }
 
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let accumulatedText = '';
       let planUpdateDetected = false;
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Process complete lines from the buffer
-        const lines = buffer.split('\n');
-        // Keep the last (potentially incomplete) line in the buffer
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          let payload: { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
-          try {
-            payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
-          } catch {
-            // Incomplete JSON in buffer — skip (handled by buffer accumulation)
-            continue;
+      const accumulatedText = await streamChatResponse(response, {
+        onText: (acc) => {
+          // Show plan-update indicator as soon as plan modification tags are detected
+          if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase'))) {
+            planUpdateDetected = true;
+            setIsGeneratingPlan(true);
           }
-
-          if (payload.text) {
-            accumulatedText += payload.text;
-            // Show plan-update indicator as soon as plan modification tags are detected
-            if (!planUpdateDetected && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add') || accumulatedText.includes('<plan:update-phase') || accumulatedText.includes('<plan:delete-phase'))) {
-              planUpdateDetected = true;
-              setIsGeneratingPlan(true);
+          // Update last assistant message in state with streaming content.
+          // Strip machine-data tags from display as they arrive.
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastIdx = updated.length - 1;
+            if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+              updated[lastIdx] = {
+                ...updated[lastIdx],
+                content: acc
+                  .replace(/<training_plan>[\s\S]*/g, '')
+                  .replace(/<plan:update-phase[^/]*\/>/g, '')
+                  .replace(/<plan:delete-phase[^/]*\/>/g, '')
+                  .replace(/<plan:update[^/]*\/>/g, '')
+                  .replace(/<plan:add[^/]*\/>/g, '')
+                  .trim(),
+              };
             }
-            // Update last assistant message in state with streaming content.
-            // Strip machine-data tags from display as they arrive.
+            return updated;
+          });
+        },
+        onDone: async (acc, planGenerated) => {
+          setIsStreaming(false);
+
+          // Parse app commands Claude may have appended (e.g. <app:navigate page="plan"/>)
+          const cmdRegex = /<app:.*?\/>/g;
+          const cmds = [...acc.matchAll(cmdRegex)].map(m => m[0]);
+
+          // Strip commands from the displayed assistant message
+          if (cmds.length > 0) {
             setMessages((prev) => {
               const updated = [...prev];
-              const lastIdx = updated.length - 1;
-              if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-                updated[lastIdx] = {
-                  ...updated[lastIdx],
-                  content: accumulatedText
-                    .replace(/<training_plan>[\s\S]*/g, '')
-                    .replace(/<plan:update-phase[^/]*\/>/g, '')
-                    .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                    .replace(/<plan:update[^/]*\/>/g, '')
-                    .replace(/<plan:add[^/]*\/>/g, '')
-                    .trim(),
+              const last = updated[updated.length - 1];
+              if (last?.role === 'assistant') {
+                updated[updated.length - 1] = {
+                  ...last,
+                  content: last.content.replace(cmdRegex, '').trim(),
                 };
               }
               return updated;
             });
-          } else if (payload.done) {
-            setIsStreaming(false);
+          }
 
-            // Parse app commands Claude may have appended (e.g. <app:navigate page="plan"/>)
-            const cmdRegex = /<app:.*?\/>/g;
-            const cmds = [...accumulatedText.matchAll(cmdRegex)].map(m => m[0]);
-
-            // Strip commands from the displayed assistant message
-            if (cmds.length > 0) {
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                if (last?.role === 'assistant') {
-                  updated[updated.length - 1] = {
-                    ...last,
-                    content: last.content.replace(cmdRegex, '').trim(),
-                  };
-                }
-                return updated;
-              });
-            }
-
-            // Handle training plan generation — plan was saved server-side, just re-fetch
-            if (payload.planGenerated || accumulatedText.includes('<training_plan>')) {
-              setIsGeneratingPlan(true);
-              // Strip the raw <training_plan> block from the displayed message
-              setMessages((prev) => {
-                const updated = [...prev];
-                const last = updated[updated.length - 1];
-                if (last?.role === 'assistant') {
-                  updated[updated.length - 1] = {
-                    ...last,
-                    content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
-                  };
-                }
-                return updated;
-              });
-
-              try {
-                const updatedPlan = await fetchPlan();
-                if (updatedPlan) setPlan(updatedPlan);
-                window.dispatchEvent(new Event('plan-updated'));
-                setIsGeneratingPlan(false);
-                navigate('/plan');
-              } catch {
-                setIsGeneratingPlan(false);
-                setError('Something went wrong generating your plan');
+          // Handle training plan generation — plan was saved server-side, just re-fetch
+          if (planGenerated || acc.includes('<training_plan>')) {
+            setIsGeneratingPlan(true);
+            // Strip the raw <training_plan> block from the displayed message
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last?.role === 'assistant') {
+                updated[updated.length - 1] = {
+                  ...last,
+                  content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
+                };
               }
-            } else {
-              // Re-fetch plan to pick up any state changes (onboardingStep, etc.)
+              return updated;
+            });
+
+            try {
               const updatedPlan = await fetchPlan();
               if (updatedPlan) setPlan(updatedPlan);
+              window.dispatchEvent(new Event('plan-updated'));
+              setIsGeneratingPlan(false);
+              navigate('/plan');
+            } catch {
+              setIsGeneratingPlan(false);
+              setError('Something went wrong generating your plan');
+            }
+          } else {
+            // Re-fetch plan to pick up any state changes (onboardingStep, etc.)
+            const updatedPlan = await fetchPlan();
+            if (updatedPlan) setPlan(updatedPlan);
 
-              // Handle <plan:update>, <plan:add>, <plan:update-phase>, <plan:delete-phase> tags
-              const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
-              const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
-              const phaseUpdateRegex = /<plan:update-phase\s+([^/]+)\/>/g;
-              const phaseDeleteRegex = /<plan:delete-phase\s*\/>/g;
-              const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
-              const planAdds = [...accumulatedText.matchAll(planAddRegex)];
-              const phaseUpdates = [...accumulatedText.matchAll(phaseUpdateRegex)];
-              const phaseDeletes = [...accumulatedText.matchAll(phaseDeleteRegex)];
+            // Handle <plan:update>, <plan:add>, phase ops
+            await applyPlanOperations(acc, planUpdateDetected);
 
-              if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0) {
-                // Strip tags from displayed message
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const last = updated[updated.length - 1];
-                  if (last?.role === 'assistant') {
-                    updated[updated.length - 1] = {
-                      ...last,
-                      content: last.content
-                        .replace(phaseUpdateRegex, '')
-                        .replace(phaseDeleteRegex, '')
-                        .replace(planUpdateRegex, '')
-                        .replace(planAddRegex, '')
-                        .trim(),
-                    };
-                  }
-                  return updated;
-                });
-
-                // Apply each update via PATCH — collect errors to surface in chat
-                const updateErrors: string[] = [];
-                for (const match of planUpdates) {
-                  const attrs = parseXmlAttrs(match[1]);
-                  if (attrs.week && attrs.day) {
-                    try {
-                      const res = await fetch(`/api/plan/days/${attrs.week}/${attrs.day}`, {
-                        method: 'PATCH',
-                        headers: authHeaders(),
-                        body: JSON.stringify(attrs),
-                      });
-                      if (!res.ok) {
-                        const body = await res.json().catch(() => ({}));
-                        updateErrors.push(body.error ?? `Could not update Week ${attrs.week} Day ${attrs.day}`);
-                      }
-                    } catch {
-                      // Non-fatal: individual day update failure doesn't block others
-                    }
-                  }
-                }
-
-                // Apply each add via POST — collect errors to surface in chat
-                const addErrors: string[] = [];
-                for (const match of planAdds) {
-                  const attrs = parseXmlAttrs(match[1]);
-                  if (attrs.week && attrs.day) {
-                    try {
-                      const res = await fetch('/api/plan/days', {
-                        method: 'POST',
-                        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ weekNumber: Number(attrs.week), label: attrs.day, type: 'run', ...attrs }),
-                      });
-                      if (!res.ok) {
-                        const body = await res.json().catch(() => ({}));
-                        addErrors.push(body.error ?? `Could not add Week ${attrs.week} Day ${attrs.day}`);
-                      }
-                    } catch {
-                      // Network error — non-fatal
-                    }
-                  }
-                }
-
-                // Apply each phase update via PATCH
-                const phaseUpdateErrors: string[] = [];
-                for (const match of phaseUpdates) {
-                  const attrs = parseXmlAttrs(match[1]);
-                  if (attrs.index !== undefined) {
-                    const updates: { name?: string; description?: string } = {};
-                    if (attrs.name !== undefined) updates.name = attrs.name;
-                    if (attrs.description !== undefined) updates.description = attrs.description;
-                    try {
-                      const res = await fetch(`/api/plan/phases/${attrs.index}`, {
-                        method: 'PATCH',
-                        headers: authHeaders(),
-                        body: JSON.stringify(updates),
-                      });
-                      if (!res.ok) {
-                        const body = await res.json().catch(() => ({}));
-                        phaseUpdateErrors.push(body.error ?? `Could not update phase ${attrs.index}`);
-                      }
-                    } catch {
-                      // Non-fatal
-                    }
-                  }
-                }
-
-                // Apply each phase delete via DELETE
-                const phaseDeleteErrors: string[] = [];
-                for (let i = 0; i < phaseDeletes.length; i++) {
-                  try {
-                    const res = await fetch('/api/plan/phases/last', {
-                      method: 'DELETE',
-                      headers: authHeaders(),
-                    });
-                    if (!res.ok) {
-                      const body = await res.json().catch(() => ({}));
-                      phaseDeleteErrors.push(body.error ?? 'Could not delete last phase');
-                    }
-                  } catch {
-                    // Non-fatal
-                  }
-                }
-
-                const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors];
-                if (allErrors.length > 0) {
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    const last = updated[updated.length - 1];
-                    if (last?.role === 'assistant') {
-                      updated[updated.length - 1] = { ...last, content: last.content + `\n\n⚠️ ${allErrors.join('; ')}` };
-                    }
-                    return updated;
-                  });
-                }
-
-                // Re-fetch plan after all updates applied and notify the plan page
-                const refreshedPlan = await fetchPlan();
-                if (refreshedPlan) setPlan(refreshedPlan);
-                window.dispatchEvent(new Event('plan-updated'));
-                setIsGeneratingPlan(false);
-              } else if (planUpdateDetected) {
-                // Tags were detected during streaming but not in accumulated text (edge case) — reset
-                setIsGeneratingPlan(false);
-              }
-
-              // Execute navigate commands after plan refresh so target page has fresh data
-              for (const cmd of cmds) {
-                const m = cmd.match(/<app:navigate page="([^"]+)"\/>/);
-                if (m) {
-                  navigate(m[1] === 'dashboard' ? '/' : `/${m[1]}`);
-                  break; // only navigate once
-                }
+            // Execute navigate commands after plan refresh so target page has fresh data
+            for (const cmd of cmds) {
+              const m = cmd.match(/<app:navigate page="([^"]+)"\/>/);
+              if (m) {
+                navigate(m[1] === 'dashboard' ? '/' : `/${m[1]}`);
+                break; // only navigate once
               }
             }
-          } else if (payload.error) {
-            setError(payload.error ?? 'An error occurred while streaming');
-            setIsStreaming(false);
           }
-        }
-      }
+        },
+        onError: (msg) => {
+          setError(msg);
+          setIsStreaming(false);
+        },
+      });
+
       return accumulatedText;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to send message';
@@ -460,7 +526,7 @@ export function useChat(): UseChatReturn {
       });
       return '';
     }
-  }, [plan, fetchPlan, navigate]);
+  }, [plan, fetchPlan, navigate, applyPlanOperations]);
 
   const startPlan = useCallback(async (mode: 'conversational' | 'paste'): Promise<void> => {
     // Capture session ID — startOver increments this, making stale continuations no-ops
@@ -530,231 +596,77 @@ export function useChat(): UseChatReturn {
             return;
           }
 
-          const reader = chatResponse.body!.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-          let accumulatedText = '';
-          let planUpdateDetected2 = false;
+          let planUpdateDetected = false;
 
-          while (true) {
-            const { value, done } = await reader.read();
-            if (!alive()) { reader.cancel(); return; }
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() ?? '';
-
-            for (const line of lines) {
-              if (!alive()) return;
-              if (!line.startsWith('data: ')) continue;
-              const jsonStr = line.slice(6).trim();
-              if (!jsonStr) continue;
-
-              let payload: { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
-              try {
-                payload = JSON.parse(jsonStr) as { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
-              } catch {
-                continue;
+          await streamChatResponse(chatResponse, {
+            alive,
+            onText: (acc) => {
+              // Show plan-update indicator as soon as plan modification tags are detected
+              if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase'))) {
+                planUpdateDetected = true;
+                if (alive()) setIsGeneratingPlan(true);
               }
-
-              if (payload.text) {
-                accumulatedText += payload.text;
-                // Show plan-update indicator as soon as plan modification tags are detected
-                if (!planUpdateDetected2 && (accumulatedText.includes('<plan:update') || accumulatedText.includes('<plan:add') || accumulatedText.includes('<plan:update-phase') || accumulatedText.includes('<plan:delete-phase'))) {
-                  planUpdateDetected2 = true;
-                  if (alive()) setIsGeneratingPlan(true);
-                }
-                if (alive()) {
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    const lastIdx = updated.length - 1;
-                    if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
-                      updated[lastIdx] = {
-                        ...updated[lastIdx],
-                        content: accumulatedText
-                          .replace(/<training_plan>[\s\S]*/g, '')
-                          .replace(/<plan:update-phase[^/]*\/>/g, '')
-                          .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                          .replace(/<plan:update[^/]*\/>/g, '')
-                          .replace(/<plan:add[^/]*\/>/g, '')
-                          .trim(),
-                      };
-                    }
-                    return updated;
-                  });
-                }
-              } else if (payload.done) {
-                if (!alive()) return;
-                setIsStreaming(false);
-                if (payload.planGenerated || accumulatedText.includes('<training_plan>')) {
-                  setIsGeneratingPlan(true);
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    const last = updated[updated.length - 1];
-                    if (last?.role === 'assistant') {
-                      updated[updated.length - 1] = {
-                        ...last,
-                        content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
-                      };
-                    }
-                    return updated;
-                  });
-
-                  try {
-                    const updatedPlan = await fetchPlan();
-                    if (!alive()) return;
-                    if (updatedPlan) setPlan(updatedPlan);
-                    window.dispatchEvent(new Event('plan-updated'));
-                    setIsGeneratingPlan(false);
-                    navigate('/plan');
-                  } catch {
-                    if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
+              if (alive()) {
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const lastIdx = updated.length - 1;
+                  if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
+                    updated[lastIdx] = {
+                      ...updated[lastIdx],
+                      content: acc
+                        .replace(/<training_plan>[\s\S]*/g, '')
+                        .replace(/<plan:update-phase[^/]*\/>/g, '')
+                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
+                        .replace(/<plan:update[^/]*\/>/g, '')
+                        .replace(/<plan:add[^/]*\/>/g, '')
+                        .trim(),
+                    };
                   }
-                } else {
+                  return updated;
+                });
+              }
+            },
+            onDone: async (acc, planGenerated) => {
+              if (!alive()) return;
+              setIsStreaming(false);
+
+              if (planGenerated || acc.includes('<training_plan>')) {
+                setIsGeneratingPlan(true);
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const last = updated[updated.length - 1];
+                  if (last?.role === 'assistant') {
+                    updated[updated.length - 1] = {
+                      ...last,
+                      content: last.content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim(),
+                    };
+                  }
+                  return updated;
+                });
+
+                try {
                   const updatedPlan = await fetchPlan();
                   if (!alive()) return;
                   if (updatedPlan) setPlan(updatedPlan);
-
-                  const planUpdateRegex = /<plan:update\s+([^/]+)\/>/g;
-                  const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
-                  const phaseUpdateRegex2 = /<plan:update-phase\s+([^/]+)\/>/g;
-                  const phaseDeleteRegex2 = /<plan:delete-phase\s*\/>/g;
-                  const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
-                  const planAdds = [...accumulatedText.matchAll(planAddRegex)];
-                  const phaseUpdates2 = [...accumulatedText.matchAll(phaseUpdateRegex2)];
-                  const phaseDeletes2 = [...accumulatedText.matchAll(phaseDeleteRegex2)];
-
-                  if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates2.length > 0 || phaseDeletes2.length > 0) {
-                    if (alive()) {
-                      setMessages((prev) => {
-                        const updated = [...prev];
-                        const last = updated[updated.length - 1];
-                        if (last?.role === 'assistant') {
-                          updated[updated.length - 1] = {
-                            ...last,
-                            content: last.content
-                              .replace(phaseUpdateRegex2, '')
-                              .replace(phaseDeleteRegex2, '')
-                              .replace(planUpdateRegex, '')
-                              .replace(planAddRegex, '')
-                              .trim(),
-                          };
-                        }
-                        return updated;
-                      });
-                    }
-
-                    const updateErrors2: string[] = [];
-                    for (const match of planUpdates) {
-                      if (!alive()) return;
-                      const attrs = parseXmlAttrs(match[1]);
-                      if (attrs.week && attrs.day) {
-                        try {
-                          const res = await fetch(`/api/plan/days/${attrs.week}/${attrs.day}`, {
-                            method: 'PATCH',
-                            headers: authHeaders(),
-                            body: JSON.stringify(attrs),
-                          });
-                          if (!res.ok) {
-                            const body = await res.json().catch(() => ({}));
-                            updateErrors2.push(body.error ?? `Could not update Week ${attrs.week} Day ${attrs.day}`);
-                          }
-                        } catch {
-                          // Non-fatal
-                        }
-                      }
-                    }
-
-                    const addErrors2: string[] = [];
-                    for (const match of planAdds) {
-                      if (!alive()) return;
-                      const attrs = parseXmlAttrs(match[1]);
-                      if (attrs.week && attrs.day) {
-                        try {
-                          const res = await fetch('/api/plan/days', {
-                            method: 'POST',
-                            headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ weekNumber: Number(attrs.week), label: attrs.day, type: 'run', ...attrs }),
-                          });
-                          if (!res.ok) {
-                            const body = await res.json().catch(() => ({}));
-                            addErrors2.push(body.error ?? `Could not add Week ${attrs.week} Day ${attrs.day}`);
-                          }
-                        } catch {
-                          // Network error — non-fatal
-                        }
-                      }
-                    }
-
-                    const phaseUpdateErrors2: string[] = [];
-                    for (const match of phaseUpdates2) {
-                      if (!alive()) return;
-                      const attrs = parseXmlAttrs(match[1]);
-                      if (attrs.index !== undefined) {
-                        const updates: { name?: string; description?: string } = {};
-                        if (attrs.name !== undefined) updates.name = attrs.name;
-                        if (attrs.description !== undefined) updates.description = attrs.description;
-                        try {
-                          const res = await fetch(`/api/plan/phases/${attrs.index}`, {
-                            method: 'PATCH',
-                            headers: authHeaders(),
-                            body: JSON.stringify(updates),
-                          });
-                          if (!res.ok) {
-                            const body = await res.json().catch(() => ({}));
-                            phaseUpdateErrors2.push(body.error ?? `Could not update phase ${attrs.index}`);
-                          }
-                        } catch {
-                          // Non-fatal
-                        }
-                      }
-                    }
-
-                    const phaseDeleteErrors2: string[] = [];
-                    for (let i = 0; i < phaseDeletes2.length; i++) {
-                      if (!alive()) return;
-                      try {
-                        const res = await fetch('/api/plan/phases/last', {
-                          method: 'DELETE',
-                          headers: authHeaders(),
-                        });
-                        if (!res.ok) {
-                          const body = await res.json().catch(() => ({}));
-                          phaseDeleteErrors2.push(body.error ?? 'Could not delete last phase');
-                        }
-                      } catch {
-                        // Non-fatal
-                      }
-                    }
-
-                    const allErrors2 = [...updateErrors2, ...addErrors2, ...phaseUpdateErrors2, ...phaseDeleteErrors2];
-                    if (allErrors2.length > 0 && alive()) {
-                      setMessages((prev) => {
-                        const updated = [...prev];
-                        const last = updated[updated.length - 1];
-                        if (last?.role === 'assistant') {
-                          updated[updated.length - 1] = { ...last, content: last.content + `\n\n⚠️ ${allErrors2.join('; ')}` };
-                        }
-                        return updated;
-                      });
-                    }
-
-                    const refreshedPlan = await fetchPlan();
-                    if (!alive()) return;
-                    if (refreshedPlan) setPlan(refreshedPlan);
-                    window.dispatchEvent(new Event('plan-updated'));
-                    if (alive()) setIsGeneratingPlan(false);
-                  } else if (planUpdateDetected2) {
-                    // Tags were detected during streaming but not in accumulated text (edge case) — reset
-                    if (alive()) setIsGeneratingPlan(false);
-                  }
+                  window.dispatchEvent(new Event('plan-updated'));
+                  setIsGeneratingPlan(false);
+                  navigate('/plan');
+                } catch {
+                  if (alive()) { setIsGeneratingPlan(false); setError('Something went wrong generating your plan'); }
                 }
-              } else if (payload.error) {
-                if (alive()) { setError(payload.error ?? 'An error occurred'); setIsStreaming(false); }
+              } else {
+                const updatedPlan = await fetchPlan();
+                if (!alive()) return;
+                if (updatedPlan) setPlan(updatedPlan);
+
+                // Handle <plan:update>, <plan:add>, phase ops
+                await applyPlanOperations(acc, planUpdateDetected, alive);
               }
-            }
-          }
+            },
+            onError: (msg) => {
+              if (alive()) { setError(msg); setIsStreaming(false); }
+            },
+          });
         } catch (err) {
           if (alive()) {
             const message = err instanceof Error ? err.message : 'Failed to connect to the coach';
@@ -780,7 +692,7 @@ export function useChat(): UseChatReturn {
         setIsBusy(false);
       }
     }
-  }, [fetchPlan, navigate]);
+  }, [fetchPlan, navigate, applyPlanOperations]);
 
   // Start over returns to the welcome screen — the orphaned onboarding plan is discarded
   // automatically when the user starts a new plan via POST /api/plan.

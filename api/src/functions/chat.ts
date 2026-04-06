@@ -11,7 +11,7 @@ import { ChatMessage, Plan, PlanPhase, PlanGoal, Run } from '../shared/types.js'
  * Format a decimal pace (minutes per km/mile) as "M:SS"
  * e.g. 5.5 → "5:30", 4.25 → "4:15"
  */
-function formatPace(paceDecimal: number): string {
+export function formatPace(paceDecimal: number): string {
   const minutes = Math.floor(paceDecimal);
   const seconds = Math.round((paceDecimal - minutes) * 60);
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
@@ -20,7 +20,7 @@ function formatPace(paceDecimal: number): string {
 /**
  * Format an ISO date string (YYYY-MM-DD) as DD/MM/YYYY
  */
-function formatRunDate(isoDate: string): string {
+export function formatRunDate(isoDate: string): string {
   const parts = isoDate.split('-');
   if (parts.length !== 3) return isoDate;
   const [year, month, day] = parts;

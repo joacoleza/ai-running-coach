@@ -392,6 +392,72 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     expect(syntheticUserMsg.role).toBe('user');
     expect(syntheticUserMsg.content).toContain('[COMPLETED]');
   });
+
+  it('truncates insight at 150 chars and appends ellipsis', async () => {
+    const { ObjectId } = await import('mongodb');
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+
+    const longInsight = 'A'.repeat(200); // 200 chars — exceeds 150 limit
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 8,
+      pace: 5.0,
+      duration: '40:00',
+      insight: longInsight,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockStream.mockReturnValueOnce(createMockStream('Nice work!'));
+    const req = makeReq({ planId, message: 'How did that run go?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+    const syntheticUserMsg = msgs[msgs.length - 3];
+
+    // Insight truncated to 150 chars + '...'
+    expect(syntheticUserMsg.content).toContain('Insight: ' + 'A'.repeat(150) + '...');
+    // Not the full 200 chars
+    expect(syntheticUserMsg.content).not.toContain('A'.repeat(151));
+  });
+
+  it('omits pace segment when run pace is 0', async () => {
+    const { ObjectId } = await import('mongodb');
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-02',
+      distance: 10,
+      pace: 0, // pace=0 means no pace data
+      duration: '60:00',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockStream.mockReturnValueOnce(createMockStream('Great!'));
+    const req = makeReq({ planId, message: 'Show me my run' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+    const syntheticUserMsg = msgs[msgs.length - 3];
+
+    // Distance is present but no "@ pace" segment
+    expect(syntheticUserMsg.content).toContain('10km');
+    expect(syntheticUserMsg.content).not.toContain('@ 0');
+    expect(syntheticUserMsg.content).not.toContain('@ ');
+  });
 });
 
 describe('Chat Integration (COACH-01)', () => {

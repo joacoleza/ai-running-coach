@@ -23,7 +23,7 @@ vi.mock('../shared/db.js', () => ({ getDb: vi.fn() }));
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { extractFirstJson } from '../functions/chat.js';
+import { extractFirstJson, formatPace, formatRunDate } from '../functions/chat.js';
 
 type Msg = { planId: string; role: 'user' | 'assistant'; content: string; timestamp: Date };
 
@@ -123,6 +123,39 @@ describe('Chat - Summary generation (COACH-06)', () => {
 
     expect(prompt).toContain('Conversation Summary');
     expect(prompt).toContain(summary);
+  });
+});
+
+describe('formatPace', () => {
+  it('formats 5.5 as "5:30"', () => {
+    expect(formatPace(5.5)).toBe('5:30');
+  });
+  it('formats 4.25 as "4:15"', () => {
+    expect(formatPace(4.25)).toBe('4:15');
+  });
+  it('formats 4.0 as "4:00"', () => {
+    expect(formatPace(4.0)).toBe('4:00');
+  });
+  it('formats 10.5 as "10:30"', () => {
+    expect(formatPace(10.5)).toBe('10:30');
+  });
+  it('pads seconds with leading zero when < 10', () => {
+    expect(formatPace(5.083333)).toBe('5:05'); // 5 min 5 sec
+  });
+});
+
+describe('formatRunDate', () => {
+  it('converts YYYY-MM-DD to DD/MM/YYYY', () => {
+    expect(formatRunDate('2026-04-15')).toBe('15/04/2026');
+  });
+  it('converts first day of year', () => {
+    expect(formatRunDate('2026-01-01')).toBe('01/01/2026');
+  });
+  it('returns input unchanged when only 1 part (no dashes)', () => {
+    expect(formatRunDate('20260415')).toBe('20260415');
+  });
+  it('returns input unchanged when only 2 parts', () => {
+    expect(formatRunDate('2026-04')).toBe('2026-04');
   });
 });
 

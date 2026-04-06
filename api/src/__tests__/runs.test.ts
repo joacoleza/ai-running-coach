@@ -263,6 +263,165 @@ describe('GET /api/runs - listRuns', () => {
   });
 });
 
+// ── GET /api/runs - date and distance filters ─────────────────────────────
+
+describe('GET /api/runs - date and distance filters', () => {
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('runs').insertMany([
+      { date: '2026-03-01', distance: 3, duration: '18:00', pace: 6, createdAt: new Date(), updatedAt: new Date() },
+      { date: '2026-04-01', distance: 7, duration: '35:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
+      { date: '2026-05-01', distance: 12, duration: '60:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
+    ]);
+  });
+
+  it('filters by dateFrom — returns only runs on or after the given date', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { dateFrom: '2026-04-01' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(2);
+    expect(runs.map((r: any) => r.date)).toContain('2026-04-01');
+    expect(runs.map((r: any) => r.date)).toContain('2026-05-01');
+    expect(runs.map((r: any) => r.date)).not.toContain('2026-03-01');
+  });
+
+  it('filters by dateTo — returns only runs on or before the given date', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { dateTo: '2026-04-01' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(2);
+    expect(runs.map((r: any) => r.date)).toContain('2026-03-01');
+    expect(runs.map((r: any) => r.date)).toContain('2026-04-01');
+    expect(runs.map((r: any) => r.date)).not.toContain('2026-05-01');
+  });
+
+  it('filters by dateFrom and dateTo together', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { dateFrom: '2026-04-01', dateTo: '2026-04-30' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(1);
+    expect(runs[0].date).toBe('2026-04-01');
+  });
+
+  it('filters by distanceMin — returns only runs >= that distance', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { distanceMin: '7' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(2);
+    expect(runs.map((r: any) => r.distance)).toContain(7);
+    expect(runs.map((r: any) => r.distance)).toContain(12);
+    expect(runs.map((r: any) => r.distance)).not.toContain(3);
+  });
+
+  it('filters by distanceMax — returns only runs <= that distance', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { distanceMax: '7' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(2);
+    expect(runs.map((r: any) => r.distance)).toContain(3);
+    expect(runs.map((r: any) => r.distance)).toContain(7);
+    expect(runs.map((r: any) => r.distance)).not.toContain(12);
+  });
+
+  it('filters by distanceMin and distanceMax together', async () => {
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { distanceMin: '5', distanceMax: '10' });
+    const result = await handlers.get('listRuns')!(req, ctx);
+    expect(result.status).toBe(200);
+    const runs = result.jsonBody.runs;
+    expect(runs).toHaveLength(1);
+    expect(runs[0].distance).toBe(7);
+  });
+});
+
+// ── GET /api/runs/{id} and PATCH /api/runs/{id} ───────────────────────────
+
+describe('GET /api/runs/:id - getRun', () => {
+  it('returns a run by id', async () => {
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+    const req = new HttpRequest({ method: 'GET', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
+    const result = await handlers.get('getRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.date).toBe('2026-04-01');
+  });
+
+  it('returns 404 for unknown id', async () => {
+    const unknownId = new ObjectId().toHexString();
+    const req = new HttpRequest({ method: 'GET', url: `http://localhost/api/runs/${unknownId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: unknownId } });
+    const result = await handlers.get('getRun')!(req, ctx);
+    expect(result.status).toBe(404);
+  });
+
+  it('returns 400 for invalid id format', async () => {
+    const req = new HttpRequest({ method: 'GET', url: 'http://localhost/api/runs/not-an-id', headers: { 'x-app-password': 'test-pw' }, params: { id: 'not-an-id' } });
+    const result = await handlers.get('getRun')!(req, ctx);
+    expect(result.status).toBe(400);
+  });
+});
+
+describe('PATCH /api/runs/:id - updateRun', () => {
+  it('updates run fields and recomputes pace when distance changes', async () => {
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+    const req = new HttpRequest({ method: 'PATCH', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
+    vi.spyOn(req, 'json').mockResolvedValue({ distance: 10, duration: '50:00' });
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.distance).toBe(10);
+    expect(result.jsonBody.pace).toBe(5.0);
+  });
+
+  it('saves insight field when provided', async () => {
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+    const req = new HttpRequest({ method: 'PATCH', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
+    vi.spyOn(req, 'json').mockResolvedValue({ insight: 'Great tempo effort today' });
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.insight).toBe('Great tempo effort today');
+  });
+});
+
+// ── POST /api/runs - HH:MM:SS duration ───────────────────────────────────
+
+describe('POST /api/runs - HH:MM:SS duration format', () => {
+  it('computes pace correctly for 1:30:00 duration (90 min / 18km = 5.0)', async () => {
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-04-01',
+      distance: 18,
+      duration: '1:30:00',
+    });
+    const result = await handlers.get('createRun')!(req, ctx);
+    expect(result.status).toBe(201);
+    expect(result.jsonBody.pace).toBe(5.0);
+  });
+});
+
 // ── GET /api/runs?unlinked=true - listRuns (unlinked filter) ──────────────
 
 describe('GET /api/runs?unlinked=true - listRuns unlinked filter', () => {
