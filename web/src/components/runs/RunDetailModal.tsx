@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 import { updateRun, deleteRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
@@ -41,6 +42,7 @@ function openCoachPanel() {
 
 export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetailModalProps) {
   const { sendMessage } = useChatContext();
+  const navigate = useNavigate();
 
   const [editDate, setEditDate] = useState(run.date);
   const [editDistance, setEditDistance] = useState(String(run.distance));
@@ -156,12 +158,24 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Plan link badge */}
+          {/* Plan link badge — click to navigate to plan and scroll to that day */}
           {run.weekNumber && (
             <div>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate('/plan');
+                  // Dispatch after a tick so TrainingPlan has mounted
+                  setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('navigate-to-day', {
+                      detail: { weekNumber: run.weekNumber, dayLabel: run.dayLabel }
+                    }));
+                  }, 150);
+                }}
+                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 cursor-pointer transition-colors"
+              >
                 Week {run.weekNumber} · Day {run.dayLabel}
-              </span>
+              </button>
             </div>
           )}
 

@@ -20,6 +20,14 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
+  // Scroll to bottom when panel opens (mobile: ensures latest message visible)
+  useEffect(() => {
+    if (isOpen) {
+      const el = messagesContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+  }, [isOpen]);
+
   // Focus input when open-coach event fires (e.g. "Update Plan" button on desktop)
   useEffect(() => {
     const handler = () => {
