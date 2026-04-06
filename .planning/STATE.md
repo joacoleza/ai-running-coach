@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-06T15:08:52.554Z"
+last_updated: "2026-04-06T15:09:47.378Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -144,6 +144,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03.2-02]: streamChatResponse extracted as module-level helper; applyPlanOperations as useCallback for plan ops sharing
 - [Phase 03.2-03]: AUTH-01/02/03 requirements updated to describe APP_PASSWORD auth replacing GitHub OAuth
 - [Phase 03.2-03]: App.auth.test.tsx uses waitFor + json() mock to drain useChat async mount effects inside act() to eliminate act() warning
+- [Phase 03.2-04]: formatPace and formatRunDate exported at module level to enable direct unit testing
 
 ## Accumulated Context
 
@@ -175,6 +176,7 @@ _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/descriptio
 | Phase 03.2-tech-debt-cleanup P01 | 6 min | 2 tasks | 5 files |
 | Phase 03.2-tech-debt-cleanup P02 | 5 min | 1 tasks | 1 files |
 | Phase 03.2-tech-debt-cleanup P03 | 9 min | 2 tasks | 3 files |
+| Phase 03.2-tech-debt-cleanup P04 | 8 min | 3 tasks | 4 files |
 
 ### Quick Tasks Completed
 
