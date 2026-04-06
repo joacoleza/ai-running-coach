@@ -716,6 +716,143 @@ describe('PATCH /api/plan/days/:week/:day - undo unlinks run', () => {
   });
 });
 
+// ── POST /api/runs/{id}/unlink - unlinkRun ───────────────────────────────────
+
+describe('POST /api/runs/:id/unlink - unlinkRun', () => {
+  it('clears planId, weekNumber, dayLabel from run and un-completes plan day', async () => {
+    const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [
+        {
+          ...validActivePlan.phases[0],
+          weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }],
+        },
+      ],
+    });
+    const planId = planInsert.insertedId;
+
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      planId,
+      weekNumber: 1,
+      dayLabel: 'A',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+
+    const req = new HttpRequest({
+      method: 'POST',
+      url: `http://localhost/api/runs/${runId}/unlink`,
+      headers: { 'x-app-password': 'test-pw' },
+      params: { id: runId },
+    });
+
+    const result = await handlers.get('unlinkRun')!(req, ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.planId).toBeUndefined();
+    expect(result.jsonBody.weekNumber).toBeUndefined();
+    expect(result.jsonBody.dayLabel).toBeUndefined();
+
+    // Plan day should be marked incomplete
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const day = plan?.phases[0]?.weeks[0]?.days[0];
+    expect(day?.completed).toBe(false);
+  });
+
+  it('returns 404 when run not found', async () => {
+    const unknownId = new ObjectId().toHexString();
+    const req = new HttpRequest({
+      method: 'POST',
+      url: `http://localhost/api/runs/${unknownId}/unlink`,
+      headers: { 'x-app-password': 'test-pw' },
+      params: { id: unknownId },
+    });
+
+    const result = await handlers.get('unlinkRun')!(req, ctx);
+    expect(result.status).toBe(404);
+  });
+
+  it('returns 400 when run is not linked to a plan', async () => {
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+
+    const req = new HttpRequest({
+      method: 'POST',
+      url: `http://localhost/api/runs/${runId}/unlink`,
+      headers: { 'x-app-password': 'test-pw' },
+      params: { id: runId },
+    });
+
+    const result = await handlers.get('unlinkRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('not linked');
+  });
+
+  it('returns 400 for invalid run id format', async () => {
+    const req = new HttpRequest({
+      method: 'POST',
+      url: 'http://localhost/api/runs/not-an-id/unlink',
+      headers: { 'x-app-password': 'test-pw' },
+      params: { id: 'not-an-id' },
+    });
+
+    const result = await handlers.get('unlinkRun')!(req, ctx);
+    expect(result.status).toBe(400);
+  });
+
+  it('unlinked run remains in runs collection (not deleted)', async () => {
+    const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [
+        {
+          ...validActivePlan.phases[0],
+          weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }],
+        },
+      ],
+    });
+    const planId = planInsert.insertedId;
+
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5,
+      planId,
+      weekNumber: 1,
+      dayLabel: 'A',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const runId = runInsert.insertedId.toHexString();
+
+    const req = new HttpRequest({
+      method: 'POST',
+      url: `http://localhost/api/runs/${runId}/unlink`,
+      headers: { 'x-app-password': 'test-pw' },
+      params: { id: runId },
+    });
+
+    await handlers.get('unlinkRun')!(req, ctx);
+
+    // Run still exists
+    const run = await mongoClient.db('running-coach').collection('runs').findOne({ _id: runInsert.insertedId });
+    expect(run).not.toBeNull();
+    expect(run?.date).toBe('2026-04-01');
+  });
+});
+
 // ── PATCH /api/plan - patchPlan ────────────────────────────────────────────
 
 describe('PATCH /api/plan - patchPlan', () => {
