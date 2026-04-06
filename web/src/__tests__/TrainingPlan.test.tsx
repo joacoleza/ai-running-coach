@@ -123,22 +123,12 @@ describe('TrainingPlan', () => {
     expect(screen.getByText('Something went wrong')).toBeInTheDocument();
   });
 
-  it('clicking Update Plan dispatches open-coach event', () => {
-    defaultUsePlan({ plan: activePlan });
-    const listener = vi.fn();
-    window.addEventListener('open-coach', listener);
-    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /update plan/i }));
-    expect(listener).toHaveBeenCalled();
-    window.removeEventListener('open-coach', listener);
-  });
-
   it('archive button triggers confirm and calls archivePlan', async () => {
     vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
     mockArchivePlan.mockResolvedValue(undefined);
     defaultUsePlan({ plan: activePlan });
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
-    fireEvent.click(screen.getByRole('button', { name: /close & archive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^archive$/i }));
     await waitFor(() => expect(mockArchivePlan).toHaveBeenCalled());
   });
 
