@@ -272,6 +272,57 @@ Plans:
 
 ---
 
+## Phase 3.3 — UI Polish & Mobile Fixes (INSERTED)
+
+**Goal:** Address UX friction points and mobile layout issues discovered during post-Phase-3 usage: scroll position, favicon, cross-linking between runs and training plan, modal consistency, and coaching feedback panel improvements.
+
+**Depends on:** Phase 3
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 3.3 to break down)
+
+**Deliverables:**
+- Training plan auto-scrolls to last completed run on open
+- Mobile coach panel opens scrolled to last message
+- Safari address-bar area blends with app theme (theme-color meta tag / safe-area background)
+- Favicon added
+- Run detail modal: Week X · Day Y badge navigates to training plan scrolled to that day (green = active plan, gray = archived)
+- Training plan: completed linked run date is clickable and opens run detail modal
+- Undo button repositioned next to guidelines for linked completed runs (consistent with unlinked completed runs)
+- Completed plan days show "Log run" option to create a new run from scratch
+- Log run modal and view run modal unified into a single consistent modal (view modal adds: insights, delete, save changes)
+- Notes field height increased in both log and view modals
+- "Update plan" button removed from training plan view
+- Close and Archive buttons made smaller and placed next to the training plan title
+- "Get plan feedback" action moved into Coach Feedback panel header; panel non-expandable when no feedback exists; link text changes to "Refresh feedback" when feedback already exists
+- Paragraph spacing in feedback panel increased to match chat spacing
+- Mobile Safari: log run modal layout fixed
+- Mobile Safari: filters layout fixed
+- Allow unlinking a linked run (both manually in run modal and via agent `<plan:unlink/>` command)
+
+**UAT:**
+- Training plan opens and viewport scrolls to last completed run
+- On mobile, opening coach panel shows most recent message
+- Safari bottom bar area has app-matching background color (no plain white strip)
+- Favicon visible in browser tab
+- Clicking Week X · Day Y badge in run detail navigates to plan and highlights that day
+- Clicking run date on a completed plan day opens run detail modal
+- Undo button appears next to guidelines on linked completed runs
+- Completed day has a "Log run" button that opens the log run form
+- Log run modal and view run modal share the same layout
+- Notes textarea is taller in both modals
+- No "Update plan" button visible in training plan
+- Close/Archive buttons are compact and positioned near the plan title
+- "Get plan feedback" button is in the feedback panel header; panel collapses when no feedback; button says "Refresh feedback" when feedback exists
+- Feedback panel text has visible paragraph spacing
+- Log run modal renders correctly on mobile Safari
+- Filters panel renders correctly on mobile Safari
+- Unlink action available in run modal; unlinking removes plan association from run
+
+---
+
 ## Phase 4 — Dashboard & Plan Import
 
 **Goal:** Full dashboard showing progress, run history, and plan import from an existing LLM conversation.

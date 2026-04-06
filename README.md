@@ -31,6 +31,10 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
 
+## Built with
+
+Planned and built using [<img src="https://avatars.githubusercontent.com/u/260490621?s=20&v=4" height="16" style="vertical-align:middle"/> Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [<img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Claude_AI_symbol.svg" height="16" style="vertical-align:middle"/> Claude Code](https://claude.ai/code) by Anthropic.
+
 ## Stack
 
 | Layer | Technology |
@@ -46,7 +50,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
 
-After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [Useful commands](#useful-commands)).
+After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [docs/useful-commands.md](docs/useful-commands.md)).
 
 ## Cost
 
@@ -55,7 +59,7 @@ After 30 consecutive wrong password attempts the app locks itself and shows "Ser
 
 ## Getting started
 
-**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop
+**Prerequisites:** Node.js 20+ (22 or 24 work), Docker Desktop, and an [Anthropic Console](https://console.anthropic.com) account (for the `ANTHROPIC_API_KEY` used in local settings and Azure config)
 
 ```bash
 npm install
@@ -105,23 +109,6 @@ npm run dev
 
 Open the local URL shown in the terminal (typically `http://localhost:5173`).
 
-## Useful commands
-
-**Check lockout state:**
-```bash
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').find().toArray()"
-```
-
-**Unlock the app (PowerShell):**
-```powershell
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{`$set:{failureCount:0,blocked:false}})"
-```
-
-**Unlock the app (bash):**
-```bash
-docker exec ai-running-coach-mongodb-1 mongosh running-coach --quiet --eval "db.getCollection('auth').updateOne({_id:'lockout'},{\$set:{failureCount:0,blocked:false}})"
-```
-
 ## Deploying
 
 Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/CD](.github/workflows/azure-static-web-apps.yml) workflow.
@@ -142,20 +129,17 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
-## Built with
-
-Planned and built using [Get Shit Done (GSD)](https://github.com/gsd-build/get-shit-done) and [Claude Code](https://claude.ai/code) by Anthropic.
-
 ## Roadmap
 
 See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 
 - ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
 - ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
-- ~~**Phase 1.2** — Testing Strategy & CI (unit tests, E2E, coverage badges, GitHub Actions)~~ ✓
-- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, calendar, file import, bug fixes + tests)~~ ✓
-- ~~**Phase 2.1** — Training Plan Redesign (hierarchical phases/weeks/days, inline editing, archive, plan:update protocol)~~ ✓
-- ~~**Phase 3** — Run Logging & Feedback (manual run entry, post-run coaching, plan feedback)~~ ✓
-- **Phase 3.1** — Fix Coach Feedback Quality (stale closure in insight save, raw XML in progressFeedback)
+- ~~**Phase 1.2** — Testing Strategy & CI (unit, E2E, coverage badges, GitHub Actions)~~ ✓
+- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, plan gen)~~ ✓
+- ~~**Phase 2.1** — Training Plan Redesign (phases/weeks/days, inline editing, archive)~~ ✓
+- ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
+- ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
 - **Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)
+- **Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
