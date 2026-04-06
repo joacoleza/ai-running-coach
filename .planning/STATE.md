@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-06T15:03:50.461Z"
+last_updated: "2026-04-06T15:04:18.514Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -141,6 +141,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03.1]: COACH-03: sendMessage return value used directly for run insight, removes stale messages closure
 - [Phase 03.1]: COACH-04: self-closing XML tags stripped from progressFeedback via replace before PATCH save
 - [Phase 03.2-02]: streamChatResponse extracted as module-level helper; applyPlanOperations as useCallback for plan ops sharing
+- [Phase 03.2-01]: generatePlan handler deleted - superseded by server-side plan saving in chat.ts
 
 ## Accumulated Context
 
@@ -170,6 +171,7 @@ _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/descriptio
 | Phase 03-run-logging P07 | 20 min | 3 tasks | 11 files |
 | Phase 03.1-fix-coach-feedback-quality P01 | 7 min | 3 tasks | 4 files |
 | Phase 03.2-tech-debt-cleanup P02 | 5 min | 1 tasks | 1 files |
+| Phase 03.2-tech-debt-cleanup P01 | 6 min | 2 tasks | 5 files |
 
 ### Quick Tasks Completed
 
