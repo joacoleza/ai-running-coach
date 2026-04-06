@@ -261,4 +261,83 @@ test.describe('Run Logging', () => {
     // Modal closes
     await expect(page.getByText(/Link a run to Week 1 Day A/)).not.toBeVisible({ timeout: 5_000 })
   })
+
+  test('COACH-03: RunDetailModal saves correct insight text after coach feedback', async ({ page }) => {
+    await loginWithPlan(page)
+
+    // Mock GET /api/runs to return unlinked run without insight
+    const unlinkedRunWithoutInsight = { ...mockUnlinkedRun, _id: 'run-feedback-001' }
+    await page.route('**/api/runs**', async (route: any) => {
+      const method = route.request().method()
+      const url = route.request().url()
+
+      if (method === 'GET' && url.includes('/api/runs/run-feedback-001')) {
+        // GET /api/runs/:id — for RunDetailModal
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify(unlinkedRunWithoutInsight),
+        })
+      } else if (method === 'GET') {
+        // GET /api/runs — for Runs page list
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [unlinkedRunWithoutInsight], total: 1 }),
+        })
+      } else if (method === 'PATCH') {
+        // PATCH /api/runs/:id — capture the insight being saved
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...unlinkedRunWithoutInsight, insight: 'Great coaching insight for your run' }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Mock /api/chat to return a coach response
+    const coachReply = 'Great coaching insight for your run'
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: `data: ${JSON.stringify({ text: coachReply })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`,
+      })
+    })
+
+    // Capture PATCH request body
+    let patchBody: any = null
+    await page.route('**/api/runs/run-feedback-001', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        patchBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...unlinkedRunWithoutInsight, insight: coachReply }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    // Navigate to Runs page
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // Click on the run row to open RunDetailModal
+    await page.getByText(/6km/).click()
+    // Wait for the modal to open — look for the modal content
+    await expect(page.getByPlaceholder(/45:30/)).toBeVisible({ timeout: 5_000 })
+
+    // Click "Add feedback to run" button
+    await page.getByRole('button', { name: /Add feedback to run/i }).click()
+
+    // Wait for coach response to appear in the modal
+    await expect(page.getByText(coachReply)).toBeVisible({ timeout: 15_000 })
+
+    // Verify the PATCH was sent with the correct insight text
+    await expect(async () => {
+      expect(patchBody?.insight).toBe(coachReply)
+    }).toPass({ timeout: 5_000 })
+  })
 })

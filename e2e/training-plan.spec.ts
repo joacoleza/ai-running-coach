@@ -774,4 +774,101 @@ test.describe('Archive section (Phase 2.1)', () => {
     // ArchivePlan renders a "← Back to Archive" link
     await expect(page.getByText(/back to archive/i)).toBeVisible({ timeout: 10_000 })
   })
+
+  test('COACH-04: TrainingPlan strips XML tags from coach response before saving progressFeedback', async ({ page }) => {
+    // Set up a plan with phases and objective (so the "Get plan feedback" button appears)
+    const activePlanWithObjective = { ...mockActivePlan }
+
+    let currentPlan = activePlanWithObjective
+
+    // Mock /api/plan to track PATCH requests
+    await page.route('**/api/plan', async (route: any) => {
+      const method = route.request().method()
+      if (method === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: currentPlan }),
+        })
+      } else if (method === 'PATCH') {
+        // Capture the PATCH body to verify progressFeedback is XML-stripped
+        const patchData = JSON.parse(route.request().postData() ?? '{}')
+        currentPlan = { ...currentPlan, ...patchData }
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: currentPlan }),
+        })
+      } else {
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: currentPlan }),
+        })
+      }
+    })
+
+    // Mock /api/messages
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      })
+    })
+
+    // Mock /api/chat to return a response with XML tags
+    const rawCoachReply =
+      'Great progress! <plan:update week="1" day="A" guidelines="easy"/> Keep it up!'
+    const expectedCleanReply = 'Great progress!  Keep it up!'
+
+    let capturedPatchBody: any = null
+
+    await page.route('**/api/chat', async (route: any) => {
+      // After this response, capture subsequent PATCH calls
+      setTimeout(() => {
+        page.route('**/api/plan', async (innerRoute: any) => {
+          const innerMethod = innerRoute.request().method()
+          if (innerMethod === 'PATCH') {
+            capturedPatchBody = JSON.parse(innerRoute.request().postData() ?? '{}')
+            currentPlan = { ...currentPlan, ...capturedPatchBody }
+            await innerRoute.fulfill({
+              status: 200,
+              contentType: 'application/json',
+              body: JSON.stringify({ plan: currentPlan }),
+            })
+          } else {
+            await innerRoute.continue()
+          }
+        })
+      }, 10)
+
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: makeSseBody(rawCoachReply),
+      })
+    })
+
+    // Login and navigate to plan
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+
+    // Click "Get plan feedback" button
+    const feedbackButton = page.getByRole('button', { name: /Get plan feedback/i })
+    await expect(feedbackButton).toBeVisible({ timeout: 10_000 })
+    await feedbackButton.click()
+
+    // Wait for coach response to appear in chat
+    await expect(page.getByText(/Great progress/)).toBeVisible({ timeout: 15_000 })
+
+    // Verify that progressFeedback was saved without XML tags
+    await expect(async () => {
+      expect(capturedPatchBody?.progressFeedback).toBeDefined()
+      expect(capturedPatchBody.progressFeedback).not.toContain('<')
+      expect(capturedPatchBody.progressFeedback).not.toContain('>')
+      expect(capturedPatchBody.progressFeedback).toContain('Great progress')
+      expect(capturedPatchBody.progressFeedback).toContain('Keep it up')
+    }).toPass({ timeout: 5_000 })
+  })
 })
