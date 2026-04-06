@@ -110,3 +110,15 @@ export async function linkRun(runId: string, weekNumber: number, dayLabel: strin
   }
   return res.json() as Promise<Run>;
 }
+
+export async function unlinkRun(id: string): Promise<Run> {
+  const res = await fetch(`/api/runs/${id}/unlink`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to unlink run' }));
+    throw new Error((err as { error?: string }).error ?? 'Failed to unlink run');
+  }
+  return res.json() as Promise<Run>;
+}

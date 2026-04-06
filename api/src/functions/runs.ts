@@ -317,6 +317,67 @@ app.http('deleteRun', {
   },
 });
 
+// ── POST /api/runs/{id}/unlink ─────────────────────────────────────────────
+app.http('unlinkRun', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'runs/{id}/unlink',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requirePassword(req);
+    if (denied) return denied;
+
+    const { id } = req.params;
+    if (!id || !ObjectId.isValid(id)) {
+      return { status: 400, jsonBody: { error: 'Invalid run ID' } };
+    }
+
+    try {
+      const db = await getDb();
+
+      // Find the run to get plan link info
+      const run = await db.collection<Run>('runs').findOne({ _id: new ObjectId(id) });
+      if (!run) return { status: 404, jsonBody: { error: 'Run not found' } };
+      if (!run.planId) return { status: 400, jsonBody: { error: 'Run is not linked to a plan day' } };
+
+      const { weekNumber, dayLabel } = run;
+
+      // Un-complete the plan day (revert completed: true → false)
+      if (weekNumber !== undefined && dayLabel) {
+        await db.collection<Plan>('plans').updateOne(
+          {
+            _id: run.planId,
+            'phases.weeks.weekNumber': weekNumber,
+          },
+          {
+            $set: {
+              'phases.$[].weeks.$[week].days.$[day].completed': false,
+            },
+          },
+          { arrayFilters: [{ 'week.weekNumber': weekNumber }, { 'day.label': dayLabel }] }
+        );
+      }
+
+      // Clear planId, weekNumber, dayLabel from the run
+      const updatedRun = await db.collection<Run>('runs').findOneAndUpdate(
+        { _id: new ObjectId(id) },
+        {
+          $unset: { planId: '', weekNumber: '', dayLabel: '' },
+          $set: { updatedAt: new Date() },
+        },
+        { returnDocument: 'after' }
+      );
+
+      if (!updatedRun) return { status: 404, jsonBody: { error: 'Run not found after update' } };
+
+      context.log(`Unlinked run ${id} from week ${weekNumber ?? '?'} day ${dayLabel ?? '?'}`);
+      return { status: 200, jsonBody: { ...updatedRun, _id: updatedRun._id.toString() } };
+    } catch (err) {
+      context.error('Error unlinking run:', err);
+      return { status: 500, jsonBody: { error: 'Internal server error' } };
+    }
+  },
+});
+
 // ── POST /api/runs/{id}/link ───────────────────────────────────────────────
 app.http('linkRun', {
   methods: ['POST'],
