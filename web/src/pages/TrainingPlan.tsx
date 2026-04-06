@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
 import { PlanActions } from '../components/plan/PlanActions';
+import { RunDetailModal } from '../components/runs/RunDetailModal';
+import type { Run } from '../hooks/useRuns';
 
 function openCoachPanel() {
   window.dispatchEvent(new CustomEvent('open-coach-panel'));
@@ -14,12 +16,57 @@ export function TrainingPlan() {
   const { sendMessage } = useChatContext();
   const [feedbackExpanded, setFeedbackExpanded] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const lastCompletedRef = useRef<HTMLDivElement | null>(null);
+  const dayRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  const hasActivePlan = !!plan && plan.status === 'active' && plan.phases?.length > 0;
+
+  // Auto-scroll to last completed day when plan first loads
+  useEffect(() => {
+    if (lastCompletedRef.current) {
+      lastCompletedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [hasActivePlan]);
+
+  // Listen for open-run-detail events from DayRow run date clicks
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ runId: string }>).detail;
+      setSelectedRunId(detail.runId);
+    };
+    window.addEventListener('open-run-detail', handler);
+    return () => window.removeEventListener('open-run-detail', handler);
+  }, []);
+
+  // Fetch the run when selectedRunId changes
+  useEffect(() => {
+    if (!selectedRunId) return;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/runs/${selectedRunId}`, {
+          headers: { 'x-app-password': localStorage.getItem('app_password') ?? '' }
+        });
+        if (res.ok) setSelectedRun(await res.json() as Run);
+      } catch { /* ignore */ }
+    })();
+  }, [selectedRunId]);
+
+  // Listen for navigate-to-day events from RunDetailModal badge clicks
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { weekNumber, dayLabel } = (e as CustomEvent<{ weekNumber: number; dayLabel: string }>).detail;
+      const el = dayRefsMap.current.get(`${weekNumber}-${dayLabel}`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+    window.addEventListener('navigate-to-day', handler);
+    return () => window.removeEventListener('navigate-to-day', handler);
+  }, []);
 
   if (isLoading) {
     return <div className="p-6 text-gray-400">Loading plan...</div>;
   }
-
-  const hasActivePlan = !!plan && plan.status === 'active' && plan.phases?.length > 0;
 
   const handleUpdate = () => {
     window.dispatchEvent(new Event('open-coach'));
@@ -110,7 +157,7 @@ export function TrainingPlan() {
             </div>
           )}
 
-          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} />
+          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         </>
       ) : !plan || plan.status === 'onboarding' ? (
         <p className="mt-4 text-gray-600">
@@ -119,6 +166,16 @@ export function TrainingPlan() {
             : 'No active plan. Create a new one using the coach.'}
         </p>
       ) : null}
+
+      {/* RunDetailModal — opened by clicking a completed day's run date */}
+      {selectedRun && (
+        <RunDetailModal
+          run={selectedRun}
+          onClose={() => { setSelectedRun(null); setSelectedRunId(null); }}
+          onUpdated={(updated) => setSelectedRun(updated)}
+          onDeleted={() => { setSelectedRun(null); setSelectedRunId(null); void refreshPlan(); }}
+        />
+      )}
     </div>
   );
 }

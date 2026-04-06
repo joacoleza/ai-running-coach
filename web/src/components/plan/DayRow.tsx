@@ -204,9 +204,12 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
           {/* Run date — separate from strikethrough, renders below on its own line */}
           {day.completed && linkedRun && (
-            <span className="block text-xs text-green-600 mt-0.5">
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-run-detail', { detail: { runId: linkedRun._id } }))}
+              className="block text-xs text-green-600 mt-0.5 hover:underline cursor-pointer"
+            >
               {formatRunDate(linkedRun.date)}
-            </span>
+            </button>
           )}
 
           {/* Saving indicator */}
