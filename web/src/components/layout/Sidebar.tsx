@@ -15,7 +15,7 @@ export function Sidebar() {
     >
       <div className="flex justify-center items-center py-3 md:hidden">
         <div className="bg-white rounded-full p-1.5 flex items-center justify-center">
-          <img src="/favicon.png" alt="AI Running Coach" className="w-7 h-7" />
+          <img src="/logo.png" alt="AI Running Coach" className="w-7 h-7 object-contain" />
         </div>
       </div>
       <div className="flex justify-center p-4 hidden md:flex">
