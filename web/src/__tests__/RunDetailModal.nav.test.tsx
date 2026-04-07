@@ -238,6 +238,25 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
   });
 });
 
+describe('RunDetailModal — UAT-14: 2-column field layout', () => {
+  it('renders Date, Distance, Duration, and Avg HR inside a shared grid-cols-2 container', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+
+    const grid = container.querySelector('.grid.grid-cols-2');
+    expect(grid).not.toBeNull();
+
+    const labelTexts = Array.from(grid!.querySelectorAll('label')).map(l => l.textContent?.trim() ?? '');
+    expect(labelTexts.some(t => t.startsWith('Date'))).toBe(true);
+    expect(labelTexts.some(t => t.startsWith('Distance'))).toBe(true);
+    expect(labelTexts.some(t => t.startsWith('Duration'))).toBe(true);
+    expect(labelTexts.some(t => t.startsWith('Avg HR'))).toBe(true);
+  });
+});
+
 describe('RunDetailModal — UX-MODAL-02: Notes textarea rows=4', () => {
   it('renders notes textarea with rows=4', () => {
     render(
