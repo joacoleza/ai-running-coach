@@ -1,5 +1,9 @@
 # AI Running Coach
 
+<p align="center">
+  <img src="web/public/logo.png" alt="AI Running Coach Logo" width="180" />
+</p>
+
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 
