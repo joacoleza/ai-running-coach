@@ -180,6 +180,7 @@ export function TrainingPlan() {
       {selectedRun && (
         <RunDetailModal
           run={selectedRun}
+          activePlanId={plan?._id}
           onClose={() => { setSelectedRun(null); setSelectedRunId(null); }}
           onUpdated={(updated) => setSelectedRun(updated)}
           onDeleted={() => { setSelectedRun(null); setSelectedRunId(null); void refreshPlan(); }}

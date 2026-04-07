@@ -10,6 +10,7 @@ interface RunDetailModalProps {
   onClose: () => void;
   onUpdated: (updatedRun: Run) => void;
   onDeleted: (runId: string) => void;
+  activePlanId?: string;
 }
 
 function formatRunDate(isoDate: string): string {
@@ -40,7 +41,7 @@ function openCoachPanel() {
   window.dispatchEvent(new CustomEvent('open-coach-panel'));
 }
 
-export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetailModalProps) {
+export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanId }: RunDetailModalProps) {
   const { sendMessage } = useChatContext();
   const navigate = useNavigate();
 
@@ -190,7 +191,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
                     }));
                   }, 150);
                 }}
-                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 cursor-pointer transition-colors"
+                className={`text-xs px-2 py-1 rounded-full cursor-pointer transition-colors ${run.planId === activePlanId ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
                 Week {run.weekNumber} · Day {run.dayLabel}
               </button>
@@ -199,73 +200,76 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
 
           {/* Editable fields */}
           <div className="space-y-3">
-            {/* Date */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
-              <input
-                type="date"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Distance */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Date */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
                 <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={editDistance}
-                  onChange={(e) => setEditDistance(e.target.value)}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-500">km</span>
               </div>
-            </div>
 
-            {/* Duration */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Duration</label>
-              <input
-                type="text"
-                value={editDuration}
-                onChange={(e) => setEditDuration(e.target.value)}
-                placeholder="45:30"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+              {/* Distance */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={editDistance}
+                    onChange={(e) => setEditDistance(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">km</span>
+                </div>
+              </div>
 
-            {/* Pace (read-only, computed) */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Pace</label>
-              <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 rounded-lg">
-                {editPace !== null ? formatPace(editPace) : formatPace(run.pace)}
-              </p>
-            </div>
-
-            {/* Avg HR */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Avg HR (optional)</label>
-              <div className="flex items-center gap-2">
+              {/* Duration */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Duration</label>
                 <input
-                  type="number"
-                  min="50"
-                  max="250"
-                  value={editAvgHR}
-                  onChange={(e) => setEditAvgHR(e.target.value)}
-                  placeholder="—"
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  value={editDuration}
+                  onChange={(e) => setEditDuration(e.target.value)}
+                  placeholder="45:30"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-500">bpm</span>
+                <p className="text-xs text-gray-400 mt-0.5">MM:SS or HH:MM:SS</p>
+              </div>
+
+              {/* Avg HR */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Avg HR <span className="text-gray-400 font-normal">(optional)</span></label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="50"
+                    max="250"
+                    value={editAvgHR}
+                    onChange={(e) => setEditAvgHR(e.target.value)}
+                    placeholder="—"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">bpm</span>
+                </div>
+              </div>
+
+              {/* Pace (read-only, computed) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Pace</label>
+                <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 rounded-lg">
+                  {editPace !== null ? formatPace(editPace) : formatPace(run.pace)}
+                </p>
               </div>
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Notes <span className="text-gray-400 font-normal">(optional)</span></label>
               <textarea
                 rows={4}
                 value={editNotes}

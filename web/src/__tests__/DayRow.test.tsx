@@ -118,12 +118,13 @@ describe('DayRow', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  it('completed day shows undo button (in DOM; desktop hover-only via parent md:opacity-0)', () => {
+  it('completed day shows undo button (in DOM; desktop hover-only via md:opacity-0 on button)', () => {
     render(<DayRow day={makeRunDay({ completed: true })} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
     const undoBtn = screen.getByTitle('Undo');
     expect(undoBtn).toBeInTheDocument();
-    // The button itself has no opacity-0 — opacity is controlled on the parent span via md: class
-    expect(undoBtn.className).not.toContain('opacity-0');
+    // Undo button is inline with guidelines — opacity controlled directly on the button via md: class
+    expect(undoBtn.className).toContain('md:opacity-0');
+    expect(undoBtn.className).toContain('md:group-hover:opacity-100');
   });
 
   it('skipped day shows undo button', () => {

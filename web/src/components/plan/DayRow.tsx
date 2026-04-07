@@ -202,6 +202,17 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
             {day.skipped && <span className="ml-1 text-xs text-gray-400">(skipped)</span>}
           </span>
 
+          {/* Undo — inline with guidelines, always next to the text */}
+          {!isEditing && !isSaving && (day.completed || day.skipped) && !readonly && !confirmingDelete && (
+            <button
+              onClick={() => { void update({ completed: 'false', skipped: 'false' }); }}
+              className="cursor-pointer p-1 text-gray-400 hover:text-blue-600 transition-colors text-xs ml-1 align-middle md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"
+              title="Undo"
+            >
+              Undo
+            </button>
+          )}
+
           {/* Run date — separate from strikethrough, renders below on its own line */}
           {day.completed && linkedRun && (
             <button
@@ -223,18 +234,10 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
             </span>
           )}
 
-          {/* Action buttons */}
+          {/* Action buttons (excluding Undo which is rendered above) */}
           {!isEditing && !isSaving && (
             <span className={`inline-flex items-center gap-1 ml-2 align-middle no-underline ${confirmingDelete ? '' : 'md:opacity-0 md:group-hover:opacity-100 md:transition-opacity'}`}>
-              {(day.completed || day.skipped) && !readonly && !confirmingDelete && (
-                <button
-                  onClick={() => { void update({ completed: 'false', skipped: 'false' }); }}
-                  className="cursor-pointer p-1 text-gray-400 hover:text-blue-600 transition-colors text-xs"
-                  title="Undo"
-                >
-                  Undo
-                </button>
-              )}
+              {/* Undo removed from here — rendered inline above */}
 
               {day.completed && !linkedRun && !readonly && !confirmingDelete && (
                 <button

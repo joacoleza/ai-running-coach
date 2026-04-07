@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchRuns } from '../hooks/useRuns';
 import type { Run } from '../hooks/useRuns';
+import { usePlan } from '../hooks/usePlan';
 import { RunEntryForm } from '../components/runs/RunEntryForm';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
 
@@ -22,10 +23,11 @@ function formatPace(pace: number): string {
 
 interface RunRowProps {
   run: Run;
+  activePlanId?: string;
   onClick: () => void;
 }
 
-function RunRow({ run, onClick }: RunRowProps) {
+function RunRow({ run, activePlanId, onClick }: RunRowProps) {
   return (
     <button
       onClick={onClick}
@@ -39,7 +41,7 @@ function RunRow({ run, onClick }: RunRowProps) {
         </div>
       </div>
       {run.weekNumber && (
-        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full ml-2 whitespace-nowrap">
+        <span className={`text-xs px-2 py-1 rounded-full ml-2 whitespace-nowrap ${run.planId === activePlanId ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
           Week {run.weekNumber} &middot; Day {run.dayLabel}
         </span>
       )}
@@ -129,6 +131,7 @@ function FilterPanel({
 }
 
 export function Runs() {
+  const { plan } = usePlan();
   const [runs, setRuns] = useState<Run[]>([]);
   const [totalAll, setTotalAll] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -281,6 +284,7 @@ export function Runs() {
               <RunRow
                 key={run._id}
                 run={run}
+                activePlanId={plan?._id}
                 onClick={() => setSelectedRun(run)}
               />
             ))}
@@ -319,6 +323,7 @@ export function Runs() {
       {selectedRun && (
         <RunDetailModal
           run={selectedRun}
+          activePlanId={plan?._id}
           onClose={() => setSelectedRun(null)}
           onUpdated={(updated) => {
             setRuns((prev) =>

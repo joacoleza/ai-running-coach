@@ -230,9 +230,7 @@ test.describe('Training Plan view (Phase 2.1)', () => {
       updatedAt: '2026-04-01T00:00:00.000Z',
     }
 
-    await loginWithPlan(page, planWithLinkedRun)
-
-    // Provide runs for the plan
+    // Provide runs BEFORE loginWithPlan so PlanView's initial fetchLinkedRuns is intercepted
     await page.route('**/api/runs**', async (route: any) => {
       const url = route.request().url()
       if (url.includes('/api/runs/run-linked-001')) {
@@ -241,6 +239,8 @@ test.describe('Training Plan view (Phase 2.1)', () => {
         await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [linkedRun], total: 1 }) })
       }
     })
+
+    await loginWithPlan(page, planWithLinkedRun)
 
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByText('Tempo run')).toBeVisible({ timeout: 10_000 })

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DayRow } from '../components/plan/DayRow';
 import type { PlanDay } from '../hooks/usePlan';
