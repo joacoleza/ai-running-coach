@@ -116,14 +116,14 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('clicking badge dispatches navigate-to-day event after delay', () => {
+  it('clicking badge on active plan dispatches navigate-to-day event after delay', () => {
     vi.useFakeTimers();
     const eventSpy = vi.fn();
     window.addEventListener('navigate-to-day', eventSpy);
 
     render(
       <MemoryRouter>
-        <RunDetailModal run={mockLinkedRun} onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
+        <RunDetailModal run={mockLinkedRun} activePlanId="plan-123" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
       </MemoryRouter>
     );
 
@@ -140,6 +140,26 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     const event = eventSpy.mock.calls[0][0] as CustomEvent;
     expect(event.detail.weekNumber).toBe(1);
     expect(event.detail.dayLabel).toBe('B');
+
+    window.removeEventListener('navigate-to-day', eventSpy);
+    vi.useRealTimers();
+  });
+
+  it('clicking badge on archived plan does NOT dispatch navigate-to-day', () => {
+    vi.useFakeTimers();
+    const eventSpy = vi.fn();
+    window.addEventListener('navigate-to-day', eventSpy);
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockLinkedRun} activePlanId="different-plan" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByText(/Week 1 · Day B/i));
+    vi.advanceTimersByTime(200);
+
+    expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener('navigate-to-day', eventSpy);
     vi.useRealTimers();

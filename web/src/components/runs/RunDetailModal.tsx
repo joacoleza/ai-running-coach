@@ -183,13 +183,17 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               <button
                 onClick={() => {
                   onClose();
-                  navigate('/plan');
-                  // Dispatch after a tick so TrainingPlan has mounted
-                  setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent('navigate-to-day', {
-                      detail: { weekNumber: run.weekNumber, dayLabel: run.dayLabel }
-                    }));
-                  }, 150);
+                  if (run.planId === activePlanId) {
+                    navigate('/plan');
+                    // Dispatch after a tick so TrainingPlan has mounted
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('navigate-to-day', {
+                        detail: { weekNumber: run.weekNumber, dayLabel: run.dayLabel }
+                      }));
+                    }, 150);
+                  } else {
+                    navigate(`/archive/${run.planId}`);
+                  }
                 }}
                 className={`text-xs px-2 py-1 rounded-full cursor-pointer transition-colors ${run.planId === activePlanId ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
               >
