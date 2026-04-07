@@ -108,7 +108,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
     const distStr = `${run.distance}km`;
     const paceStr = formatPace(run.pace);
     const hrStr = run.avgHR ? `, avg HR ${run.avgHR}bpm` : '';
-    const notesStr = run.notes ? `, notes: "${run.notes}"` : '';
+    const notesStr = editNotes ? `, notes: "${editNotes}"` : '';
     const planStr = run.weekNumber
       ? `\nThis run was for Week ${run.weekNumber} Day ${run.dayLabel} of my training plan.`
       : '\nThis was a standalone run (not linked to my training plan).';

@@ -197,7 +197,9 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
     expect(unlinkBtn).not.toBeInTheDocument();
   });
 
-  it('clicking unlink button shows confirmation prompt', () => {
+  it('clicking unlink button shows browser confirm dialog', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
     render(
       <MemoryRouter>
         <RunDetailModal run={mockLinkedRun} onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
@@ -207,13 +209,15 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
     const unlinkBtn = screen.getByText(/Unlink from plan/i);
     fireEvent.click(unlinkBtn);
 
-    // Confirmation buttons should appear
-    expect(screen.getByText(/Yes, unlink/i)).toBeInTheDocument();
-    expect(screen.getByText(/No, keep it/i)).toBeInTheDocument();
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Unlink this run from the training plan day? The day will be marked incomplete.'
+    );
+    vi.restoreAllMocks();
   });
 
   it('confirming unlink calls unlinkRun API', async () => {
     vi.mocked(unlinkRun).mockResolvedValue({ ...mockLinkedRun, planId: undefined });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
       <MemoryRouter>
@@ -224,15 +228,14 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
     const unlinkBtn = screen.getByText(/Unlink from plan/i);
     fireEvent.click(unlinkBtn);
 
-    const confirmBtn = screen.getByText(/Yes, unlink/i);
-    fireEvent.click(confirmBtn);
-
     await waitFor(() => expect(unlinkRun).toHaveBeenCalledWith('run-001'), { timeout: 2000 });
+    vi.restoreAllMocks();
   });
 
   it('calling onUpdated with unlinked run after successful unlink', async () => {
     const unlinkedRun = { ...mockLinkedRun, planId: undefined };
     vi.mocked(unlinkRun).mockResolvedValue(unlinkedRun);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
       <MemoryRouter>
@@ -243,13 +246,13 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
     const unlinkBtn = screen.getByText(/Unlink from plan/i);
     fireEvent.click(unlinkBtn);
 
-    const confirmBtn = screen.getByText(/Yes, unlink/i);
-    fireEvent.click(confirmBtn);
-
     await waitFor(() => expect(onUpdated).toHaveBeenCalledWith(unlinkedRun), { timeout: 2000 });
+    vi.restoreAllMocks();
   });
 
   it('cancelling unlink does not call unlinkRun', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
     render(
       <MemoryRouter>
         <RunDetailModal run={mockLinkedRun} onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
@@ -259,10 +262,8 @@ describe('RunDetailModal — UX-MODAL-03: Unlink from plan button', () => {
     const unlinkBtn = screen.getByText(/Unlink from plan/i);
     fireEvent.click(unlinkBtn);
 
-    const cancelBtn = screen.getByText(/No, keep it/i);
-    fireEvent.click(cancelBtn);
-
     expect(unlinkRun).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 });
 
