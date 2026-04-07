@@ -170,7 +170,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/description and delete last phase with confirmation_
+_Last updated: 2026-04-07 — quick task 260407-iqp shipped — PR #49_
 | Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
 | Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
 | Phase 03-run-logging P06 | 5min | 4 tasks | 3 files |
@@ -194,6 +194,7 @@ _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/descriptio
 | 260329-ep5 | disable Add Day for past weeks, planState to agent, fix startDate, server-side plan saving | 2026-03-29 | 929ee6b | [260329-ep5-fix-4-issues-disable-add-day-when-all-da](./quick/260329-ep5-fix-4-issues-disable-add-day-when-all-da/) |
 | 260331-0vx | Edit phase title/description and delete last phase with confirmation | 2026-03-31 | 8e7e159 | [260331-0vx-edit-phase-title-description-and-delete-](./quick/260331-0vx-edit-phase-title-description-and-delete-/) |
 | 260328-uuj | fix plan adjustment 409 conflict completed dates and silent errors | 2026-03-28 | 808bd73 | [260328-uuj-fix-plan-adjustment-409-conflict-complet](./quick/260328-uuj-fix-plan-adjustment-409-conflict-complet/) |
+| 260407-iqp | Add logo to app UI, change favicon, update README | 2026-04-07 | 5d5c94b | [260407-iqp-add-logo-to-app-ui-change-favicon-update](./quick/260407-iqp-add-logo-to-app-ui-change-favicon-update/) |
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
