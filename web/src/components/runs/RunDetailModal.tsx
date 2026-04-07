@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { updateRun, deleteRun, unlinkRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
+import { DateInput } from './DateInput';
 
 interface RunDetailModalProps {
   run: Run;
@@ -218,13 +219,12 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               {/* Date */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
-                <input
-                  type="date"
+                <DateInput
+                  value={editDate}
+                  onChange={setEditDate}
                   min="2000-01-01"
                   max="2099-12-31"
-                  value={editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  invalid={!!editDate && !isValidDate(editDate)}
                 />
               </div>
 

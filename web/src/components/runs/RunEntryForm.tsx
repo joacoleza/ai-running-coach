@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
+import { DateInput } from './DateInput';
 
 interface RunEntryFormProps {
   weekNumber?: number;    // if provided, run will be linked to plan day on save
@@ -25,7 +26,6 @@ function isValidDate(dateStr: string): boolean {
 function computePaceDisplay(distStr: string, durStr: string): string {
   const dist = parseFloat(distStr);
   if (!dist || dist <= 0) return '';
-  // Parse duration: support MM:SS and HH:MM:SS
   const parts = durStr.split(':').map(Number);
   let totalMinutes = 0;
   if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
@@ -88,13 +88,12 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
         {/* Date */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
-          <input
-            type="date"
+          <DateInput
+            value={date}
+            onChange={setDate}
             min="2000-01-01"
             max={todayISO()}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+            invalid={!!date && !isValidDate(date)}
           />
         </div>
 
@@ -147,7 +146,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           </div>
         </div>
 
-        {/* Pace (computed, read-only) — always visible, empty until distance+duration filled */}
+        {/* Pace (computed, read-only) */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
           <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 min-h-[2rem]">

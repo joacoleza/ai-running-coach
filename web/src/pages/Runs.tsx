@@ -4,6 +4,7 @@ import type { Run } from '../hooks/useRuns';
 import { usePlan } from '../hooks/usePlan';
 import { RunEntryForm } from '../components/runs/RunEntryForm';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
+import { DateInput } from '../components/runs/DateInput';
 
 const PAGE_SIZE = 20;
 
@@ -77,24 +78,20 @@ function FilterPanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">From date</label>
-          <input
-            type="date"
+          <DateInput
+            value={dateFrom}
+            onChange={onDateFromChange}
             min="2000-01-01"
             max="2099-12-31"
-            value={dateFrom}
-            onChange={(e) => onDateFromChange(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">To date</label>
-          <input
-            type="date"
+          <DateInput
+            value={dateTo}
+            onChange={onDateToChange}
             min="2000-01-01"
             max="2099-12-31"
-            value={dateTo}
-            onChange={(e) => onDateToChange(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
