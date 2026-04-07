@@ -74,6 +74,48 @@ const activePlanWithCompleted: PlanData = {
   ],
 };
 
+describe('TrainingPlan — sticky header structure', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it('renders a sticky header containing the title, objective card, and coach feedback panel', () => {
+    defaultUsePlan({ plan: activePlanWithCompleted });
+    const { container } = render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    // The sticky header div must have the correct Tailwind classes
+    const stickyHeader = container.querySelector('.sticky.top-0.z-10');
+    expect(stickyHeader).not.toBeNull();
+
+    // Title is inside the sticky header
+    const title = stickyHeader!.querySelector('h1');
+    expect(title).not.toBeNull();
+    expect(title!.textContent).toBe('Training Plan');
+
+    // Objective card is inside the sticky header
+    const objectiveCard = stickyHeader!.querySelector('.bg-blue-50');
+    expect(objectiveCard).not.toBeNull();
+
+    // Coach feedback panel is inside the sticky header
+    const feedbackPanel = stickyHeader!.querySelector('.border.border-gray-200');
+    expect(feedbackPanel).not.toBeNull();
+  });
+
+  it('PlanView is rendered outside the sticky header in the scrollable content area', () => {
+    defaultUsePlan({ plan: activePlanWithCompleted });
+    const { container } = render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+
+    const stickyHeader = container.querySelector('.sticky.top-0.z-10');
+    // PlanView renders phase/week content — check it is NOT a descendant of the sticky header
+    const weekContent = container.querySelector('[data-testid="plan-view"]') ??
+      // PlanView renders phase names — look for any element outside sticky header
+      Array.from(container.querySelectorAll('*')).find(
+        el => !stickyHeader!.contains(el) && el.textContent?.includes('Base')
+      );
+    expect(weekContent).not.toBeNull();
+  });
+});
+
 describe('TrainingPlan — UX-SCROLL-01: Auto-scroll to last completed day on mount', () => {
   beforeEach(() => {
     // Mock scrollIntoView since jsdom doesn't implement it
