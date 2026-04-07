@@ -82,9 +82,11 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
           <input
-            type="date"
+            type="text"
+            inputMode="numeric"
+            placeholder="YYYY-MM-DD"
+            pattern="\d{4}-\d{2}-\d{2}"
             value={date}
-            max={todayLocal}
             onChange={(e) => setDate(e.target.value)}
             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
           />
