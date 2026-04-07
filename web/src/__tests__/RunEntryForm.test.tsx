@@ -141,4 +141,25 @@ describe('RunEntryForm', () => {
 
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it('save button is disabled when date is invalid', () => {
+    renderForm();
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+    const distanceInput = screen.getByPlaceholderText('5.0');
+    const durationInput = screen.getByPlaceholderText('45:30');
+
+    fireEvent.change(distanceInput, { target: { value: '5' } });
+    fireEvent.change(durationInput, { target: { value: '25:00' } });
+    fireEvent.change(dateInput, { target: { value: '' } });
+
+    expect(screen.getByRole('button', { name: /save run/i })).toBeDisabled();
+  });
+
+  it('date input has type=date with min and max attributes', () => {
+    renderForm();
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(dateInput).toBeInTheDocument();
+    expect(dateInput.min).toBe('2000-01-01');
+    expect(dateInput.max).toMatch(/^\d{4}-\d{2}-\d{2}$/); // today's date
+  });
 });
