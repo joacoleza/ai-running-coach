@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
@@ -156,12 +157,8 @@ export function TrainingPlan() {
                     <span>{feedbackExpanded ? '▲' : '▼'}</span>
                   </button>
                   {feedbackExpanded && (
-                    <div className="p-3 text-sm text-gray-700">
-                      <div className="space-y-3">
-                        {plan.progressFeedback.split('\n\n').map((paragraph, i) => (
-                          <p key={i}>{paragraph}</p>
-                        ))}
-                      </div>
+                    <div className="p-3 text-sm text-gray-700 prose prose-sm max-w-none">
+                      <ReactMarkdown>{plan.progressFeedback}</ReactMarkdown>
                     </div>
                   )}
                 </>

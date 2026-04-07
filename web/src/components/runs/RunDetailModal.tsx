@@ -62,8 +62,6 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmUnlink, setConfirmUnlink] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDirty =
@@ -140,7 +138,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
   };
 
   const handleUnlink = async () => {
-    if (!confirmUnlink) { setConfirmUnlink(true); return; }
+    if (!window.confirm('Unlink this run from the training plan day? The day will be marked incomplete.')) return;
     setIsUnlinking(true);
     setError(null);
     try {
@@ -151,15 +149,11 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
       setError(err instanceof Error ? err.message : 'Failed to unlink run');
     } finally {
       setIsUnlinking(false);
-      setConfirmUnlink(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
+    if (!window.confirm('Delete this run? This cannot be undone.')) return;
     setIsDeleting(true);
     setError(null);
     try {
@@ -168,7 +162,6 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete run');
       setIsDeleting(false);
-      setConfirmDelete(false);
     }
   };
 
@@ -231,16 +224,16 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               {/* Distance */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
-                <div className="flex items-center gap-2">
+                <div className="relative">
                   <input
                     type="number"
                     min="0.1"
                     step="0.1"
                     value={editDistance}
                     onChange={(e) => setEditDistance(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-500">km</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">km</span>
                 </div>
               </div>
 
@@ -260,7 +253,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               {/* Avg HR */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Avg HR <span className="text-gray-400 font-normal">(optional)</span></label>
-                <div className="flex items-center gap-2">
+                <div className="relative">
                   <input
                     type="number"
                     min="50"
@@ -268,9 +261,9 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                     value={editAvgHR}
                     onChange={(e) => setEditAvgHR(e.target.value)}
                     placeholder="—"
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-500">bpm</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">bpm</span>
                 </div>
               </div>
 
@@ -341,31 +334,13 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
           {/* Unlink section — only for linked runs */}
           {run.planId && (
             <div className="pt-2 border-t border-gray-100">
-              {confirmUnlink ? (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => void handleUnlink()}
-                    disabled={isUnlinking}
-                    className="flex-1 bg-amber-500 text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
-                  >
-                    {isUnlinking ? 'Unlinking...' : 'Yes, unlink'}
-                  </button>
-                  <button
-                    onClick={() => setConfirmUnlink(false)}
-                    disabled={isUnlinking}
-                    className="flex-1 bg-gray-100 text-gray-700 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                  >
-                    No, keep it
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => void handleUnlink()}
-                  className="w-full text-amber-600 text-sm hover:text-amber-800 py-1 transition-colors"
-                >
-                  Unlink from plan
-                </button>
-              )}
+              <button
+                onClick={() => void handleUnlink()}
+                disabled={isUnlinking}
+                className="w-full text-amber-600 text-sm hover:text-amber-800 py-1 transition-colors disabled:opacity-50"
+              >
+                {isUnlinking ? 'Unlinking...' : 'Unlink from plan'}
+              </button>
             </div>
           )}
 
@@ -383,29 +358,13 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                   Delete run
                 </button>
               </span>
-            ) : confirmDelete ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => void handleDelete()}
-                  disabled={isDeleting}
-                  className="flex-1 bg-red-600 text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
-                >
-                  {isDeleting ? 'Deleting...' : 'Yes, delete'}
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={isDeleting}
-                  className="flex-1 bg-gray-100 text-gray-700 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
-                >
-                  No, keep it
-                </button>
-              </div>
             ) : (
               <button
                 onClick={() => void handleDelete()}
-                className="w-full text-red-600 text-sm hover:text-red-800 py-1 transition-colors"
+                disabled={isDeleting}
+                className="w-full text-red-600 text-sm hover:text-red-800 py-1 transition-colors disabled:opacity-50"
               >
-                Delete run
+                {isDeleting ? 'Deleting...' : 'Delete run'}
               </button>
             )}
           </div>
