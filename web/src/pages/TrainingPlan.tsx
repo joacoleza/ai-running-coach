@@ -11,7 +11,7 @@ function openCoachPanel() {
 }
 
 export function TrainingPlan() {
-  const { plan, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
+  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
   const { sendMessage } = useChatContext();
   const [feedbackExpanded, setFeedbackExpanded] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
@@ -174,7 +174,7 @@ export function TrainingPlan() {
       {/* Scrollable content area — PlanView and empty states */}
       <div className="px-6 pt-4 pb-6">
         {hasActivePlan && plan ? (
-          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
+          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         ) : !plan || plan.status === 'onboarding' ? (
           <p className="mt-4 text-gray-600">
             {plan?.status === 'onboarding'

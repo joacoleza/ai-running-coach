@@ -41,24 +41,24 @@ const plan: PlanData = {
 
 describe('PlanView', () => {
   it('renders all phase names', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Base Phase')).toBeInTheDocument();
     expect(screen.getByText('Peak Phase')).toBeInTheDocument();
   });
 
   it('renders phase description when present', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Build your aerobic base')).toBeInTheDocument();
   });
 
   it('renders week headings', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Week 1')).toBeInTheDocument();
     expect(screen.getByText('Week 2')).toBeInTheDocument();
   });
 
   it('renders run days but hides rest days', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.getByText('Easy 5k')).toBeInTheDocument();
     expect(screen.getByText('Tempo run')).toBeInTheDocument();
     // Rest days are filtered out
@@ -84,7 +84,7 @@ describe('PlanView', () => {
         },
       ],
     };
-    render(<PlanView plan={outOfOrderPlan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={outOfOrderPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     const items = screen.getAllByText(/run$/);
     // Tuesday run (label A) should appear before Thursday run (label B)
     const texts = items.map(el => el.textContent);
@@ -92,19 +92,19 @@ describe('PlanView', () => {
   });
 
   it('shows + Add day button per week when onAddDay is provided', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
     // Two weeks in Base Phase (both have available label slots)
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
   it('does not show + Add day button without onAddDay prop', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} />);
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
   it('clicking + Add day opens inline form with label buttons A-G', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
     fireEvent.click(addButtons[0]);
     // Should show A through G label buttons
@@ -115,7 +115,7 @@ describe('PlanView', () => {
   });
 
   it('label buttons: only labels taken by non-rest days are disabled', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     // Week 1 has label 'A' taken by a run day — A button should be disabled
     const aBtns = screen.getAllByText('A');
@@ -130,7 +130,7 @@ describe('PlanView', () => {
 
   it('saving add day form calls onAddDay with correct args', async () => {
     const onAddDay = vi.fn().mockResolvedValue(undefined);
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     const addButtons = screen.getAllByTitle('Add a day to this week');
     fireEvent.click(addButtons[0]); // Week 1 of Base Phase
 
@@ -152,13 +152,13 @@ describe('PlanView', () => {
   });
 
   it('Add button is disabled until a label is selected', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     expect(screen.getByText('Add')).toBeDisabled();
   });
 
   it('Add button remains disabled when a label is selected but no objective value', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     // Select label B — a free slot in week 1
     const bBtns = screen.getAllByText('B');
@@ -169,7 +169,7 @@ describe('PlanView', () => {
   });
 
   it('Add button becomes enabled only after both label and objective value are filled', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     const bBtns = screen.getAllByText('B');
     const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
@@ -182,7 +182,7 @@ describe('PlanView', () => {
   });
 
   it('Add button is disabled when objective value is zero or non-numeric', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     const bBtns = screen.getAllByText('B');
     const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
@@ -195,7 +195,7 @@ describe('PlanView', () => {
 
   it('saving add day form always includes objective fields', async () => {
     const onAddDay = vi.fn().mockResolvedValue(undefined);
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     const bBtns = screen.getAllByText('B');
     const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
@@ -212,20 +212,20 @@ describe('PlanView', () => {
   });
 
   it('+ Add day button has cursor-pointer', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     const addBtn = screen.getAllByTitle('Add a day to this week')[0];
     expect(addBtn.className).toContain('cursor-pointer');
   });
 
   it('Add and Cancel buttons in AddDayForm have cursor-pointer', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     expect(screen.getByText('Add').className).toContain('cursor-pointer');
     expect(screen.getByText('Cancel').className).toContain('cursor-pointer');
   });
 
   it('available label buttons in AddDayForm have cursor-pointer', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     // B is a free slot — should have cursor-pointer
     const bBtns = screen.getAllByText('B');
@@ -238,12 +238,12 @@ describe('PlanView', () => {
   });
 
   it('does not show + Add day button in readonly mode', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} readonly={true} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} readonly={true} />);
     expect(screen.queryByTitle('Add a day to this week')).not.toBeInTheDocument();
   });
 
   it('renders PhaseHeader with editable title when onUpdatePhase is provided', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} />);
     // Phase names should appear and have hover edit styling
     const titleEl = screen.getByText('Base Phase');
     expect(titleEl).toBeInTheDocument();
@@ -252,7 +252,7 @@ describe('PlanView', () => {
   });
 
   it('shows delete button only on last phase when multiple phases exist', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} />);
     // plan has 2 phases: Base Phase (idx 0) and Peak Phase (idx 1, last)
     // Delete phase button should only appear for the last phase
     const deleteButtons = screen.queryAllByTitle('Delete last phase');
@@ -260,7 +260,7 @@ describe('PlanView', () => {
   });
 
   it('does not show delete button in readonly mode', () => {
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} readonly={true} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onUpdatePhase={vi.fn()} onDeletePhase={vi.fn()} readonly={true} />);
     expect(screen.queryByTitle('Delete last phase')).not.toBeInTheDocument();
   });
 
@@ -283,13 +283,13 @@ describe('PlanView', () => {
         },
       ],
     };
-    render(<PlanView plan={planWithSpace} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
+    render(<PlanView plan={planWithSpace} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={vi.fn()} />);
     expect(screen.queryByTitle('Add a day to this week')).toBeInTheDocument();
   });
 
   it('shows inline error message when onAddDay rejects', async () => {
     const onAddDay = vi.fn().mockRejectedValue(new Error('Day C already exists in week 1'));
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     const bBtns = screen.getAllByText('B');
     const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;
@@ -308,7 +308,7 @@ describe('PlanView', () => {
     const onAddDay = vi.fn().mockImplementation(
       () => new Promise<void>((resolve) => { resolveAdd = resolve; })
     );
-    render(<PlanView plan={plan} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddDay={onAddDay} />);
     fireEvent.click(screen.getAllByTitle('Add a day to this week')[0]);
     const bBtns = screen.getAllByText('B');
     const bBtn = bBtns.find(el => el.tagName === 'BUTTON')!;

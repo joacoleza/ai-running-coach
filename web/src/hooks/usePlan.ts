@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { Run } from './useRuns';
 
 export interface PlanDay {
   label: string;         // "A"-"G" for non-rest days, "" for rest days
@@ -42,6 +43,7 @@ export interface PlanData {
 
 interface UsePlanReturn {
   plan: PlanData | null;
+  linkedRuns: Map<string, Run>;
   isLoading: boolean;
   error: string | null;
   refreshPlan: () => Promise<void>;
@@ -62,6 +64,7 @@ function authHeaders(): Record<string, string> {
 
 export function usePlan(): UsePlanReturn {
   const [plan, setPlan] = useState<PlanData | null>(null);
+  const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,8 +72,11 @@ export function usePlan(): UsePlanReturn {
     try {
       const res = await fetch('/api/plan', { headers: authHeaders() });
       if (!res.ok) throw new Error('Failed to fetch plan');
-      const data = await res.json();
+      const data = await res.json() as { plan?: PlanData | null; linkedRuns?: Record<string, Run> };
       setPlan(data.plan ?? null);
+      // Convert the plain object from JSON into a Map for O(1) lookup
+      const runsRecord = data.linkedRuns ?? {};
+      setLinkedRuns(new Map(Object.entries(runsRecord)));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load plan');
     } finally {
@@ -159,5 +165,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase };
+  return { plan, linkedRuns, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase };
 }
