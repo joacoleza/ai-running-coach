@@ -57,6 +57,11 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y azure-functions-core-tools-4
 
+      - name: Pre-cache Azure Functions extension bundle
+        run: cd api && func bundles download
+        env:
+          FUNCTIONS_WORKER_RUNTIME: node
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
