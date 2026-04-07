@@ -107,6 +107,35 @@ describe('RunDetailModal', () => {
     expect(updateRun).not.toHaveBeenCalled();
   });
 
+  it('date input has type=date with min and max attributes', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(dateInput).toBeInTheDocument();
+    expect(dateInput.min).toBe('2000-01-01');
+    expect(dateInput.max).toBe('2099-12-31');
+  });
+
+  it('shows error and does not call updateRun when date is cleared', async () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+    fireEvent.change(dateInput, { target: { value: '' } });
+
+    // Trigger save by changing distance to make form dirty then clicking Save changes
+    fireEvent.change(document.querySelector('input[type="number"]') as HTMLInputElement, { target: { value: '10' } });
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(screen.getByText(/valid date/i)).toBeInTheDocument();
+    expect(updateRun).not.toHaveBeenCalled();
+  });
+
   it('swallows updateRun error and resets isRequestingFeedback', async () => {
     const mockSendMessage = vi.fn().mockResolvedValue('Great run feedback');
     vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: mockSendMessage });

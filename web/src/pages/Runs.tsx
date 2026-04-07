@@ -79,6 +79,8 @@ function FilterPanel({
           <label className="block text-xs font-medium text-gray-500 mb-1">From date</label>
           <input
             type="date"
+            min="2000-01-01"
+            max="2099-12-31"
             value={dateFrom}
             onChange={(e) => onDateFromChange(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -88,6 +90,8 @@ function FilterPanel({
           <label className="block text-xs font-medium text-gray-500 mb-1">To date</label>
           <input
             type="date"
+            min="2000-01-01"
+            max="2099-12-31"
             value={dateTo}
             onChange={(e) => onDateToChange(e.target.value)}
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

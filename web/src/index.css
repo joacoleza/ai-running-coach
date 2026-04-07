@@ -7,6 +7,14 @@ body,
   overflow: hidden;
 }
 
+body {
+  background-color: #111827; /* gray-900 — fills iOS safe area bottom with sidebar color */
+}
+
+#root {
+  background-color: #f9fafb; /* gray-50 — matches AppShell bg */
+}
+
 /* Prevent iOS Safari from zooming on input focus (requires font-size >= 16px) */
 @media (max-width: 767px) {
   input,
