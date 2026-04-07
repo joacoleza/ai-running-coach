@@ -1,11 +1,10 @@
 # AI Running Coach
 
 <p align="center">
-  <img src="web/public/logo.png" alt="AI Running Coach Logo" width="180" />
+  <img src="web/public/logo-bg.png" alt="AI Running Coach Logo" width="180" />
 </p>
 
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
-
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)
@@ -44,14 +43,14 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 
 ## Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React + TypeScript + Vite |
-| Hosting | Azure Static Web Apps (free tier) |
-| Backend | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
-| Database | Azure Cosmos DB for MongoDB (free tier) |
-| AI | Claude API (Anthropic) |
-| Auth | Pre-shared password (stored in Azure config) |
+| Layer    | Technology                                                |
+| -------- | --------------------------------------------------------- |
+| Frontend | React + TypeScript + Vite                                 |
+| Hosting  | Azure Static Web Apps (free tier)                         |
+| Backend  | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
+| Database | Azure Cosmos DB for MongoDB (free tier)                   |
+| AI       | Claude API (Anthropic)                                    |
+| Auth     | Pre-shared password (stored in Azure config)              |
 
 ## Personal use only
 
@@ -75,6 +74,7 @@ cd api && npm install && cd ..
 ```
 
 **Configure local settings** — create `api/local.settings.json` (gitignored):
+
 ```json
 {
   "IsEncrypted": false,
@@ -91,12 +91,14 @@ cd api && npm install && cd ..
 ```
 
 **Check everything compiles:**
+
 ```bash
 cd web && npx tsc --noEmit && cd ..
 cd api && npx tsc --noEmit && cd ..
 ```
 
 **Run tests:**
+
 ```bash
 # Unit tests (API)
 cd api && npx vitest run
@@ -110,6 +112,7 @@ npx playwright test
 ```
 
 **Start local dev server** (Vite + Functions + Docker emulators):
+
 ```bash
 npm run dev
 ```
@@ -127,6 +130,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
 3. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
+
    ```bash
    COSMOS_ACCOUNT_NAME=your-account RESOURCE_GROUP=your-rg ./scripts/setup-cosmos-db.sh
    ```
