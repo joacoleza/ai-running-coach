@@ -13,6 +13,12 @@ interface RunDetailModalProps {
   activePlanId?: string;
 }
 
+function isValidDate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const d = new Date(dateStr + 'T12:00:00');
+  return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+}
+
 function formatRunDate(isoDate: string): string {
   const d = new Date(isoDate + 'T12:00:00');
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'long' });
@@ -71,6 +77,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
 
   const handleSave = async () => {
     if (isSaving) return;
+    if (!isValidDate(editDate)) {
+      setError('Please enter a valid date.');
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
@@ -209,10 +219,9 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
                 <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="YYYY-MM-DD"
-                  pattern="\d{4}-\d{2}-\d{2}"
+                  type="date"
+                  min="2000-01-01"
+                  max="2099-12-31"
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"

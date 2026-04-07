@@ -214,11 +214,11 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    expect(document.querySelector('input[placeholder="YYYY-MM-DD"]')).not.toBeInTheDocument();
+    expect(document.querySelector('input[type="date"]')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
-    expect(document.querySelector('input[placeholder="YYYY-MM-DD"]')).toBeInTheDocument();
+    expect(document.querySelector('input[type="date"]')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
-    expect(document.querySelector('input[placeholder="YYYY-MM-DD"]')).not.toBeInTheDocument();
+    expect(document.querySelector('input[type="date"]')).not.toBeInTheDocument();
   });
 
   it('clears filters when Clear filters is clicked', async () => {
@@ -226,7 +226,7 @@ describe('Runs page', () => {
       render(<Runs />);
     });
     fireEvent.click(screen.getByRole('button', { name: /filter/i }));
-    const fromInput = document.querySelectorAll('input[placeholder="YYYY-MM-DD"]')[0] as HTMLInputElement;
+    const fromInput = document.querySelectorAll('input[type="date"]')[0] as HTMLInputElement;
     fireEvent.change(fromInput, { target: { value: '2026-01-01' } });
     expect(fromInput.value).toBe('2026-01-01');
 
@@ -243,7 +243,7 @@ describe('Runs page', () => {
       render(<Runs />);
     });
     fireEvent.click(screen.getByRole('button', { name: /filter/i }));
-    const fromInput = document.querySelectorAll('input[placeholder="YYYY-MM-DD"]')[0] as HTMLInputElement;
+    const fromInput = document.querySelectorAll('input[type="date"]')[0] as HTMLInputElement;
     await act(async () => {
       fireEvent.change(fromInput, { target: { value: '2026-01-01' } });
     });

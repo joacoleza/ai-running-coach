@@ -15,6 +15,12 @@ const todayLocal = (() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 })();
 
+function isValidDate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const d = new Date(dateStr + 'T12:00:00');
+  return !isNaN(d.getTime()) && d.getFullYear() >= 2000 && d.getFullYear() <= 2099;
+}
+
 function computePaceDisplay(distStr: string, durStr: string): string {
   const dist = parseFloat(distStr);
   if (!dist || dist <= 0) return '';
@@ -44,8 +50,8 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
   const handleSubmit = async () => {
     if (isSaving) return;
     const dist = parseFloat(distance);
-    if (!date || !dist || dist <= 0 || !duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-      setError('Please fill in date, distance, and duration (MM:SS).');
+    if (!isValidDate(date) || !dist || dist <= 0 || !duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
+      setError('Please fill in a valid date, distance, and duration (MM:SS).');
       return;
     }
     setIsSaving(true);
@@ -67,7 +73,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
     }
   };
 
-  const isValid = !!date && !!parseFloat(distance) && parseFloat(distance) > 0 && !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
+  const isValid = isValidDate(date) && !!parseFloat(distance) && parseFloat(distance) > 0 && !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
 
   return (
     <div className="space-y-3">
@@ -82,10 +88,9 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
           <input
-            type="text"
-            inputMode="numeric"
-            placeholder="YYYY-MM-DD"
-            pattern="\d{4}-\d{2}-\d{2}"
+            type="date"
+            min="2000-01-01"
+            max="2099-12-31"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
