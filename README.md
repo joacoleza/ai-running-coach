@@ -4,10 +4,10 @@
 
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-88.9%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-172%2F172-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-309%2F309-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-47%2F47-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-177%2F177-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-349%2F349-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-48%2F48-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -27,9 +27,12 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Log a run manually after each session (date, distance, duration, heart rate, notes); the coach provides feedback and can adjust the plan
+- **Run/plan cross-navigation** — Click a completed day's run date to open the run detail; click the Week/Day badge in a run to jump back to that training day
+- **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
+- **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
 - **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
-- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button
+- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
 
 ## Built with
 
@@ -141,5 +144,5 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
 - ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
 - ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
-- **Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)
+- ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)~~ ✓
 - **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)

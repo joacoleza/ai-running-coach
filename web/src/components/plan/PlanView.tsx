@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { PlanData } from '../../hooks/usePlan';
 import type { Run } from '../../hooks/useRuns';
 import { DayRow } from './DayRow';
@@ -134,9 +134,11 @@ interface PlanViewProps {
   onUpdatePhase?: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
   onDeletePhase?: () => Promise<void>;
   readonly?: boolean;
+  lastCompletedDayRef?: React.RefObject<HTMLDivElement | null>;
+  dayRefsMap?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
-export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly }: PlanViewProps) {
+export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
   const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
   const [refreshKey, setRefreshKey] = useState(0);
@@ -173,6 +175,21 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePha
     return () => window.removeEventListener('plan-updated', handler);
   }, []);
 
+  // Compute the key of the last completed non-rest day across all phases/weeks
+  const lastCompletedKey = (() => {
+    let key = '';
+    for (const phase of plan.phases) {
+      for (const week of phase.weeks) {
+        for (const day of week.days) {
+          if (day.completed && day.type !== 'rest') {
+            key = `${week.weekNumber}-${day.label}`;
+          }
+        }
+      }
+    }
+    return key;
+  })();
+
   return (
     <>
       <div>
@@ -206,22 +223,39 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePha
                 <div key={week.weekNumber} className="mb-4">
                   <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
                   <div className="space-y-1">
-                    {activeDays.map(day => (
-                      <DayRow
-                        key={day.label}
-                        day={day}
-                        weekNumber={week.weekNumber}
-                        onUpdate={onUpdateDay}
-                        onDelete={onDeleteDay}
-                        readonly={readonly}
-                        linkedRun={linkedRuns.get(`${week.weekNumber}-${day.label}`) ?? null}
-                        onRunLinked={
-                          !readonly && !day.skipped && (!day.completed || (day.completed && !linkedRuns.get(`${week.weekNumber}-${day.label}`)))
-                            ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines })
-                            : undefined
-                        }
-                      />
-                    ))}
+                    {activeDays.map(day => {
+                      const dayKey = `${week.weekNumber}-${day.label}`;
+                      const isLastCompleted = dayKey === lastCompletedKey;
+                      return (
+                        <div
+                          key={day.label}
+                          ref={(el) => {
+                            if (el) {
+                              if (isLastCompleted && lastCompletedDayRef) {
+                                (lastCompletedDayRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                              }
+                              dayRefsMap?.current?.set(dayKey, el);
+                            } else {
+                              dayRefsMap?.current?.delete(dayKey);
+                            }
+                          }}
+                        >
+                          <DayRow
+                            day={day}
+                            weekNumber={week.weekNumber}
+                            onUpdate={onUpdateDay}
+                            onDelete={onDeleteDay}
+                            readonly={readonly}
+                            linkedRun={linkedRuns.get(dayKey) ?? null}
+                            onRunLinked={
+                              !readonly && !day.skipped && (!day.completed || (day.completed && !linkedRuns.get(dayKey)))
+                                ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines })
+                                : undefined
+                            }
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                   {!readonly && onAddDay && hasAvailableLabel && (
                     isAddingHere ? (

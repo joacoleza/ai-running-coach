@@ -87,7 +87,7 @@ Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
 
 ## Current State
 
-Phase 3.1 complete — Two coaching data-integrity bugs fixed: run insights now always reflect the actual assistant response received (COACH-03: stale closure fix in RunDetailModal), and plan feedback never stores raw XML tags (COACH-04: XML strip in TrainingPlan.handleGetFeedback). 252 web tests, 170 API tests all passing. Ready for Phase 3.2 (Tech Debt Cleanup).
+Phase 3.3 complete (last phase in milestone) — UI Polish & Mobile Fixes: scroll to last completed day on plan open, RunDetailModal cross-navigation badge, CoachPanel scroll-to-bottom on open, unlink run feature (API + UI + agent XML tag), rows=4 notes in both modals, mobile Safari layout fixes (responsive filter grids, overflow-y-auto modals, 16px font-size), running shoe favicon, theme-color meta for Safari address bar, removed Update Plan button (compact inline Archive), Coach Feedback panel redesigned with header button (Get plan feedback / Refresh feedback), conditional expand only when feedback exists, paragraph spacing, and Log run button on completed days without linked run. 307 web tests, 172 API tests all passing.
 
 ---
-*Last updated: 2026-04-06 after Phase 3.1: Fix Coach Feedback Quality*
+*Last updated: 2026-04-06 after Phase 3.3: UI Polish & Mobile Fixes*

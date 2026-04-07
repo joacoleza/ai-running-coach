@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Running shoe silhouette -->
+  <rect width="32" height="32" rx="8" fill="#1d4ed8"/>
+  <!-- Shoe body -->
+  <path d="M4 22 C4 22 6 18 10 18 L20 18 C24 18 28 20 28 22 L28 24 C28 25.1 27.1 26 26 26 L6 26 C4.9 26 4 25.1 4 24 Z" fill="white"/>
+  <!-- Shoe upper/tongue -->
+  <path d="M10 18 C10 18 11 13 14 12 L20 11 C22 11 22 14 20 16 L18 18 Z" fill="white" opacity="0.85"/>
+  <!-- Sole accent -->
+  <rect x="4" y="23.5" width="24" height="2" rx="1" fill="#93c5fd"/>
+  <!-- Laces -->
+  <line x1="11" y1="16" x2="18" y2="15" stroke="#bfdbfe" stroke-width="1" stroke-linecap="round"/>
+  <line x1="11" y1="17.5" x2="18" y2="16.5" stroke="#bfdbfe" stroke-width="1" stroke-linecap="round"/>
+</svg>

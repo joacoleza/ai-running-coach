@@ -19,8 +19,8 @@ describe('ChatHistory', () => {
 
   it('renders each message using ChatMessage', () => {
     const messages: Message[] = [
-      { role: 'user', content: 'Hello coach' },
-      { role: 'assistant', content: 'Hi there!' },
+      { role: 'user', content: 'Hello coach', timestamp: new Date().toISOString() },
+      { role: 'assistant', content: 'Hi there!', timestamp: new Date().toISOString() },
     ];
     render(<ChatHistory messages={messages} onBack={onBack} />);
     expect(screen.getByText('Hello coach')).toBeInTheDocument();

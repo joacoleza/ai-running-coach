@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { updateRun, deleteRun } from '../../hooks/useRuns';
+import { useNavigate } from 'react-router-dom';
+import { updateRun, deleteRun, unlinkRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
 
@@ -9,6 +10,7 @@ interface RunDetailModalProps {
   onClose: () => void;
   onUpdated: (updatedRun: Run) => void;
   onDeleted: (runId: string) => void;
+  activePlanId?: string;
 }
 
 function formatRunDate(isoDate: string): string {
@@ -39,8 +41,9 @@ function openCoachPanel() {
   window.dispatchEvent(new CustomEvent('open-coach-panel'));
 }
 
-export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetailModalProps) {
+export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanId }: RunDetailModalProps) {
   const { sendMessage } = useChatContext();
+  const navigate = useNavigate();
 
   const [editDate, setEditDate] = useState(run.date);
   const [editDistance, setEditDistance] = useState(String(run.distance));
@@ -50,8 +53,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmUnlink, setConfirmUnlink] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDirty =
@@ -123,6 +128,22 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
     }
   };
 
+  const handleUnlink = async () => {
+    if (!confirmUnlink) { setConfirmUnlink(true); return; }
+    setIsUnlinking(true);
+    setError(null);
+    try {
+      const updated = await unlinkRun(run._id);
+      onUpdated(updated);
+      window.dispatchEvent(new Event('plan-updated'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to unlink run');
+    } finally {
+      setIsUnlinking(false);
+      setConfirmUnlink(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirmDelete) {
       setConfirmDelete(true);
@@ -142,7 +163,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-900">{formatRunDate(run.date)}</h2>
@@ -156,86 +177,105 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Plan link badge */}
+          {/* Plan link badge — click to navigate to plan and scroll to that day */}
           {run.weekNumber && (
             <div>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+              <button
+                onClick={() => {
+                  onClose();
+                  if (run.planId === activePlanId) {
+                    navigate('/plan');
+                    // Dispatch after a tick so TrainingPlan has mounted
+                    setTimeout(() => {
+                      window.dispatchEvent(new CustomEvent('navigate-to-day', {
+                        detail: { weekNumber: run.weekNumber, dayLabel: run.dayLabel }
+                      }));
+                    }, 150);
+                  } else {
+                    navigate(`/archive/${run.planId}`);
+                  }
+                }}
+                className={`text-xs px-2 py-1 rounded-full cursor-pointer transition-colors ${run.planId === activePlanId ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
                 Week {run.weekNumber} · Day {run.dayLabel}
-              </span>
+              </button>
             </div>
           )}
 
           {/* Editable fields */}
           <div className="space-y-3">
-            {/* Date */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
-              <input
-                type="date"
-                value={editDate}
-                onChange={(e) => setEditDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Distance */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
-              <div className="flex items-center gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Date */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Date</label>
                 <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={editDistance}
-                  onChange={(e) => setEditDistance(e.target.value)}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="date"
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-500">km</span>
               </div>
-            </div>
 
-            {/* Duration */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Duration</label>
-              <input
-                type="text"
-                value={editDuration}
-                onChange={(e) => setEditDuration(e.target.value)}
-                placeholder="45:30"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+              {/* Distance */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="0.1"
+                    step="0.1"
+                    value={editDistance}
+                    onChange={(e) => setEditDistance(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">km</span>
+                </div>
+              </div>
 
-            {/* Pace (read-only, computed) */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Pace</label>
-              <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 rounded-lg">
-                {editPace !== null ? formatPace(editPace) : formatPace(run.pace)}
-              </p>
-            </div>
-
-            {/* Avg HR */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Avg HR (optional)</label>
-              <div className="flex items-center gap-2">
+              {/* Duration */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Duration</label>
                 <input
-                  type="number"
-                  min="50"
-                  max="250"
-                  value={editAvgHR}
-                  onChange={(e) => setEditAvgHR(e.target.value)}
-                  placeholder="—"
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  type="text"
+                  value={editDuration}
+                  onChange={(e) => setEditDuration(e.target.value)}
+                  placeholder="45:30"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm text-gray-500">bpm</span>
+                <p className="text-xs text-gray-400 mt-0.5">MM:SS or HH:MM:SS</p>
+              </div>
+
+              {/* Avg HR */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Avg HR <span className="text-gray-400 font-normal">(optional)</span></label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="50"
+                    max="250"
+                    value={editAvgHR}
+                    onChange={(e) => setEditAvgHR(e.target.value)}
+                    placeholder="—"
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">bpm</span>
+                </div>
+              </div>
+
+              {/* Pace (read-only, computed) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Pace</label>
+                <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 rounded-lg">
+                  {editPace !== null ? formatPace(editPace) : formatPace(run.pace)}
+                </p>
               </div>
             </div>
 
             {/* Notes */}
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Notes (optional)</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Notes <span className="text-gray-400 font-normal">(optional)</span></label>
               <textarea
-                rows={2}
+                rows={4}
                 value={editNotes}
                 onChange={(e) => setEditNotes(e.target.value)}
                 placeholder="How did it feel?"
@@ -285,6 +325,37 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted }: RunDetail
               'Add feedback to run'
             )}
           </button>
+
+          {/* Unlink section — only for linked runs */}
+          {run.planId && (
+            <div className="pt-2 border-t border-gray-100">
+              {confirmUnlink ? (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => void handleUnlink()}
+                    disabled={isUnlinking}
+                    className="flex-1 bg-amber-500 text-white rounded-lg px-3 py-2 text-sm font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors"
+                  >
+                    {isUnlinking ? 'Unlinking...' : 'Yes, unlink'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmUnlink(false)}
+                    disabled={isUnlinking}
+                    className="flex-1 bg-gray-100 text-gray-700 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
+                  >
+                    No, keep it
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => void handleUnlink()}
+                  className="w-full text-amber-600 text-sm hover:text-amber-800 py-1 transition-colors"
+                >
+                  Unlink from plan
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Delete section */}
           <div className="pt-2 border-t border-gray-100">

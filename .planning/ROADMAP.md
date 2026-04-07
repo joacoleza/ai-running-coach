@@ -286,13 +286,13 @@ Plans:
 
 **Depends on:** Phase 3
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans complete
 
 Plans:
-- [ ] 03.3-01-PLAN.md — Scroll & navigation: plan auto-scroll to last completed day, mobile coach panel scroll, cross-linking (run date → detail modal, Week/Day badge → plan scroll)
-- [ ] 03.3-02-PLAN.md — Modal unification: unlink run feature (API + UI + agent command), notes height, mobile Safari fixes
-- [ ] 03.3-03-PLAN.md — Visual polish: favicon, theme-color meta tag, remove Update Plan button, compact Archive button inline with title
-- [ ] 03.3-04-PLAN.md — Coaching feedback panel: move Get/Refresh feedback to panel header, conditional collapse, paragraph spacing; DayRow Log run on completed days
+- [x] 03.3-01-PLAN.md — Scroll & navigation: plan auto-scroll to last completed day, mobile coach panel scroll, cross-linking (run date → detail modal, Week/Day badge → plan scroll)
+- [x] 03.3-02-PLAN.md — Modal unification: unlink run feature (API + UI + agent command), notes height, mobile Safari fixes
+- [x] 03.3-03-PLAN.md — Visual polish: favicon, theme-color meta tag, remove Update Plan button, compact Archive button inline with title
+- [x] 03.3-04-PLAN.md — Coaching feedback panel: move Get/Refresh feedback to panel header, conditional collapse, paragraph spacing; DayRow Log run on completed days
 
 **Deliverables:**
 - Training plan auto-scrolls to last completed run on open

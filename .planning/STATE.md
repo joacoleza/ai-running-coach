@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: planning
-last_updated: "2026-04-06T15:17:42.157Z"
+status: "Phase 3.3 validated - Nyquist compliant"
+last_updated: "2026-04-06T19:00:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 8
-  total_plans: 34
-  completed_plans: 34
-  percent: 91
+  completed_phases: 9
+  total_plans: 38
+  completed_plans: 38
+  percent: 92
 ---
 
 # State
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 03.2 — tech-debt-cleanup
+**Current focus:** Phase 03.3 complete — ready for Phase 4
 
 ## Current Phase
 
 **Phase:** 03.3
-**Status:** Ready to plan
+**Status:** Phase 3.3 shipped - PR #48
 **Plans:** 5/5
-**Progress:** [█████████░] 94%
+**Progress:** [█████████░] 92%
 
 ## Milestone
 
@@ -145,6 +145,9 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03.2-03]: AUTH-01/02/03 requirements updated to describe APP_PASSWORD auth replacing GitHub OAuth
 - [Phase 03.2-03]: App.auth.test.tsx uses waitFor + json() mock to drain useChat async mount effects inside act() to eliminate act() warning
 - [Phase 03.2-04]: formatPace and formatRunDate exported at module level to enable direct unit testing
+- [Phase 03.3-01]: dayRefsMap uses Map<string,HTMLDivElement> keyed by weekNumber-label for O(1) day lookup during navigate-to-day scroll
+- [Phase 03.3-01]: navigate-to-day dispatched with 150ms delay so TrainingPlan has time to mount after navigate('/plan')
+- [Phase 03.3-01]: hasActivePlan moved before useEffects to avoid React hooks order violation (reference before declaration)
 
 ## Accumulated Context
 
@@ -177,6 +180,7 @@ _Last updated: 2026-03-31 — quick task 260331-0vx: Edit phase title/descriptio
 | Phase 03.2-tech-debt-cleanup P02 | 5 min | 1 tasks | 1 files |
 | Phase 03.2-tech-debt-cleanup P03 | 9 min | 2 tasks | 3 files |
 | Phase 03.2-tech-debt-cleanup P04 | 8 min | 3 tasks | 4 files |
+| Phase 03.3-ui-polish-mobile-fixes P01 | 5 min | 2 tasks | 5 files |
 
 ### Quick Tasks Completed
 

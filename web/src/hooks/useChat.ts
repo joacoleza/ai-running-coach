@@ -201,6 +201,7 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:delete-phase[^/]*\/>/g, '')
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
+                        .replace(/<plan:unlink[^/]*\/>/g, '')
                         .replace(/<app:[^/]*\/>/g, '')
                         .trim()
                     : m.content,
@@ -236,12 +237,14 @@ export function useChat(): UseChatReturn {
     const planAddRegex = /<plan:add\s+([^/]+)\/>/g;
     const phaseUpdateRegex = /<plan:update-phase\s+([^/]+)\/>/g;
     const phaseDeleteRegex = /<plan:delete-phase\s*\/>/g;
+    const planUnlinkRegex = /<plan:unlink\s+([^/]+)\/>/g;
     const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
     const planAdds = [...accumulatedText.matchAll(planAddRegex)];
     const phaseUpdates = [...accumulatedText.matchAll(phaseUpdateRegex)];
     const phaseDeletes = [...accumulatedText.matchAll(phaseDeleteRegex)];
+    const planUnlinks = [...accumulatedText.matchAll(planUnlinkRegex)];
 
-    if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0) {
+    if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0 || planUnlinks.length > 0) {
       if (!aliveCheck || aliveCheck()) {
         // Strip tags from displayed message
         setMessages((prev) => {
@@ -255,6 +258,7 @@ export function useChat(): UseChatReturn {
                 .replace(/<plan:delete-phase\s*\/>/g, '')
                 .replace(/<plan:update\s+([^/]+)\/>/g, '')
                 .replace(/<plan:add\s+([^/]+)\/>/g, '')
+                .replace(/<plan:unlink\s+([^/]+)\/>/g, '')
                 .trim(),
             };
           }
@@ -349,7 +353,33 @@ export function useChat(): UseChatReturn {
         }
       }
 
-      const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors];
+      // Apply each plan:unlink — find the run linked to week+day and unlink it
+      const unlinkErrors: string[] = [];
+      for (const match of planUnlinks) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        const { week, day } = attrs;
+        if (!week || !day) continue;
+        try {
+          const planRes = await fetch('/api/plan', { headers: authHeaders() });
+          if (!planRes.ok) { unlinkErrors.push(`plan:unlink week=${week} day=${day}: could not fetch plan`); continue; }
+          const planData = await planRes.json() as { _id: string };
+          const runsRes = await fetch(`/api/runs?planId=${planData._id}&limit=500`, { headers: authHeaders() });
+          if (!runsRes.ok) { unlinkErrors.push(`plan:unlink week=${week} day=${day}: could not fetch runs`); continue; }
+          const runsData = await runsRes.json() as { runs: Array<{ _id: string; weekNumber?: number; dayLabel?: string }> };
+          const linkedRun = runsData.runs.find(r => String(r.weekNumber) === week && r.dayLabel === day);
+          if (!linkedRun) { unlinkErrors.push(`plan:unlink week=${week} day=${day}: no linked run found`); continue; }
+          const unlinkRes = await fetch(`/api/runs/${linkedRun._id}/unlink`, { method: 'POST', headers: authHeaders() });
+          if (!unlinkRes.ok) {
+            const errBody = await unlinkRes.json().catch(() => ({ error: 'unlink failed' })) as { error?: string };
+            unlinkErrors.push(`plan:unlink week=${week} day=${day}: ${errBody.error ?? 'failed'}`);
+          }
+        } catch (e) {
+          unlinkErrors.push(`plan:unlink week=${week} day=${day}: ${e instanceof Error ? e.message : 'error'}`);
+        }
+      }
+
+      const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors, ...unlinkErrors];
       if (allErrors.length > 0 && (!aliveCheck || aliveCheck())) {
         setMessages((prev) => {
           const updated = [...prev];
@@ -433,6 +463,7 @@ export function useChat(): UseChatReturn {
                   .replace(/<plan:delete-phase[^/]*\/>/g, '')
                   .replace(/<plan:update[^/]*\/>/g, '')
                   .replace(/<plan:add[^/]*\/>/g, '')
+                  .replace(/<plan:unlink[^/]*\/>/g, '')
                   .trim(),
               };
             }
@@ -619,6 +650,7 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:delete-phase[^/]*\/>/g, '')
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
+                        .replace(/<plan:unlink[^/]*\/>/g, '')
                         .trim(),
                     };
                   }

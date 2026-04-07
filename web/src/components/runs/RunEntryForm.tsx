@@ -154,7 +154,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           Notes <span className="text-gray-400 font-normal">(optional)</span>
         </label>
         <textarea
-          rows={2}
+          rows={4}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="How did it go?"

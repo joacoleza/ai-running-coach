@@ -108,3 +108,56 @@ describe('plan:add tag stripping', () => {
     expect(result).toBe(message);
   });
 });
+
+describe('plan:unlink tag stripping', () => {
+  const planUnlinkRegex = /<plan:unlink\s+([^/>]*)\s*\/>/g;
+
+  it('strips plan:unlink tag from a message', () => {
+    const message = 'Unlinked the run from Week 2 Day C.\n<plan:unlink week="2" day="C"/>';
+    const result = message.replace(planUnlinkRegex, '').trim();
+    expect(result).toBe('Unlinked the run from Week 2 Day C.');
+    expect(result).not.toContain('<plan:unlink');
+  });
+
+  it('plan:unlink regex captures week and day attributes', () => {
+    const message = '<plan:unlink week="2" day="C"/>';
+    const matches = [...message.matchAll(planUnlinkRegex)];
+    expect(matches).toHaveLength(1);
+    const attrs = parseXmlAttrs(matches[0][1]);
+    expect(attrs.week).toBe('2');
+    expect(attrs.day).toBe('C');
+  });
+
+  it('strips multiple plan:unlink tags from message', () => {
+    const message =
+      'Unlinked two runs.\n' +
+      '<plan:unlink week="1" day="A"/>\n' +
+      '<plan:unlink week="2" day="B"/>';
+    const result = message.replace(planUnlinkRegex, '').trim();
+    expect(result).toBe('Unlinked two runs.');
+    expect(result).not.toContain('<plan:unlink');
+  });
+
+  it('strips plan:unlink along with plan:update and plan:add tags', () => {
+    const message =
+      'Updated and unlinked.\n' +
+      '<plan:update week="1" day="A" guidelines="Easy run"/>\n' +
+      '<plan:unlink week="2" day="B"/>\n' +
+      '<plan:add week="3" day="C" type="run" objective_kind="distance" objective_value="5" objective_unit="km" guidelines="Tempo"/>';
+    const result = message
+      .replace(planUpdateRegex, '')
+      .replace(planUnlinkRegex, '')
+      .replace(planAddRegex, '')
+      .trim();
+    expect(result).toBe('Updated and unlinked.');
+    expect(result).not.toContain('<plan:update');
+    expect(result).not.toContain('<plan:unlink');
+    expect(result).not.toContain('<plan:add');
+  });
+
+  it('returns message unchanged when no plan:unlink tags present', () => {
+    const message = 'Great progress this week!';
+    const result = message.replace(planUnlinkRegex, '').trim();
+    expect(result).toBe(message);
+  });
+});
