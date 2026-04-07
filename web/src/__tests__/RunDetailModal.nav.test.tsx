@@ -68,6 +68,30 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     expect(badge.tagName).toBe('BUTTON');
   });
 
+  it('badge is green when activePlanId matches run planId (active plan)', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockLinkedRun} activePlanId="plan-123" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+
+    const badge = screen.getByText(/Week 1 · Day B/i);
+    expect(badge.className).toContain('bg-green-100');
+    expect(badge.className).toContain('text-green-700');
+  });
+
+  it('badge is gray when activePlanId does not match run planId (archived plan)', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockLinkedRun} activePlanId="different-plan" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+
+    const badge = screen.getByText(/Week 1 · Day B/i);
+    expect(badge.className).toContain('bg-gray-100');
+    expect(badge.className).toContain('text-gray-600');
+  });
+
   it('does not render badge when run is not linked to plan', () => {
     render(
       <MemoryRouter>

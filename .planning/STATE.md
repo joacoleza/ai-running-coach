@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 03.2 — tech-debt-cleanup
+**Current focus:** Phase 03.3 complete — ready for Phase 4
 
 ## Current Phase
 

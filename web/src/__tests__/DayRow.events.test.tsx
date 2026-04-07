@@ -74,6 +74,23 @@ describe('DayRow — UX-NAV-01: Run date clickable button emits open-run-detail 
     window.removeEventListener('open-run-detail', eventSpy);
   });
 
+  it('Undo button is still visible when completed day has a linked run', () => {
+    const linkedRun = makeRun();
+    render(
+      <DayRow
+        day={makeRunDay({ completed: true })}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={linkedRun}
+      />
+    );
+
+    // Undo must be present regardless of whether a linked run is shown below
+    const undoBtn = screen.getByTitle('Undo');
+    expect(undoBtn).toBeInTheDocument();
+  });
+
   it('does not render date as button when day is not completed', () => {
     const linkedRun = makeRun();
     render(
