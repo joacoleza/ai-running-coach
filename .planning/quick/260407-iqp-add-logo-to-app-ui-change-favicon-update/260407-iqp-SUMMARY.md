@@ -9,6 +9,7 @@ tech-stack:
 key-files:
   created:
     - web/public/logo.png
+    - web/public/logo-bg.png
     - web/public/favicon.png
     - .planning/quick/260407-iqp-add-logo-to-app-ui-change-favicon-update/260407-iqp-SUMMARY.md
   modified:
@@ -16,8 +17,9 @@ key-files:
     - web/src/components/layout/Sidebar.tsx
     - README.md
 decisions:
-  - "Used rounded-full object-cover for mobile logo (w-10 h-10) to show circular crop in narrow sidebar"
-  - "Used max-w-[140px] rounded-lg for desktop logo to fill header area with soft corners"
+  - "Mobile and desktop logos wrapped in bg-white rounded-full container — transparent PNG requires white background against dark sidebar"
+  - "favicon.svg removed in favour of user-supplied favicon.png (transparent background)"
+  - "logo-bg.png (white background) used in README for better GitHub rendering"
   - "Replaced 'AI Coach' h2 text entirely with img tag — cleaner branding without redundant text"
 metrics:
   duration: "5 min"
