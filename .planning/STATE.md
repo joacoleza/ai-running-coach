@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: "Phase 3.3 validated - Nyquist compliant"
-last_updated: "2026-04-06T19:00:00.000Z"
+last_updated: "2026-04-07T12:44:51.000Z"
 progress:
   total_phases: 9
   completed_phases: 9
@@ -195,6 +195,7 @@ _Last updated: 2026-04-07 — quick task 260407-iqp shipped — PR #49_
 | 260331-0vx | Edit phase title/description and delete last phase with confirmation | 2026-03-31 | 8e7e159 | [260331-0vx-edit-phase-title-description-and-delete-](./quick/260331-0vx-edit-phase-title-description-and-delete-/) |
 | 260328-uuj | fix plan adjustment 409 conflict completed dates and silent errors | 2026-03-28 | 808bd73 | [260328-uuj-fix-plan-adjustment-409-conflict-complet](./quick/260328-uuj-fix-plan-adjustment-409-conflict-complet/) |
 | 260407-iqp | Add logo to app UI, change favicon, update README | 2026-04-07 | 5d5c94b | [260407-iqp-add-logo-to-app-ui-change-favicon-update](./quick/260407-iqp-add-logo-to-app-ui-change-favicon-update/) |
+| 260407-khd | fix Safari date inputs showing locale format and bottom safe area white rectangle | 2026-04-07 | 27264ca | [260407-khd-fix-safari-date-inputs-showing-locale-fo](./quick/260407-khd-fix-safari-date-inputs-showing-locale-fo/) |
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
