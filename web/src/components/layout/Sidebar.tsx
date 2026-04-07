@@ -10,11 +10,11 @@ const navItems = [
 export function Sidebar() {
   return (
     <aside className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-full sticky top-0 overflow-y-auto transition-all duration-200" data-testid="sidebar">
-      <div className="flex justify-center p-2 md:hidden">
-        <img src="/logo.png" alt="AI Running Coach" className="w-10 h-10 rounded-full object-cover" />
+      <div className="flex justify-center items-center py-3 md:hidden">
+        <img src="/favicon.svg" alt="AI Running Coach" className="w-8 h-8" />
       </div>
-      <div className="p-4 hidden md:block">
-        <img src="/logo.png" alt="AI Running Coach" className="w-full max-w-[140px] rounded-lg" />
+      <div className="flex justify-center p-4 hidden md:flex">
+        <img src="/logo.png" alt="AI Running Coach" className="max-w-[140px] rounded-lg" />
       </div>
       <nav className="flex-1 mt-4" role="navigation" aria-label="Main navigation">
         {navItems.map((item) => (
