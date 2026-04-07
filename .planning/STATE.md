@@ -170,7 +170,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-04-07 — quick task 260407-iqp shipped — PR #49_
+_Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LLM run notes_
 | Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
 | Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
 | Phase 03-run-logging P06 | 5min | 4 tasks | 3 files |
