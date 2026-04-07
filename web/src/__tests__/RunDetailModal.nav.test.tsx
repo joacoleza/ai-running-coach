@@ -2,6 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
+
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 import type { Run } from '../hooks/useRuns';
 
 vi.mock('../contexts/ChatContext', () => ({
@@ -53,6 +59,7 @@ beforeEach(() => {
   onClose.mockClear();
   onUpdated.mockClear();
   onDeleted.mockClear();
+  mockNavigate.mockClear();
   vi.clearAllMocks();
 });
 
@@ -145,7 +152,7 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     vi.useRealTimers();
   });
 
-  it('clicking badge on archived plan does NOT dispatch navigate-to-day', () => {
+  it('clicking badge on archived plan navigates to /archive/:planId and does NOT dispatch navigate-to-day', () => {
     vi.useFakeTimers();
     const eventSpy = vi.fn();
     window.addEventListener('navigate-to-day', eventSpy);
@@ -159,6 +166,7 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     fireEvent.click(screen.getByText(/Week 1 · Day B/i));
     vi.advanceTimersByTime(200);
 
+    expect(mockNavigate).toHaveBeenCalledWith('/archive/plan-123');
     expect(eventSpy).not.toHaveBeenCalled();
 
     window.removeEventListener('navigate-to-day', eventSpy);
