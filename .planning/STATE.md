@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: "Phase 04 planning shipped — PR #55"
-last_updated: "2026-04-08T09:00:00.000Z"
+status: executing
+last_updated: "2026-04-08T20:42:01.326Z"
 progress:
-  total_phases: 9
+  total_phases: 10
   completed_phases: 9
-  total_plans: 38
-  completed_plans: 38
-  percent: 92
+  total_plans: 43
+  completed_plans: 39
+  percent: 91
 ---
 
 # State
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 03.3 complete — ready for Phase 4
+**Current focus:** Phase 04 — dashboard
 
 ## Current Phase
 
 **Phase:** 03.3
-**Status:** Phase 3.3 shipped - PR #48
+**Status:** Executing Phase 04
 **Plans:** 5/5
-**Progress:** [█████████░] 92%
+**Progress:** [█████████░] 91%
 
 ## Milestone
 
@@ -148,6 +148,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03.3-01]: dayRefsMap uses Map<string,HTMLDivElement> keyed by weekNumber-label for O(1) day lookup during navigate-to-day scroll
 - [Phase 03.3-01]: navigate-to-day dispatched with 150ms delay so TrainingPlan has time to mount after navigate('/plan')
 - [Phase 03.3-01]: hasActivePlan moved before useEffects to avoid React hooks order violation (reference before declaration)
+- [Phase 04-01]: Dashboard is the new app home: / and * routes redirect to /dashboard
+- [Phase 04-01]: FilterPreset type and FILTER_PRESETS exported from Dashboard.tsx for useDashboard hook in plan 04-02
 
 ## Accumulated Context
 
@@ -181,6 +183,7 @@ _Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LL
 | Phase 03.2-tech-debt-cleanup P03 | 9 min | 2 tasks | 3 files |
 | Phase 03.2-tech-debt-cleanup P04 | 8 min | 3 tasks | 4 files |
 | Phase 03.3-ui-polish-mobile-fixes P01 | 5 min | 2 tasks | 5 files |
+| Phase 04-dashboard P01 | 3 min | 3 tasks | 7 files |
 
 ### Quick Tasks Completed
 
