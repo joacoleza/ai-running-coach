@@ -200,6 +200,44 @@ describe('Plan CRUD', () => {
     expect(result.jsonBody.plan).toBeNull();
   });
 
+  it('GET /api/plan includes linkedRuns map keyed by weekNumber-dayLabel', async () => {
+    const planId = await createTestPlan();
+    // Patch plan to active with a completed phase/week/day
+    await mongoClient.db('running-coach').collection('plans').updateOne(
+      { _id: new ObjectId(planId) },
+      { $set: { status: 'active', phases: validPhases } }
+    );
+    // Insert a run linked to this plan
+    const planOid = new ObjectId(planId);
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 5,
+      pace: 5.5,
+      duration: '27:30',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.linkedRuns).toBeDefined();
+    expect(result.jsonBody.linkedRuns['1-A']).toBeDefined();
+    expect(result.jsonBody.linkedRuns['1-A'].distance).toBe(5);
+  });
+
+  it('GET /api/plan returns empty linkedRuns when no runs are linked', async () => {
+    await createTestPlan();
+
+    const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
+
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.linkedRuns).toEqual({});
+  });
+
   it('GET /api/plan returns null for stale sessions-based plans', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',
