@@ -361,10 +361,10 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     expect(syntheticUserMsg.content).toContain('Notes: Felt strong today');
   });
 
-  it('truncates run notes longer than 100 chars in synthetic context', async () => {
+  it('truncates run notes longer than 500 chars in synthetic context', async () => {
     const planOid = await insertActivePlanWithCompletedDay();
     const planId = planOid.toString();
-    const longNotes = 'A'.repeat(120);
+    const longNotes = 'A'.repeat(520);
 
     await mongoClient.db('running-coach').collection('runs').insertOne({
       planId: planOid,
@@ -387,7 +387,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
     const msgs = callArgs.messages;
     const syntheticUserMsg = msgs[msgs.length - 3];
-    expect(syntheticUserMsg.content).toContain('Notes: ' + 'A'.repeat(100) + '...');
+    expect(syntheticUserMsg.content).toContain('Notes: ' + 'A'.repeat(500) + '...');
   });
 
   it('injects progressFeedback before day listing when plan has it set', async () => {
