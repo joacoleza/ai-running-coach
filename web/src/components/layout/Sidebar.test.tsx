@@ -33,4 +33,18 @@ describe('Sidebar', () => {
     )
     expect(screen.getByTestId('sidebar')).toBeInTheDocument()
   })
+
+  it('renders Dashboard link before Training Plan link', () => {
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+    const links = screen.getAllByRole('link')
+    const dashboardIndex = links.findIndex((link) => link.textContent?.includes('Dashboard'))
+    const trainingPlanIndex = links.findIndex((link) => link.textContent?.includes('Training Plan'))
+    expect(dashboardIndex).toBeGreaterThanOrEqual(0)
+    expect(trainingPlanIndex).toBeGreaterThanOrEqual(0)
+    expect(dashboardIndex).toBeLessThan(trainingPlanIndex)
+  })
 })
