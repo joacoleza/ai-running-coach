@@ -123,11 +123,7 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('clicking badge on active plan dispatches navigate-to-day event after delay', () => {
-    vi.useFakeTimers();
-    const eventSpy = vi.fn();
-    window.addEventListener('navigate-to-day', eventSpy);
-
+  it('clicking badge on active plan navigates to /plan with scrollToDay state', () => {
     render(
       <MemoryRouter>
         <RunDetailModal run={mockLinkedRun} activePlanId="plan-123" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
@@ -137,26 +133,10 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     const badge = screen.getByText(/Week 1 · Day B/i);
     fireEvent.click(badge);
 
-    // Before timeout, event should not be dispatched
-    expect(eventSpy).not.toHaveBeenCalled();
-
-    // Advance timers past the 150ms setTimeout
-    vi.advanceTimersByTime(150);
-
-    expect(eventSpy).toHaveBeenCalled();
-    const event = eventSpy.mock.calls[0][0] as CustomEvent;
-    expect(event.detail.weekNumber).toBe(1);
-    expect(event.detail.dayLabel).toBe('B');
-
-    window.removeEventListener('navigate-to-day', eventSpy);
-    vi.useRealTimers();
+    expect(mockNavigate).toHaveBeenCalledWith('/plan', { state: { scrollToDay: '1-B' } });
   });
 
-  it('clicking badge on archived plan navigates to /archive/:planId and does NOT dispatch navigate-to-day', () => {
-    vi.useFakeTimers();
-    const eventSpy = vi.fn();
-    window.addEventListener('navigate-to-day', eventSpy);
-
+  it('clicking badge on archived plan navigates to /archive/:planId with scrollToWeek state', () => {
     render(
       <MemoryRouter>
         <RunDetailModal run={mockLinkedRun} activePlanId="different-plan" onClose={onClose} onUpdated={onUpdated} onDeleted={onDeleted} />
@@ -164,13 +144,8 @@ describe('RunDetailModal — UX-NAV-02: Week/Day badge navigates and dispatches 
     );
 
     fireEvent.click(screen.getByText(/Week 1 · Day B/i));
-    vi.advanceTimersByTime(200);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/archive/plan-123');
-    expect(eventSpy).not.toHaveBeenCalled();
-
-    window.removeEventListener('navigate-to-day', eventSpy);
-    vi.useRealTimers();
+    expect(mockNavigate).toHaveBeenCalledWith('/archive/plan-123', { state: { scrollToWeek: 1 } });
   });
 });
 

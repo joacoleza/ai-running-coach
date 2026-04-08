@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
@@ -14,6 +15,8 @@ function openCoachPanel() {
 export function TrainingPlan() {
   const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
   const { sendMessage } = useChatContext();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [feedbackExpanded, setFeedbackExpanded] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [selectedRun, setSelectedRun] = useState<Run | null>(null);
@@ -23,12 +26,21 @@ export function TrainingPlan() {
 
   const hasActivePlan = !!plan && plan.status === 'active' && plan.phases?.length > 0;
 
-  // Auto-scroll to last completed day when plan first loads
+  // Scroll to a specific day if navigated here from RunDetailModal badge, otherwise
+  // fall back to auto-scrolling to the last completed day.
   useEffect(() => {
-    if (lastCompletedRef.current) {
+    if (!hasActivePlan) return;
+    const scrollToDay = (location.state as { scrollToDay?: string } | null)?.scrollToDay;
+    if (scrollToDay) {
+      const el = dayRefsMap.current.get(scrollToDay);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        navigate('/plan', { replace: true, state: null });
+      }
+    } else if (lastCompletedRef.current) {
       lastCompletedRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [hasActivePlan]);
+  }, [hasActivePlan]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Listen for open-run-detail events from DayRow run date clicks
   useEffect(() => {
