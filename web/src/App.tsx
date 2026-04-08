@@ -36,13 +36,13 @@ export function App() {
       <ChatProvider>
       <AppShell>
         <Routes>
-          <Route path="/" element={<Navigate to="/plan" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/plan" element={<TrainingPlan />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/runs" element={<Runs />} />
           <Route path="/archive" element={<Archive />} />
           <Route path="/archive/:id" element={<ArchivePlan />} />
-          <Route path="*" element={<Navigate to="/plan" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </AppShell>
       </ChatProvider>
