@@ -27,7 +27,6 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
   const [editingField, setEditingField] = useState<'guidelines' | 'objective' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [editUnit, setEditUnit] = useState<'km' | 'min'>('km');
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [completingRun, setCompletingRun] = useState(false);
@@ -61,7 +60,6 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
   const startEdit = (field: 'guidelines' | 'objective') => {
     if (isReadOnly) return;
-    setConfirmingDelete(false);
     setEditingField(field);
     if (field === 'guidelines') {
       setEditValue(day.guidelines);
@@ -203,7 +201,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
           </span>
 
           {/* Undo — inline with guidelines, always next to the text */}
-          {!isEditing && !isSaving && (day.completed || day.skipped) && !readonly && !confirmingDelete && (
+          {!isEditing && !isSaving && (day.completed || day.skipped) && !readonly && (
             <button
               onClick={() => { void update({ completed: 'false', skipped: 'false' }); }}
               className="cursor-pointer p-1 text-gray-400 hover:text-blue-600 transition-colors text-xs ml-1 align-middle md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"
@@ -236,10 +234,10 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
           {/* Action buttons (excluding Undo which is rendered above) */}
           {!isEditing && !isSaving && (
-            <span className={`inline-flex items-center gap-1 ml-2 align-middle no-underline ${confirmingDelete ? '' : 'md:opacity-0 md:group-hover:opacity-100 md:transition-opacity'}`}>
+            <span className="inline-flex items-center gap-1 ml-2 align-middle no-underline md:opacity-0 md:group-hover:opacity-100 md:transition-opacity">
               {/* Undo removed from here — rendered inline above */}
 
-              {day.completed && !linkedRun && !readonly && !confirmingDelete && (
+              {day.completed && !linkedRun && !readonly && (
                 <button
                   onClick={() => setCompletingRun(true)}
                   className="text-xs text-gray-500 hover:text-green-600 cursor-pointer"
@@ -249,7 +247,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                 </button>
               )}
 
-              {!isReadOnly && !confirmingDelete && (
+              {!isReadOnly && (
                 <>
                   <button
                     onClick={() => { void update({ completed: 'true' }); }}
@@ -277,7 +275,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                 </>
               )}
 
-              {!confirmingDelete && onRunLinked && (
+              {onRunLinked && (
                 <button
                   onClick={() => onRunLinked()}
                   className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
@@ -287,33 +285,19 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
               )}
 
               {!readonly && !day.completed && (
-                confirmingDelete ? (
-                  <>
-                    <span className="text-xs text-gray-500">Remove?</span>
-                    <button
-                      onClick={() => { setConfirmingDelete(false); void remove(); }}
-                      className="cursor-pointer p-1 text-red-500 hover:text-red-700 text-xs font-medium"
-                    >
-                      Yes
-                    </button>
-                    <button
-                      onClick={() => setConfirmingDelete(false)}
-                      className="cursor-pointer p-1 text-gray-400 hover:text-gray-600 text-xs"
-                    >
-                      No
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setConfirmingDelete(true)}
-                    className="cursor-pointer p-1 text-gray-400 hover:text-red-500 transition-colors"
-                    title="Delete day"
-                  >
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )
+                <button
+                  onClick={() => {
+                    if (window.confirm('Delete this training day? This cannot be undone.')) {
+                      void remove();
+                    }
+                  }}
+                  className="cursor-pointer p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete day"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               )}
             </span>
           )}

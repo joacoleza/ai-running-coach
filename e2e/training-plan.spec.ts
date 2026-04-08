@@ -63,13 +63,13 @@ function makeSseBody(text: string): string {
   return `data: ${JSON.stringify({ text })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`
 }
 
-async function loginWithPlan(page: any, plan: any = mockActivePlan) {
+async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: Record<string, any> = {}) {
   await page.route('**/api/plan', async (route: any) => {
     const method = route.request().method()
     if (method === 'GET') {
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan }) })
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan, linkedRuns }) })
     } else {
-      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan }) })
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan, linkedRuns }) })
     }
   })
   await page.route('**/api/plan/days/**', async (route: any) => {
@@ -230,17 +230,12 @@ test.describe('Training Plan view (Phase 2.1)', () => {
       updatedAt: '2026-04-01T00:00:00.000Z',
     }
 
-    // Provide runs BEFORE loginWithPlan so PlanView's initial fetchLinkedRuns is intercepted
-    await page.route('**/api/runs**', async (route: any) => {
-      const url = route.request().url()
-      if (url.includes('/api/runs/run-linked-001')) {
-        await route.fulfill({ contentType: 'application/json', body: JSON.stringify(linkedRun) })
-      } else {
-        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [linkedRun], total: 1 }) })
-      }
+    await page.route('**/api/runs/run-linked-001', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify(linkedRun) })
     })
 
-    await loginWithPlan(page, planWithLinkedRun)
+    const linkedRunsMap = { '1-B': linkedRun }
+    await loginWithPlan(page, planWithLinkedRun, linkedRunsMap)
 
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByText('Tempo run')).toBeVisible({ timeout: 10_000 })
@@ -334,12 +329,9 @@ test.describe('Day row actions (Phase 2.1)', () => {
       }
     })
 
-    // Click delete on the first run day — shows confirmation
+    // Click delete — browser confirm dialog appears, accept it
+    page.once('dialog', dialog => dialog.accept())
     await page.getByTitle('Delete day').first().click()
-    await expect(page.getByText('Remove?')).toBeVisible({ timeout: 3_000 })
-
-    // Confirm deletion
-    await page.getByText('Yes').click()
 
     await expect(async () => {
       expect(deleteUrl).toContain('/api/plan/days/')
@@ -362,12 +354,12 @@ test.describe('Day row actions (Phase 2.1)', () => {
       }
     })
 
+    // Click delete — browser confirm dialog appears, dismiss it
+    page.once('dialog', dialog => dialog.dismiss())
     await page.getByTitle('Delete day').first().click()
-    await expect(page.getByText('Remove?')).toBeVisible({ timeout: 3_000 })
-    await page.getByText('No').click()
 
-    // Confirmation dismissed, no DELETE request sent
-    await expect(page.getByText('Remove?')).not.toBeVisible()
+    // No DELETE request sent
+    await page.waitForTimeout(500)
     expect(deleteWasCalled).toBe(false)
   })
 

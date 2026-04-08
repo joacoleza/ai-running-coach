@@ -308,7 +308,16 @@ export function Runs() {
       {showLogForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowLogForm(false)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 my-auto" onClick={(e) => e.stopPropagation()}>
-            <h2 className="font-semibold text-gray-900 mb-3">Log a run</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold text-gray-900">Log a run</h2>
+              <button
+                onClick={() => setShowLogForm(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            </div>
             <RunEntryForm
               onSave={() => {
                 setShowLogForm(false);

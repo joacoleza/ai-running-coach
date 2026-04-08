@@ -26,7 +26,7 @@ vi.mock('../hooks/useRuns', () => ({
 }));
 
 import { useChatContext } from '../contexts/ChatContext';
-import { updateRun } from '../hooks/useRuns';
+import { updateRun, deleteRun } from '../hooks/useRuns';
 
 const mockRun: Run = {
   _id: 'run-001',
@@ -152,5 +152,75 @@ describe('RunDetailModal', () => {
 
     // After the async operation finishes, button should be re-enabled (not stuck in requesting state)
     await waitFor(() => expect(screen.getByRole('button', { name: /add feedback to run/i })).not.toBeDisabled());
+  });
+
+  it('uses editNotes (live state) not run.notes (stale prop) when building insight prompt', async () => {
+    const mockSendMessage = vi.fn().mockResolvedValue('Feedback with edited notes');
+    vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: mockSendMessage });
+    vi.mocked(updateRun).mockResolvedValue({ ...mockRun, insight: 'Feedback with edited notes' });
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={{ ...mockRun, notes: 'Original notes' }} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    // Change notes in the textarea
+    const notesArea = screen.getByPlaceholderText(/how did it feel/i);
+    fireEvent.change(notesArea, { target: { value: 'Edited notes' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
+    const [prompt] = mockSendMessage.mock.calls[0] as [string];
+    expect(prompt).toContain('Edited notes');
+    expect(prompt).not.toContain('Original notes');
+  });
+});
+
+describe('RunDetailModal — delete run', () => {
+  const onDeleted = vi.fn();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useChatContext).mockReturnValue({ ...defaults });
+    vi.mocked(deleteRun).mockResolvedValue(undefined as any);
+  });
+
+  it('clicking Delete run shows browser confirm dialog', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    expect(window.confirm).toHaveBeenCalledWith('Delete this run? This cannot be undone.');
+    vi.restoreAllMocks();
+  });
+
+  it('confirming delete calls deleteRun and onDeleted', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    await waitFor(() => expect(deleteRun).toHaveBeenCalledWith('run-001'));
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('run-001'));
+    vi.restoreAllMocks();
+  });
+
+  it('cancelling delete does not call deleteRun', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    expect(deleteRun).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 });

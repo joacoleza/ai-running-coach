@@ -143,6 +143,16 @@ describe('Runs page', () => {
     expect(screen.queryByTestId('run-entry-form')).not.toBeInTheDocument();
   });
 
+  it('closes Log a run modal via X button in header', async () => {
+    await act(async () => {
+      render(<Runs />);
+    });
+    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    expect(screen.getByTestId('run-entry-form')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /close/i }));
+    expect(screen.queryByTestId('run-entry-form')).not.toBeInTheDocument();
+  });
+
   it('closes Log a run modal and refreshes after save', async () => {
     await act(async () => {
       render(<Runs />);

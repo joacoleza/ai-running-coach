@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "concurrently --names \"docker,web,func\" --prefix-colors \"cyan,blue,yellow\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\"",
+    "dev": "concurrently --kill-others --kill-others-on-fail --names \"docker,web,func\" --prefix-colors \"cyan,blue,yellow\" \"docker compose up\" \"npm run dev:web\" \"npm run dev:func\"",
+    "kill-dev": "npx kill-port 3000 5173 7071",
     "dev:web": "npm run dev --prefix web",
     "dev:func": "npm run start --prefix api",
     "test": "npm run test --prefix web",

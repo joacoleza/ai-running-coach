@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
 import { PlanView } from '../components/plan/PlanView';
@@ -11,7 +12,7 @@ function openCoachPanel() {
 }
 
 export function TrainingPlan() {
-  const { plan, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
+  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
   const { sendMessage } = useChatContext();
   const [feedbackExpanded, setFeedbackExpanded] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
@@ -156,12 +157,8 @@ export function TrainingPlan() {
                     <span>{feedbackExpanded ? '▲' : '▼'}</span>
                   </button>
                   {feedbackExpanded && (
-                    <div className="p-3 text-sm text-gray-700">
-                      <div className="space-y-3">
-                        {plan.progressFeedback.split('\n\n').map((paragraph, i) => (
-                          <p key={i}>{paragraph}</p>
-                        ))}
-                      </div>
+                    <div className="p-3 text-sm text-gray-700 prose prose-sm max-w-none">
+                      <ReactMarkdown>{plan.progressFeedback}</ReactMarkdown>
                     </div>
                   )}
                 </>
@@ -174,7 +171,7 @@ export function TrainingPlan() {
       {/* Scrollable content area — PlanView and empty states */}
       <div className="px-6 pt-4 pb-6">
         {hasActivePlan && plan ? (
-          <PlanView plan={plan} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
+          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         ) : !plan || plan.status === 'onboarding' ? (
           <p className="mt-4 text-gray-600">
             {plan?.status === 'onboarding'

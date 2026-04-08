@@ -1,7 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import { Plan, PlanGoal } from '../shared/types.js';
+import { Plan, PlanGoal, Run } from '../shared/types.js';
 
 app.http('getPlan', {
   methods: ['GET'],
@@ -22,12 +22,27 @@ app.http('getPlan', {
 
       // Stale plan migration: old plans have sessions[] but no phases[]
       if (plan && (!plan.phases || plan.phases.length === 0) && (plan as any).sessions?.length > 0) {
-        return { status: 200, jsonBody: { plan: null } };
+        return { status: 200, jsonBody: { plan: null, linkedRuns: {} } };
+      }
+
+      // Fetch runs linked to this plan and return as a Record<"weekNumber-dayLabel", Run>
+      let linkedRunsRecord: Record<string, Run> = {};
+      if (plan?._id) {
+        try {
+          const runs = await db.collection<Run>('runs').find({ planId: plan._id }).toArray();
+          for (const run of runs) {
+            if (run.weekNumber != null && run.dayLabel) {
+              linkedRunsRecord[`${run.weekNumber}-${run.dayLabel}`] = run;
+            }
+          }
+        } catch {
+          // Non-fatal: proceed without linked runs if fetch fails
+        }
       }
 
       return {
         status: 200,
-        jsonBody: { plan: plan ?? null },
+        jsonBody: { plan: plan ?? null, linkedRuns: linkedRunsRecord },
       };
     } catch (err) {
       context.log('Error getting plan:', err);

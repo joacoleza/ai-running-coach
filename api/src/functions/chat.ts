@@ -143,6 +143,12 @@ app.http('chat', {
               const runDate = formatRunDate(run.date);
               const runPace = run.pace > 0 ? ` @ ${formatPace(run.pace)}/km` : '';
               line += ` | Ran: ${runDate}, ${run.distance}km${runPace}`;
+              if (run.notes) {
+                const truncatedNotes = run.notes.length > 500
+                  ? run.notes.slice(0, 500) + '...'
+                  : run.notes;
+                line += ` | Notes: ${truncatedNotes}`;
+              }
               if (run.insight) {
                 const truncatedInsight = run.insight.length > 150
                   ? run.insight.slice(0, 150) + '...'

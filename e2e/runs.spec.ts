@@ -341,3 +341,214 @@ test.describe('Run Logging', () => {
     }).toPass({ timeout: 5_000 })
   })
 })
+
+test.describe('Run delete and unlink flows', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('delete unlinked run: confirm dialog triggers DELETE and closes modal', async ({ page }) => {
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      const method = route.request().method()
+      const url = route.request().url()
+      if (method === 'DELETE' && url.includes('run-unlinked-001')) {
+        await route.fulfill({ status: 204 })
+      } else if (method === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [mockUnlinkedRun], total: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    let deleteWasCalled = false
+    await page.route('**/api/runs/run-unlinked-001', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteWasCalled = true
+        await route.fulfill({ status: 204 })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // Open RunDetailModal by clicking the run row
+    await page.getByText(/6km/).click()
+    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible({ timeout: 5_000 })
+
+    // Accept the confirm dialog and click Delete run
+    page.once('dialog', dialog => {
+      expect(dialog.message()).toContain('Delete this run')
+      dialog.accept()
+    })
+    await page.getByRole('button', { name: /delete run/i }).click()
+
+    // Modal closes and DELETE was called
+    await expect(async () => {
+      expect(deleteWasCalled).toBe(true)
+    }).toPass({ timeout: 5_000 })
+    await expect(page.getByRole('button', { name: /delete run/i })).not.toBeVisible({ timeout: 5_000 })
+  })
+
+  test('delete run cancelled: dismiss dialog does not call DELETE', async ({ page }) => {
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [mockUnlinkedRun], total: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    let deleteWasCalled = false
+    await page.route('**/api/runs/run-unlinked-001', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteWasCalled = true
+        await route.fulfill({ status: 204 })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByText(/6km/).click()
+    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible({ timeout: 5_000 })
+
+    // Dismiss the confirm dialog
+    page.once('dialog', dialog => dialog.dismiss())
+    await page.getByRole('button', { name: /delete run/i }).click()
+
+    // Modal stays open and DELETE was not called
+    await page.waitForTimeout(500)
+    expect(deleteWasCalled).toBe(false)
+    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible()
+  })
+
+  test('unlink linked run: confirm dialog triggers POST /unlink and hides unlink button', async ({ page }) => {
+    const linkedRunForUnlink = {
+      ...mockSavedRun,
+      _id: 'run-linked-002',
+      date: '2026-04-03',
+      distance: 7,
+      duration: '35:00',
+      pace: 5.0,
+      planId: 'plan-runs-001',
+      weekNumber: 1,
+      dayLabel: 'A',
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      const method = route.request().method()
+      const url = route.request().url()
+      if (method === 'POST' && url.includes('/unlink')) {
+        // Unlink returns the run without planId
+        const unlinked = { ...linkedRunForUnlink, planId: undefined, weekNumber: undefined, dayLabel: undefined }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(unlinked) })
+      } else if (method === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [linkedRunForUnlink], total: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    let unlinkCalled = false
+    await page.route('**/api/runs/run-linked-002/unlink', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        unlinkCalled = true
+        const unlinked = { ...linkedRunForUnlink, planId: undefined, weekNumber: undefined, dayLabel: undefined }
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(unlinked) })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // Open modal by clicking the linked run row
+    await page.getByText(/7km/).click()
+    await expect(page.getByRole('button', { name: /unlink from plan/i })).toBeVisible({ timeout: 5_000 })
+
+    // Accept the confirm dialog and click Unlink from plan
+    page.once('dialog', dialog => {
+      expect(dialog.message()).toContain('Unlink this run')
+      dialog.accept()
+    })
+    await page.getByRole('button', { name: /unlink from plan/i }).click()
+
+    // POST /unlink was called
+    await expect(async () => {
+      expect(unlinkCalled).toBe(true)
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('unlink cancelled: dismiss dialog does not call POST /unlink', async ({ page }) => {
+    const linkedRunForUnlink = {
+      ...mockSavedRun,
+      _id: 'run-linked-003',
+      date: '2026-04-04',
+      distance: 9,
+      duration: '45:00',
+      pace: 5.0,
+      planId: 'plan-runs-001',
+      weekNumber: 1,
+      dayLabel: 'A',
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [linkedRunForUnlink], total: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    let unlinkCalled = false
+    await page.route('**/api/runs/run-linked-003/unlink', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        unlinkCalled = true
+        await route.continue()
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByText(/9km/).click()
+    await expect(page.getByRole('button', { name: /unlink from plan/i })).toBeVisible({ timeout: 5_000 })
+
+    // Dismiss the confirm dialog
+    page.once('dialog', dialog => dialog.dismiss())
+    await page.getByRole('button', { name: /unlink from plan/i }).click()
+
+    // Unlink was not called and button stays visible
+    await page.waitForTimeout(500)
+    expect(unlinkCalled).toBe(false)
+    await expect(page.getByRole('button', { name: /unlink from plan/i })).toBeVisible()
+  })
+})

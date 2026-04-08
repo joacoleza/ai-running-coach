@@ -333,6 +333,63 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     expect(syntheticUserMsg.content).toContain('5:30');
   });
 
+  it('includes run notes in synthetic context when run has notes', async () => {
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 5.2,
+      pace: 5.5,
+      duration: '28:36',
+      notes: 'Felt strong today',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockStream.mockReturnValueOnce(createMockStream('Looking good!'));
+    const req = makeReq({ planId, message: 'How am I doing?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+    const syntheticUserMsg = msgs[msgs.length - 3];
+    expect(syntheticUserMsg.content).toContain('Notes: Felt strong today');
+  });
+
+  it('truncates run notes longer than 500 chars in synthetic context', async () => {
+    const planOid = await insertActivePlanWithCompletedDay();
+    const planId = planOid.toString();
+    const longNotes = 'A'.repeat(520);
+
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId: planOid,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 5.2,
+      pace: 5.5,
+      duration: '28:36',
+      notes: longNotes,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    mockStream.mockReturnValueOnce(createMockStream('Looking good!'));
+    const req = makeReq({ planId, message: 'How am I doing?' });
+    const result = await handlers.get('chat')!(req, ctx);
+    await consumeStream(result.body as ReadableStream<Uint8Array>);
+
+    const callArgs = mockStream.mock.calls[0][0] as { messages: { role: string; content: string }[] };
+    const msgs = callArgs.messages;
+    const syntheticUserMsg = msgs[msgs.length - 3];
+    expect(syntheticUserMsg.content).toContain('Notes: ' + 'A'.repeat(500) + '...');
+  });
+
   it('injects progressFeedback before day listing when plan has it set', async () => {
     const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',

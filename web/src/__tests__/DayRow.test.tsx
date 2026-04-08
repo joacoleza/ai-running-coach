@@ -184,34 +184,35 @@ describe('DayRow', () => {
     expect(deleteBtn.className).not.toContain('opacity-0');
   });
 
-  it('clicking delete shows confirmation prompt, does not immediately call onDelete', async () => {
+  it('clicking delete shows browser confirm dialog, does not immediately call onDelete when cancelled', async () => {
     const onDelete = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={onDelete} />);
     fireEvent.click(screen.getByTitle('Delete day'));
-    expect(screen.getByText('Remove?')).toBeInTheDocument();
-    expect(screen.getByText('Yes')).toBeInTheDocument();
-    expect(screen.getByText('No')).toBeInTheDocument();
+    expect(window.confirm).toHaveBeenCalledWith('Delete this training day? This cannot be undone.');
     expect(onDelete).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 
   it('clicking Yes in confirmation calls onDelete with weekNumber and label', async () => {
     const onDelete = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={onDelete} />);
-    fireEvent.click(screen.getByTitle('Delete day'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Yes'));
+      fireEvent.click(screen.getByTitle('Delete day'));
     });
     expect(onDelete).toHaveBeenCalledWith(1, 'A');
+    vi.restoreAllMocks();
   });
 
   it('clicking No in confirmation dismisses without calling onDelete', () => {
     const onDelete = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={onDelete} />);
     fireEvent.click(screen.getByTitle('Delete day'));
-    fireEvent.click(screen.getByText('No'));
-    expect(screen.queryByText('Remove?')).not.toBeInTheDocument();
     expect(screen.getByTitle('Delete day')).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
   });
 
   it('readonly mode has no delete button', () => {
@@ -242,12 +243,13 @@ describe('DayRow', () => {
 
   it('shows inline error when onDelete rejects', async () => {
     const onDelete = vi.fn().mockRejectedValue(new Error('Delete failed'));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={onDelete} />);
-    fireEvent.click(screen.getByTitle('Delete day'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Yes'));
+      fireEvent.click(screen.getByTitle('Delete day'));
     });
     expect(await screen.findByText('Delete failed')).toBeInTheDocument();
+    vi.restoreAllMocks();
   });
 });
 
@@ -309,14 +311,13 @@ describe('DayRow — hide actions while editing', () => {
     expect(screen.queryByTitle('Mark as skipped')).not.toBeInTheDocument();
   });
 
-  it('starting an edit clears any pending delete confirmation', () => {
+  it('clicking delete button shows browser confirm dialog', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
-    // Open confirmation
     fireEvent.click(screen.getByTitle('Delete day'));
-    expect(screen.getByText('Remove?')).toBeInTheDocument();
-    // Start editing guidelines — confirmation should clear
-    fireEvent.click(screen.getByText('Easy Zone 2 run'));
-    // Cancel editing
-    fireEvent.blur(screen.getByDisplayValue('Easy Zone 2 run'));
+    expect(window.confirm).toHaveBeenCalled();
+    // Delete button still visible since confirm was cancelled
+    expect(screen.getByTitle('Delete day')).toBeInTheDocument();
+    vi.restoreAllMocks();
   });
 });

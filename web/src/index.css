@@ -15,6 +15,13 @@ body {
   background-color: #f9fafb; /* gray-50 — matches AppShell bg */
 }
 
+/* All interactive elements use pointer cursor */
+button,
+a,
+[role="button"] {
+  cursor: pointer;
+}
+
 /* Prevent iOS Safari from zooming on input focus (requires font-size >= 16px) */
 @media (max-width: 767px) {
   input,

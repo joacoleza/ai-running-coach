@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import type { PlanData } from '../../hooks/usePlan';
 import type { Run } from '../../hooks/useRuns';
 import { DayRow } from './DayRow';
@@ -6,13 +6,6 @@ import { PhaseHeader } from './PhaseHeader';
 import { LinkRunModal } from '../runs/LinkRunModal';
 
 const ALL_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'] as const;
-
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
-  };
-}
 
 interface AddDayFormProps {
   weekNumber: number;
@@ -128,6 +121,7 @@ function AddDayForm({ existingLabels, onSave, onCancel }: AddDayFormProps) {
 
 interface PlanViewProps {
   plan: PlanData;
+  linkedRuns: Map<string, Run>;
   onUpdateDay: (weekNumber: number, label: string, updates: Record<string, string>) => Promise<void>;
   onDeleteDay: (weekNumber: number, label: string) => Promise<void>;
   onAddDay?: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
@@ -138,42 +132,9 @@ interface PlanViewProps {
   dayRefsMap?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
-export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
+export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
-  const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
-  const [refreshKey, setRefreshKey] = useState(0);
   const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
-
-  // Fetch runs linked to this plan, keyed by "weekNumber-label"
-  const fetchLinkedRuns = useCallback(async () => {
-    if (!plan?._id) return;
-    try {
-      const res = await fetch(`/api/runs?planId=${plan._id}&limit=500`, { headers: authHeaders() });
-      if (!res.ok) return;
-      const data = await res.json() as { runs: Run[] };
-      const map = new Map<string, Run>();
-      for (const run of data.runs) {
-        if (run.weekNumber && run.dayLabel) {
-          map.set(`${run.weekNumber}-${run.dayLabel}`, run);
-        }
-      }
-      setLinkedRuns(map);
-    } catch {
-      // silently ignore — linked run display is non-critical
-    }
-  }, [plan?._id]);
-
-  // Fetch on mount and when plan ID or refreshKey changes
-  useEffect(() => {
-    void fetchLinkedRuns();
-  }, [fetchLinkedRuns, refreshKey]);
-
-  // Re-fetch when plan-updated event fires (run linked/unlinked)
-  useEffect(() => {
-    const handler = () => setRefreshKey((k) => k + 1);
-    window.addEventListener('plan-updated', handler);
-    return () => window.removeEventListener('plan-updated', handler);
-  }, []);
 
   // Compute the key of the last completed non-rest day across all phases/weeks
   const lastCompletedKey = (() => {
@@ -293,7 +254,8 @@ export function PlanView({ plan, onUpdateDay, onDeleteDay, onAddDay, onUpdatePha
           dayGuidelines={linkingDay.guidelines}
           onLinked={() => {
             setLinkingDay(null);
-            setRefreshKey((k) => k + 1);
+            // Dispatch plan-updated so usePlan refreshes (which re-fetches linkedRuns)
+            window.dispatchEvent(new Event('plan-updated'));
           }}
           onClose={() => setLinkingDay(null)}
         />

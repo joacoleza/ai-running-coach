@@ -21,6 +21,7 @@ const mockUseChatContext = vi.mocked(useChatContext);
 function defaultUsePlan(overrides: Partial<ReturnType<typeof usePlan>> = {}) {
   mockUsePlan.mockReturnValue({
     plan: null,
+    linkedRuns: new Map(),
     isLoading: false,
     error: null,
     refreshPlan: vi.fn().mockResolvedValue(undefined),
