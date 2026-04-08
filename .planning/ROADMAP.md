@@ -336,29 +336,39 @@ Plans:
 
 ## Phase 4 — Dashboard & Plan Import
 
-**Goal:** Full dashboard showing progress, run history, and plan import from an existing LLM conversation.
+**Goal:** Real dashboard home page with date-filtered training stats, volume and pace charts, and readonly archived plan chat history.
 
 **Requirements covered:** DASH-01, DASH-02, DASH-03, DASH-04, IMP-01, IMP-02, IMP-03
 
+**Note:** IMP-01/02/03 (plan import from LLM) dropped by user — not needed. DASH-04 (generic chat history section) replaced by archived plan readonly chat (D-17 through D-23).
+
+**Plans:** 5 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Routing changes (/ → /dashboard), Sidebar reorder (Dashboard first), Recharts install, Dashboard scaffold
+- [ ] 04-02-PLAN.md — useDashboard hook (filter state machine, run fetching, stats + chart data calculation)
+- [ ] 04-03-PLAN.md — Dashboard UI (stat cards wired to useDashboard, Recharts bar + line charts, empty states)
+- [ ] 04-04-PLAN.md — CoachPanel readonly mode + ArchivePlan wiring (chat history fetch, right panel, mobile FAB)
+- [ ] 04-05-PLAN.md — E2E tests (dashboard routing, filters, stats, Adherence navigation, archived plan FAB)
+
 **Deliverables:**
-- Dashboard home page:
-  - Current week: training schedule with session status (planned/complete/missed)
-  - Progress card: weeks elapsed, total distance logged, plan adherence %
-  - Recent runs list: last 5 runs with distance, pace, date
-- Run history page: full list of logged runs with per-run detail view (distance, pace, HR, comparison to plan, coach feedback)
-- Plan import flow:
-  - Text area to paste raw LLM conversation
-  - Claude extracts and normalizes to session schema
-  - Preview table showing parsed weeks/sessions before saving
-  - Confirm → replaces active plan (with warning)
-- Chat history section: paginated list of past coaching conversations, readable but not interactive
+- Dashboard becomes home page (/ → /dashboard); Dashboard first in sidebar
+- 7 date filter presets with "Current Plan" as default
+- 4 stat cards: Total Distance, Total Runs, Total Time, Adherence % (clickable → /plan)
+- Weekly Volume bar chart (Recharts, green-500 bars)
+- Pace Trend line chart (Recharts, blue-500 line)
+- Empty states: no active plan + Current Plan filter; no runs in range
+- Archived plan pages show readonly CoachPanel with "Plan History" label, no input, gray FAB on mobile
+- Full unit + E2E test coverage for all dashboard and archived plan panel features
 
 **UAT:**
-- Dashboard shows correct week view with session statuses
-- Progress card shows accurate adherence % based on logged runs
-- Run detail view shows all metrics and the coach's post-run feedback
-- Paste a ChatGPT/Claude training plan conversation → see parsed plan in preview → confirm → calendar updates
-- Chat history shows all past conversations chronologically
+- / redirects to /dashboard
+- Dashboard shows correct stats for the selected filter
+- Adherence % card click navigates to /plan
+- Switching filter preset re-fetches data and updates all cards and charts
+- Empty state shown when no active plan and "Current Plan" filter selected
+- Archived plan page shows "Plan History" panel on desktop; gray clock FAB on mobile
+- Panel shows historical coaching messages (readonly — no input field)
 
 ---
 

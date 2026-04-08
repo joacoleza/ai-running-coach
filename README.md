@@ -10,7 +10,7 @@
 ![Coverage](https://img.shields.io/badge/coverage-89.8%25-brightgreen)
 ![API Tests](https://img.shields.io/badge/api_tests-181%2F181-brightgreen)
 ![Web Tests](https://img.shields.io/badge/web_tests-360%2F360-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-52%2F52-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-unknown-lightgrey)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
