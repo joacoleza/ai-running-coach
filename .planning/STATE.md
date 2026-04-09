@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-08T20:42:01.326Z"
+last_updated: "2026-04-09T12:18:26.869Z"
 progress:
   total_phases: 10
   completed_phases: 9
   total_plans: 43
-  completed_plans: 39
-  percent: 91
+  completed_plans: 42
+  percent: 98
 ---
 
 # State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 03.3
 **Status:** Executing Phase 04
 **Plans:** 5/5
-**Progress:** [█████████░] 91%
+**Progress:** [██████████] 98%
 
 ## Milestone
 
@@ -150,6 +150,9 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 03.3-01]: hasActivePlan moved before useEffects to avoid React hooks order violation (reference before declaration)
 - [Phase 04-01]: Dashboard is the new app home: / and * routes redirect to /dashboard
 - [Phase 04-01]: FilterPreset type and FILTER_PRESETS exported from Dashboard.tsx for useDashboard hook in plan 04-02
+- [Phase 04-dashboard]: startOfYear timezone fix: use getFullYear() string construction for this-year dateFrom to avoid UTC offset shifting Jan 1 to Dec 31
+- [Phase 04-03]: Re-export FILTER_PRESETS from Dashboard.tsx for backward compat with pages.test.tsx
+- [Phase 04-03]: Recharts Tooltip formatter uses Number(v) cast to satisfy ValueType|undefined TS union
 
 ## Accumulated Context
 
@@ -184,6 +187,8 @@ _Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LL
 | Phase 03.2-tech-debt-cleanup P04 | 8 min | 3 tasks | 4 files |
 | Phase 03.3-ui-polish-mobile-fixes P01 | 5 min | 2 tasks | 5 files |
 | Phase 04-dashboard P01 | 3 min | 3 tasks | 7 files |
+| Phase 04-dashboard P02 | 5min | 2 tasks | 2 files |
+| Phase 04-dashboard P03 | 10min | 2 tasks | 3 files |
 
 ### Quick Tasks Completed
 
