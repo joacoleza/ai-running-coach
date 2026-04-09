@@ -342,14 +342,14 @@ Plans:
 
 **Note:** IMP-01/02/03 (plan import from LLM) dropped by user — not needed. DASH-04 (generic chat history section) replaced by archived plan readonly chat (D-17 through D-23).
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 04-01-PLAN.md — Routing changes (/ → /dashboard), Sidebar reorder (Dashboard first), Recharts install, Dashboard scaffold
 - [x] 04-02-PLAN.md — useDashboard hook (filter state machine, run fetching, stats + chart data calculation)
 - [x] 04-03-PLAN.md — Dashboard UI (stat cards wired to useDashboard, Recharts bar + line charts, empty states)
 - [x] 04-04-PLAN.md — CoachPanel readonly mode + ArchivePlan wiring (chat history fetch, right panel, mobile FAB)
-- [ ] 04-05-PLAN.md — E2E tests (dashboard routing, filters, stats, Adherence navigation, archived plan FAB)
+- [x] 04-05-PLAN.md — E2E tests (dashboard routing, filters, stats, Adherence navigation, archived plan FAB)
 
 **Deliverables:**
 - Dashboard becomes home page (/ → /dashboard); Dashboard first in sidebar
