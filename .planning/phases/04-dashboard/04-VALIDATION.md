@@ -93,14 +93,14 @@ Existing infrastructure covers all phase requirements. No Wave 0 test stubs were
 | File | Tests | Covers |
 |------|-------|--------|
 | `web/src/__tests__/useDashboard.test.ts` | 17 | parseDurationToMinutes (5), formatTotalTime (5), computeDateRange (7) |
-| `web/src/__tests__/Dashboard.test.tsx` | 13 | Stat values, empty state, loading state, Adherence click nav |
+| `web/src/__tests__/Dashboard.test.tsx` | 16 | Stat values, empty state (no-runs), loading state, Adherence click nav |
 | `web/src/components/layout/Sidebar.test.tsx` | 4 | Dashboard nav presence, Dashboard before Training Plan order |
 | `web/src/__tests__/pages.test.tsx` | 4 | Dashboard heading render, filter presets, stat card labels |
 | `web/src/__tests__/CoachPanel.test.tsx` | 21 | Mobile overlay, no-plan state, cursor-pointer, readonly mode (6) |
 | `web/src/__tests__/ArchivePlan.test.tsx` | 9 | Loading/error/not-found states, chat history fetch, readonly panel, FAB |
 | `e2e/dashboard.spec.ts` | 7 | / redirect, sidebar order, filter active state, stat labels, Adherence nav, empty state, archive FAB |
 
-**Total automated: 403 tests (32 test files) — all passing**
+**Total automated: 406 tests (32 test files) — all passing**
 
 ---
 
@@ -125,4 +125,15 @@ Existing infrastructure covers all phase requirements. No Wave 0 test stubs were
 | Resolved | 0 |
 | Escalated to manual-only | 4 (chart rendering, filter data visibility, desktop layout, mobile FAB animation) |
 | Total requirements | 4 active (DASH-01..04) + 3 descoped (IMP-01..03) |
+| Nyquist compliance | ✅ |
+
+## Validation Audit 2026-04-09 (re-audit)
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+| Test count delta | +3 (Dashboard.test.tsx: 13→16, no-runs empty state) |
+| Total suite | 406 tests (32 test files) — all green |
 | Nyquist compliance | ✅ |
