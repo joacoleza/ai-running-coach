@@ -81,7 +81,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
     // Wait for the main app shell to load
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
   }
 
   test('shows welcome screen with Start New Plan button when no plan exists', async ({ page }) => {

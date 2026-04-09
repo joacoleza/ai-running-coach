@@ -108,7 +108,7 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 }
 
 // ── Tests ──────────────────────────────────────────────────────────────────
