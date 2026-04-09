@@ -342,7 +342,7 @@ Plans:
 
 **Note:** IMP-01/02/03 (plan import from LLM) dropped by user — not needed. DASH-04 (generic chat history section) replaced by archived plan readonly chat (D-17 through D-23).
 
-**Plans:** 5/5 plans complete
+**Plans:** 7 plans (5 original + 2 gap closure)
 
 Plans:
 - [x] 04-01-PLAN.md — Routing changes (/ → /dashboard), Sidebar reorder (Dashboard first), Recharts install, Dashboard scaffold
@@ -350,25 +350,31 @@ Plans:
 - [x] 04-03-PLAN.md — Dashboard UI (stat cards wired to useDashboard, Recharts bar + line charts, empty states)
 - [x] 04-04-PLAN.md — CoachPanel readonly mode + ArchivePlan wiring (chat history fetch, right panel, mobile FAB)
 - [x] 04-05-PLAN.md — E2E tests (dashboard routing, filters, stats, Adherence navigation, archived plan FAB)
+- [ ] 04-06-PLAN.md — Gap closure: Adherence card conditional on current-plan filter + Pace+BPM ComposedChart
+- [ ] 04-07-PLAN.md — Gap closure: AppShell route-awareness to suppress CoachPanel and FAB on /archive/:id
 
 **Deliverables:**
 - Dashboard becomes home page (/ → /dashboard); Dashboard first in sidebar
 - 7 date filter presets with "Current Plan" as default
-- 4 stat cards: Total Distance, Total Runs, Total Time, Adherence % (clickable → /plan)
+- 4 stat cards: Total Distance, Total Runs, Total Time, Adherence % (clickable → /plan, visible only on Current Plan filter)
 - Weekly Volume bar chart (Recharts, green-500 bars)
 - Pace Trend line chart (Recharts, blue-500 line)
+- Pace + BPM ComposedChart (dual Y-axes: pace blue left, BPM red right)
 - Empty states: no active plan + Current Plan filter; no runs in range
 - Archived plan pages show readonly CoachPanel with "Plan History" label, no input, gray FAB on mobile
+- AppShell CoachPanel and FAB hidden on /archive/:id to avoid overlapping ArchivePlan's own panel
 - Full unit + E2E test coverage for all dashboard and archived plan panel features
 
 **UAT:**
 - / redirects to /dashboard
 - Dashboard shows correct stats for the selected filter
+- Adherence % card visible only when Current Plan filter is active; hidden for date-based filters
 - Adherence % card click navigates to /plan
 - Switching filter preset re-fetches data and updates all cards and charts
 - Empty state shown when no active plan and "Current Plan" filter selected
 - Archived plan page shows "Plan History" panel on desktop; gray clock FAB on mobile
 - Panel shows historical coaching messages (readonly — no input field)
+- On /archive/:id: AppShell live coach chat column is not visible; AppShell blue FAB not visible
 
 ---
 
