@@ -1,9 +1,21 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { Coach } from '../pages/Coach';
 import { Dashboard } from '../pages/Dashboard';
 import { FILTER_PRESETS } from '../pages/Dashboard';
+
+vi.mock('../hooks/useDashboard', () => ({
+  useDashboard: vi.fn(() => ({
+    activeFilter: 'current-plan' as const,
+    setActiveFilter: vi.fn(),
+    stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+    weeklyData: [],
+    paceData: [],
+    isLoading: false,
+    hasPlan: false,
+  })),
+}))
 
 describe('Coach page', () => {
   it('renders heading', () => {

@@ -1,16 +1,14 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  BarChart, Bar,
+  LineChart, Line,
+  XAxis, YAxis,
+  CartesianGrid, Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
+import { useDashboard, type FilterPreset } from '../hooks/useDashboard'
 
-type FilterPreset =
-  | 'current-plan'
-  | 'last-4-weeks'
-  | 'last-8-weeks'
-  | 'last-3-months'
-  | 'last-12-months'
-  | 'this-year'
-  | 'all-time'
-
-const FILTER_PRESETS: { id: FilterPreset; label: string }[] = [
+export const FILTER_PRESETS: { id: FilterPreset; label: string }[] = [
   { id: 'current-plan', label: 'Current Plan' },
   { id: 'last-4-weeks', label: 'Last 4 weeks' },
   { id: 'last-8-weeks', label: 'Last 8 weeks' },
@@ -20,12 +18,20 @@ const FILTER_PRESETS: { id: FilterPreset; label: string }[] = [
   { id: 'all-time', label: 'All time' },
 ]
 
-export type { FilterPreset }
-export { FILTER_PRESETS }
-
 export function Dashboard() {
-  const [activeFilter, setActiveFilter] = useState<FilterPreset>('current-plan')
   const navigate = useNavigate()
+  const {
+    activeFilter,
+    setActiveFilter,
+    stats,
+    weeklyData,
+    paceData,
+    isLoading,
+    hasPlan,
+  } = useDashboard()
+
+  const showNoPlanEmpty = activeFilter === 'current-plan' && !hasPlan && !isLoading
+  const showNoRunsEmpty = !isLoading && !showNoPlanEmpty && weeklyData.length === 0
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -52,45 +58,115 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Stats cards — 4 grid, populated by useDashboard in next plan */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {/* Total Distance */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600 mb-1">Total Distance</p>
-          <p className="text-2xl font-bold text-gray-900">—</p>
+      {/* Empty state — no active plan */}
+      {showNoPlanEmpty && (
+        <div className="text-center py-16">
+          <p className="text-xl font-semibold text-gray-900 mb-2">No active training plan</p>
+          <p className="text-sm text-gray-600 mb-4">Create a new plan with your coach to get started.</p>
+          <button
+            onClick={() => { window.dispatchEvent(new Event('open-coach-panel')); navigate('/plan'); }}
+            className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            Start Planning
+          </button>
         </div>
-        {/* Total Runs */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600 mb-1">Total Runs</p>
-          <p className="text-2xl font-bold text-gray-900">—</p>
-        </div>
-        {/* Total Time */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-xs font-medium text-gray-600 mb-1">Total Time</p>
-          <p className="text-2xl font-bold text-gray-900">—</p>
-        </div>
-        {/* Adherence — clickable, navigates to /plan per D-11 */}
-        <div
-          role="button"
-          onClick={() => navigate('/plan')}
-          className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:shadow-sm transition-all"
-        >
-          <p className="text-xs font-medium text-gray-600 mb-1">Adherence</p>
-          <p className="text-2xl font-bold text-gray-900">—</p>
-        </div>
-      </div>
+      )}
 
-      {/* Charts section — populated by useDashboard + Recharts in plan 04-03 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Volume</h2>
-          <div className="h-72 flex items-center justify-center text-gray-400 text-sm">Chart coming soon</div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Pace Trend</h2>
-          <div className="h-72 flex items-center justify-center text-gray-400 text-sm">Chart coming soon</div>
-        </div>
-      </div>
+      {/* Stats cards — always shown when not showing no-plan empty state */}
+      {!showNoPlanEmpty && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-medium text-gray-600 mb-1">Total Distance</p>
+              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.totalDistance}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-medium text-gray-600 mb-1">Total Runs</p>
+              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.totalRuns}</p>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="text-xs font-medium text-gray-600 mb-1">Total Time</p>
+              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.totalTime}</p>
+            </div>
+            {/* Adherence — clickable per D-11 */}
+            <div
+              role="button"
+              onClick={() => navigate('/plan')}
+              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:shadow-sm transition-all"
+            >
+              <p className="text-xs font-medium text-gray-600 mb-1">Adherence</p>
+              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.adherence}</p>
+            </div>
+          </div>
+
+          {/* Loading spinner */}
+          {isLoading && (
+            <div className="flex justify-center py-12">
+              <svg className="h-8 w-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+              </svg>
+            </div>
+          )}
+
+          {/* Empty state — no runs in selected range */}
+          {showNoRunsEmpty && (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-xl font-semibold text-gray-900 mb-2">No runs yet</p>
+              <p className="text-sm text-gray-600">Log your first run from the Training Plan or Runs page.</p>
+            </div>
+          )}
+
+          {/* Charts — only when data exists */}
+          {weeklyData.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Weekly Volume bar chart */}
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Volume</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={weeklyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                    <XAxis dataKey="weekLabel" tick={{ fontSize: 12, fill: '#6b7280' }} />
+                    <YAxis
+                      label={{ value: 'Distance (km)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#6b7280' } }}
+                      tick={{ fontSize: 12, fill: '#6b7280' }}
+                    />
+                    <Tooltip formatter={(v) => [`${Number(v).toFixed(1)}km`, 'Distance']} />
+                    <Bar dataKey="distance" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Pace Trend line chart — only if pace data exists */}
+              {paceData.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Pace Trend</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={paceData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis dataKey="weekLabel" tick={{ fontSize: 12, fill: '#6b7280' }} />
+                      <YAxis
+                        label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#6b7280' } }}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        domain={['auto', 'auto']}
+                      />
+                      <Tooltip formatter={(v) => [`${Number(v).toFixed(2)} min/km`, 'Avg Pace']} />
+                      <Line
+                        type="monotone"
+                        dataKey="pace"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: '#3b82f6' }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
