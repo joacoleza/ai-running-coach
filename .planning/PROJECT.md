@@ -27,9 +27,11 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [x] Coach can adjust the training plan based on run history — Validated in Phase 3: Run Logging & Feedback
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
-- [ ] Dashboard shows plan calendar, run history/stats, and progress toward goal
-- [ ] Coach chat history is accessible as a dedicated section
-- [ ] User can import a training plan from raw LLM conversation text (Claude parses and structures it)
+- [x] Dashboard shows run history stats (distance, runs, time, adherence), weekly volume chart, pace trend chart, and date-filtered views — Validated in Phase 4: Dashboard
+- [x] Archived plan chat history is viewable in readonly mode on the Archive page — Validated in Phase 4: Dashboard
+- [ ] User can upload Apple Health export (ZIP/XML) after each run
+- [ ] Coach parses Apple Health data and provides feedback via chat
+- _Plan import from LLM conversation (IMP-01/02/03) — dropped, not needed_
 
 ### Out of Scope
 
