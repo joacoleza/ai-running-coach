@@ -125,6 +125,35 @@ describe('empty state - no active plan', () => {
   })
 })
 
+describe('empty state - has plan but no runs', () => {
+  beforeEach(() => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeFilter: 'last-4-weeks',
+      hasPlan: true,
+      isLoading: false,
+      weeklyData: [],
+      paceData: [],
+      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+    }))
+  })
+
+  it('renders "No runs yet" empty state text', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('No runs yet')).toBeInTheDocument()
+  })
+
+  it('does NOT render Weekly Volume chart section', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Weekly Volume')).not.toBeInTheDocument()
+  })
+
+  it('shows stat cards (not no-plan empty state)', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Total Distance')).toBeInTheDocument()
+    expect(screen.queryByText('No active training plan')).not.toBeInTheDocument()
+  })
+})
+
 describe('loading state', () => {
   beforeEach(() => {
     mockUseDashboard.mockReturnValue(makeDefaults({

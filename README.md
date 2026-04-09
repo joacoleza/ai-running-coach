@@ -34,7 +34,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
 - **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
-- **Dashboard** — Track progress toward your goal, browse run history, and review past coaching conversations
+- **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence), weekly volume bar chart, and pace trend line chart; archived plan pages show readonly coaching chat history
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
 
 ## Built with
@@ -153,4 +153,4 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
 - ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
 - ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)~~ ✓
-- **Phase 4** — Dashboard & Plan Import (progress tracking, LLM plan import)
+- ~~**Phase 4** — Dashboard (progress tracking: filter presets, stat cards, Weekly Volume + Pace Trend charts, readonly archived chat history)~~ ✓
