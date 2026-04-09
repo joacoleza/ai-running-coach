@@ -13,7 +13,7 @@ vi.mock('../hooks/useDashboard', () => ({
     weeklyData: [],
     paceData: [],
     isLoading: false,
-    hasPlan: false,
+    hasPlan: true,
   })),
 }))
 

@@ -1,0 +1,148 @@
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
+import React from 'react';
+import { Dashboard } from '../pages/Dashboard';
+import { useDashboard } from '../hooks/useDashboard';
+
+vi.mock('../hooks/useDashboard', () => ({
+  useDashboard: vi.fn(),
+}))
+
+const mockNavigate = vi.fn()
+vi.mock('react-router-dom', async (importActual) => {
+  const actual = await importActual<typeof import('react-router-dom')>()
+  return { ...actual, useNavigate: () => mockNavigate }
+})
+
+vi.mock('recharts', () => ({
+  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  Bar: () => null,
+  Line: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}))
+
+const mockUseDashboard = vi.mocked(useDashboard)
+
+function makeDefaults(overrides: Partial<ReturnType<typeof useDashboard>> = {}): ReturnType<typeof useDashboard> {
+  return {
+    activeFilter: 'current-plan',
+    setActiveFilter: vi.fn(),
+    stats: { totalDistance: '42.5km', totalRuns: 8, totalTime: '3h25m', adherence: '75%' },
+    weeklyData: [{ weekLabel: 'Apr 7', distance: 15 }],
+    paceData: [{ weekLabel: 'Apr 7', pace: 5.2 }],
+    isLoading: false,
+    hasPlan: true,
+    ...overrides,
+  }
+}
+
+beforeEach(() => {
+  mockNavigate.mockClear()
+  mockUseDashboard.mockReturnValue(makeDefaults())
+})
+
+describe('with active plan and data', () => {
+  it('renders h1 Dashboard', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByRole('heading', { name: /^dashboard$/i })).toBeInTheDocument()
+  })
+
+  it('renders Total Distance label and value', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Total Distance')).toBeInTheDocument()
+    expect(screen.getByText('42.5km')).toBeInTheDocument()
+  })
+
+  it('renders Total Runs label and value', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Total Runs')).toBeInTheDocument()
+    expect(screen.getByText('8')).toBeInTheDocument()
+  })
+
+  it('renders Total Time label and value', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Total Time')).toBeInTheDocument()
+    expect(screen.getByText('3h25m')).toBeInTheDocument()
+  })
+
+  it('renders Adherence label and value', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Adherence')).toBeInTheDocument()
+    expect(screen.getByText('75%')).toBeInTheDocument()
+  })
+
+  it('renders Weekly Volume chart section', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Weekly Volume')).toBeInTheDocument()
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
+  })
+
+  it('renders Pace Trend chart section', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Pace Trend')).toBeInTheDocument()
+    expect(screen.getByTestId('line-chart')).toBeInTheDocument()
+  })
+
+  it('navigates to /plan when Adherence card is clicked', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    const adherenceCard = screen.getByText('75%').closest('[role="button"]')!
+    fireEvent.click(adherenceCard)
+    expect(mockNavigate).toHaveBeenCalledWith('/plan')
+  })
+})
+
+describe('empty state - no active plan', () => {
+  beforeEach(() => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeFilter: 'current-plan',
+      hasPlan: false,
+      isLoading: false,
+      weeklyData: [],
+      paceData: [],
+      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+    }))
+  })
+
+  it('renders "No active training plan" empty state text', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('No active training plan')).toBeInTheDocument()
+  })
+
+  it('renders "Start Planning" button', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByRole('button', { name: /start planning/i })).toBeInTheDocument()
+  })
+
+  it('does NOT render Weekly Volume chart section', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Weekly Volume')).not.toBeInTheDocument()
+  })
+})
+
+describe('loading state', () => {
+  beforeEach(() => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      isLoading: true,
+      weeklyData: [],
+      paceData: [],
+    }))
+  })
+
+  it('renders loading spinner (svg with animate-spin)', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    const svg = document.querySelector('svg.animate-spin')
+    expect(svg).toBeInTheDocument()
+  })
+
+  it('shows "—" placeholders for stat values while loading', () => {
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    const dashes = screen.getAllByText('—')
+    expect(dashes.length).toBeGreaterThanOrEqual(4)
+  })
+})
