@@ -20,6 +20,12 @@ export interface PaceDataPoint {
   pace: number            // min/km decimal
 }
 
+export interface PaceBpmDataPoint {
+  weekLabel: string
+  pace: number | null
+  avgBPM: number | null
+}
+
 export type FilterPreset =
   | 'current-plan'
   | 'last-4-weeks'
@@ -105,6 +111,7 @@ interface WeekBucket {
   distance: number
   avgPace: number | null
   paceValues: number[]
+  hrValues: number[]
 }
 
 function groupRunsByWeek(runs: Run[]): WeekBucket[] {
@@ -117,13 +124,16 @@ function groupRunsByWeek(runs: Run[]): WeekBucket[] {
     const weekLabel = format(monday, 'MMM d')
 
     if (!buckets.has(key)) {
-      buckets.set(key, { weekLabel, distance: 0, avgPace: null, paceValues: [] })
+      buckets.set(key, { weekLabel, distance: 0, avgPace: null, paceValues: [], hrValues: [] })
     }
 
     const bucket = buckets.get(key)!
     bucket.distance = Math.round((bucket.distance + run.distance) * 10) / 10
     if (run.pace && run.pace > 0) {
       bucket.paceValues.push(run.pace)
+    }
+    if (run.avgHR && run.avgHR > 0) {
+      bucket.hrValues.push(run.avgHR)
     }
   }
 
@@ -247,6 +257,16 @@ export function useDashboard() {
     .filter(w => w.avgPace !== null)
     .map(w => ({ weekLabel: w.weekLabel, pace: w.avgPace as number }))
 
+  const paceBpmData: PaceBpmDataPoint[] = weekBuckets
+    .filter(w => w.avgPace !== null || w.hrValues.length > 0)
+    .map(w => ({
+      weekLabel: w.weekLabel,
+      pace: w.avgPace,
+      avgBPM: w.hrValues.length > 0
+        ? Math.round(w.hrValues.reduce((s, v) => s + v, 0) / w.hrValues.length * 10) / 10
+        : null,
+    }))
+
   const stats = computeStats(runs, plan, activeFilter, linkedRuns)
 
   return {
@@ -255,6 +275,7 @@ export function useDashboard() {
     stats,
     weeklyData,
     paceData,
+    paceBpmData,
     isLoading,
     hasPlan: plan !== null && plan.status === 'active',
   }

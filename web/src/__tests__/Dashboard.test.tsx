@@ -18,12 +18,14 @@ vi.mock('react-router-dom', async (importActual) => {
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
   LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  ComposedChart: ({ children }: { children: React.ReactNode }) => <div data-testid="composed-chart">{children}</div>,
   Bar: () => null,
   Line: () => null,
   XAxis: () => null,
   YAxis: () => null,
   CartesianGrid: () => null,
   Tooltip: () => null,
+  Legend: () => null,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
@@ -36,6 +38,7 @@ function makeDefaults(overrides: Partial<ReturnType<typeof useDashboard>> = {}):
     stats: { totalDistance: '42.5km', totalRuns: 8, totalTime: '3h25m', adherence: '75%' },
     weeklyData: [{ weekLabel: 'Apr 7', distance: 15 }],
     paceData: [{ weekLabel: 'Apr 7', pace: 5.2 }],
+    paceBpmData: [],
     isLoading: false,
     hasPlan: true,
     ...overrides,
@@ -172,6 +175,44 @@ describe('loading state', () => {
   it('shows "—" placeholders for stat values while loading', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(4)
+    expect(dashes.length).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe('adherence card guard', () => {
+  it('shows Adherence card when activeFilter is current-plan', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'current-plan' }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Adherence')).toBeInTheDocument()
+  })
+
+  it('hides Adherence card when activeFilter is last-4-weeks', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'last-4-weeks' }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Adherence')).not.toBeInTheDocument()
+  })
+
+  it('hides Adherence card when activeFilter is all-time', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'all-time' }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Adherence')).not.toBeInTheDocument()
+  })
+})
+
+describe('Pace vs Heart Rate ComposedChart', () => {
+  it('renders ComposedChart when paceBpmData has entries', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      paceBpmData: [{ weekLabel: 'Apr 7', pace: 5.2, avgBPM: 145 }],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Pace vs Heart Rate')).toBeInTheDocument()
+    expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
+  })
+
+  it('does NOT render ComposedChart when paceBpmData is empty', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({ paceBpmData: [] }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Pace vs Heart Rate')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
   })
 })
