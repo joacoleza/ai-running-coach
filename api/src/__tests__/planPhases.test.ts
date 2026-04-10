@@ -41,6 +41,19 @@ function makePatchReq(phaseIndex: string, body?: unknown): HttpRequest {
   return req;
 }
 
+function makePostReq(body?: unknown): HttpRequest {
+  const url = 'http://localhost/api/plan/phases';
+  const req = new HttpRequest({
+    method: 'POST',
+    url,
+    headers: { 'x-app-password': 'test-pw' },
+  });
+  if (body !== undefined) {
+    vi.spyOn(req, 'json').mockResolvedValue(body);
+  }
+  return req;
+}
+
 function makeDeleteReq(): HttpRequest {
   const url = 'http://localhost/api/plan/phases/last';
   const req = new HttpRequest({
@@ -179,6 +192,63 @@ describe('PATCH /api/plan/phases/:phaseIndex', () => {
     expect(result.jsonBody.error).toContain('Invalid JSON body');
   });
 
+});
+
+describe('POST /api/plan/phases', () => {
+  it('returns 404 when no active plan exists', async () => {
+    const req = makePostReq();
+    const result = await handlers.get('addPhase')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('No active plan found');
+  });
+
+  it('creates a new phase with auto-numbered name when body is empty', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makePostReq();
+    const result = await handlers.get('addPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    expect(result.jsonBody.plan.phases).toHaveLength(3);
+    expect(result.jsonBody.plan.phases[2].name).toBe('Phase 3');
+  });
+
+  it('creates a new phase with provided name and description', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makePostReq({ name: 'Race Prep', description: 'Final push' });
+    const result = await handlers.get('addPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    expect(result.jsonBody.plan.phases[2].name).toBe('Race Prep');
+    expect(result.jsonBody.plan.phases[2].description).toBe('Final push');
+  });
+
+  it('new phase has correct globally sequential weekNumber via assignPlanStructure', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makePostReq();
+    const result = await handlers.get('addPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    // validActivePlan has 2 phases each with 1 week (weekNumbers 1,2)
+    // new phase's first week should be weekNumber 3
+    expect(result.jsonBody.plan.phases[2].weeks[0].weekNumber).toBe(3);
+  });
+
+  it('new phase starts with one empty week and no days', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makePostReq();
+    const result = await handlers.get('addPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    const newPhase = result.jsonBody.plan.phases[2];
+    expect(newPhase.weeks).toHaveLength(1);
+    expect(newPhase.weeks[0].days).toHaveLength(0);
+  });
+
+  it('handles missing body gracefully (no JSON body)', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makePostReq();
+    vi.spyOn(req, 'json').mockRejectedValue(new SyntaxError('No body'));
+    const result = await handlers.get('addPhase')!(req, ctx);
+    // Should still succeed with auto-numbered name
+    expect(result.status).toBe(201);
+    expect(result.jsonBody.plan.phases[2].name).toBe('Phase 3');
+  });
 });
 
 describe('DELETE /api/plan/phases/last', () => {
