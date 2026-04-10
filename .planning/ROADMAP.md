@@ -376,6 +376,22 @@ Plans:
 - Panel shows historical coaching messages (readonly — no input field)
 - On /archive/:id: AppShell live coach chat column is not visible; AppShell blue FAB not visible
 
+## Phase 5 — Missing Features
+
+**Goal:** Add four coaching loop capabilities: manual + agent-driven plan extension, inline target date editing, agent-created run logging, and chat-triggered run insight saving.
+
+**Requirements:** FEAT-ADD-PHASE-API, FEAT-ADD-PHASE-UI, FEAT-TARGET-DATE-API, FEAT-TARGET-DATE-UI, FEAT-AGENT-COMMANDS, FEAT-AGENT-ADD-PHASE, FEAT-AGENT-TARGET-DATE, FEAT-AGENT-RUN-CREATE, FEAT-AGENT-RUN-INSIGHT, FEAT-TEST-COVERAGE
+
+**Depends on:** Phase 4
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — API extensions: POST /api/plan/phases, extend PATCH /api/plan for targetDate, system prompt updates (all 4 new XML commands), RunId in synthetic plan-state context
+- [ ] 05-02-PLAN.md — useChat tag handling: 4 new handlers in applyPlanOperations, strip in both locations
+- [ ] 05-03-PLAN.md — Frontend UI: + Add phase button in PlanView, inline target date editor in TrainingPlan header
+- [ ] 05-04-PLAN.md — Tests: API unit tests, useChat unit tests, E2E tests covering all 4 features
+
 ---
 
 ## Milestone Complete: v1

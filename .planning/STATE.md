@@ -168,6 +168,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - Import from Existing Plan and Import from ChatGPT URL removed from frontend during UAT — API endpoint preserved
 - Phase 3 (Run Logging) is the active next phase
 - Phase 3.3 inserted after Phase 3.2 (URGENT): UI Polish & Mobile Fixes — post-Phase-3 UX feedback covering scroll position, favicon, run/plan cross-linking, modal consistency, mobile Safari layout, and coaching feedback panel improvements
+- Phase 5 added: Missing features — add phase/week (manual + agent), update target date, create run from agent with plan link, request run feedback from agent chat
 
 ## Performance Metrics
 
