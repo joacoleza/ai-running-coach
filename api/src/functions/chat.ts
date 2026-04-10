@@ -155,6 +155,9 @@ app.http('chat', {
                   : run.insight;
                 line += ` | Insight: ${truncatedInsight}`;
               }
+              if ((run as any)._id) {
+                line += ` | RunId: ${(run as any)._id.toString()}`;
+              }
             }
           }
 
