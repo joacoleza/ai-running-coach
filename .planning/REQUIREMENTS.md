@@ -50,16 +50,16 @@
 
 ### Dashboard
 
-- [ ] **DASH-01**: Dashboard shows the current week's training schedule with session status (planned/complete/missed)
-- [ ] **DASH-02**: Run history list with key stats per run (date, distance, pace, HR)
-- [ ] **DASH-03**: Progress indicator toward the goal event (weeks elapsed, total volume, adherence %)
-- [ ] **DASH-04**: Coach chat history is accessible as a dedicated section (separate from active coaching)
+- [x] **DASH-01**: Dashboard shows the current week's training schedule with session status (planned/complete/missed)
+- [x] **DASH-02**: Run history list with key stats per run (date, distance, pace, HR)
+- [x] **DASH-03**: Progress indicator toward the goal event (weeks elapsed, total volume, adherence %)
+- [x] **DASH-04**: Coach chat history is accessible as a dedicated section (separate from active coaching)
 
 ### Plan Import
 
-- [ ] **IMP-01**: User can paste raw LLM conversation text containing a training plan
-- [ ] **IMP-02**: Claude extracts and normalizes the plan into the standard session schema
-- [ ] **IMP-03**: User sees a preview of the parsed plan before it is saved (to catch unit errors or ambiguities)
+- [x] **IMP-01**: User can paste raw LLM conversation text containing a training plan
+- [x] **IMP-02**: Claude extracts and normalizes the plan into the standard session schema
+- [x] **IMP-03**: User sees a preview of the parsed plan before it is saved (to catch unit errors or ambiguities)
 
 ## v2 Requirements
 
@@ -121,13 +121,13 @@
 | COACH-04 | Phase 3 | Complete |
 | COACH-05 | Phase 2 | Complete |
 | COACH-06 | Phase 2 | Complete |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
-| DASH-03 | Phase 4 | Pending |
-| DASH-04 | Phase 4 | Pending |
-| IMP-01 | Phase 4 | Pending |
-| IMP-02 | Phase 4 | Pending |
-| IMP-03 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete |
+| DASH-02 | Phase 4 | Complete |
+| DASH-03 | Phase 4 | Complete |
+| DASH-04 | Phase 4 | Complete |
+| IMP-01 | Phase 4 | Complete |
+| IMP-02 | Phase 4 | Complete |
+| IMP-03 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total (RUN-03 and RUN-05 removed — ZIP upload approach dropped in Phase 3 rethink 2026-03-29)

@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import type { PlanData } from '../hooks/usePlan';
 import { planToMarkdown } from '../utils/planToMarkdown';
+import { CoachPanel } from '../components/coach/CoachPanel';
 
 function authHeaders(): Record<string, string> {
   return {
@@ -35,14 +36,37 @@ export function ArchivePlan() {
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
+    async function fetchChatHistory(planId: string) {
+      setChatLoading(true);
+      try {
+        const res = await fetch(`/api/messages?planId=${planId}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return;
+        const data = await res.json() as { messages: Array<{ role: 'user' | 'assistant'; content: string }> };
+        setChatMessages(data.messages.map(m => ({ role: m.role, content: m.content })));
+      } catch {
+        // non-fatal — panel just shows empty
+      } finally {
+        setChatLoading(false);
+      }
+    }
+
     async function fetchPlan() {
       try {
         const res = await fetch(`/api/plans/archived/${id}`, { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch plan');
         const data = await res.json();
-        setPlan((data as { plan?: PlanData }).plan ?? null);
+        const fetchedPlan = (data as { plan?: PlanData }).plan ?? null;
+        setPlan(fetchedPlan);
+        if (fetchedPlan?._id) {
+          void fetchChatHistory(fetchedPlan._id);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load plan');
       } finally {
@@ -69,11 +93,36 @@ export function ArchivePlan() {
   const markdown = planToMarkdown(plan);
 
   return (
-    <div className="p-6 w-full">
-      <Link to="/archive" className="text-blue-600 hover:underline text-sm mb-4 inline-block">&larr; Back to Archive</Link>
-      <div className="w-full">
-        <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+    <div className="flex flex-1 overflow-hidden h-full">
+      {/* Plan content — scrollable */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <Link to="/archive" className="text-blue-600 hover:underline text-sm mb-4 inline-block">&larr; Back to Archive</Link>
+        <div className="w-full">
+          <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+        </div>
       </div>
+
+      {/* Readonly CoachPanel — right column on desktop, overlay on mobile */}
+      <CoachPanel
+        isOpen={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        readonly={true}
+        initialMessages={chatLoading ? [] : chatMessages}
+      />
+
+      {/* Mobile FAB — gray-500, history/clock icon, opens readonly panel */}
+      {!panelOpen && (
+        <button
+          onClick={() => setPanelOpen(true)}
+          aria-label="View plan history"
+          className="cursor-pointer fixed bottom-6 right-4 z-40 bg-gray-500 text-white shadow-lg w-14 h-14 rounded-full flex items-center justify-center hover:bg-gray-600 transition-transform active:scale-95 md:hidden"
+        >
+          {/* Clock icon — inline SVG */}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

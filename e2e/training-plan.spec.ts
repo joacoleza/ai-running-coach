@@ -106,8 +106,8 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: 
   await page.goto('/')
   await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
   await page.reload()
-  // Home redirects to /plan — wait for Training Plan heading
-  await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+  // Home redirects to /dashboard — wait for Dashboard heading
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 }
 
 test.describe('Training Plan view (Phase 2.1)', () => {
@@ -627,7 +627,7 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
     await page.evaluate(() => localStorage.clear())
   })
 
-  test('sidebar shows nav items in order: Training Plan, Runs, Archive, Dashboard', async ({ page }) => {
+  test('sidebar shows nav items in order: Dashboard, Training Plan, Runs, Archive', async ({ page }) => {
     await loginWithPlan(page)
 
     const sidebar = page.getByTestId('sidebar')
@@ -641,7 +641,7 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
     }
     // Each nav item includes icon + label text (e.g. "📅Training Plan")
     // Verify the four items appear in the correct order
-    const knownOrder = ['Training Plan', 'Runs', 'Archive', 'Dashboard']
+    const knownOrder = ['Dashboard', 'Training Plan', 'Runs', 'Archive']
     const indices = knownOrder.map(label => navTexts.findIndex(t => t.includes(label)))
     expect(indices.every(i => i !== -1)).toBe(true)
     // Indices must be strictly increasing (correct order)
@@ -650,11 +650,11 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
     }
   })
 
-  test('/ redirects to /plan', async ({ page }) => {
+  test('/ redirects to /dashboard', async ({ page }) => {
     await loginWithPlan(page)
     await page.goto('/')
-    // Should redirect to /plan
-    await expect(page).toHaveURL(/\/plan/, { timeout: 5_000 })
+    // Should redirect to /dashboard
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 5_000 })
   })
 
   test('Dashboard is accessible at /dashboard', async ({ page }) => {
@@ -926,7 +926,9 @@ test.describe('Archive section (Phase 2.1)', () => {
     await page.goto('/')
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+    await page.goto('/plan')
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 10_000 })
 
     // Click "Get plan feedback" button
     const feedbackButton = page.getByRole('button', { name: /Get plan feedback/i })

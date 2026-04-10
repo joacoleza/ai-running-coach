@@ -27,9 +27,11 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [x] Coach can adjust the training plan based on run history — Validated in Phase 3: Run Logging & Feedback
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
-- [ ] Dashboard shows plan calendar, run history/stats, and progress toward goal
-- [ ] Coach chat history is accessible as a dedicated section
-- [ ] User can import a training plan from raw LLM conversation text (Claude parses and structures it)
+- [x] Dashboard shows run history stats (distance, runs, time, adherence), weekly volume chart, pace trend chart, and date-filtered views — Validated in Phase 4: Dashboard
+- [x] Archived plan chat history is viewable in readonly mode on the Archive page — Validated in Phase 4: Dashboard
+- [ ] User can upload Apple Health export (ZIP/XML) after each run
+- [ ] Coach parses Apple Health data and provides feedback via chat
+- _Plan import from LLM conversation (IMP-01/02/03) — dropped, not needed_
 
 ### Out of Scope
 
@@ -87,7 +89,7 @@ Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
 
 ## Current State
 
-Phase 3.3 complete (last phase in milestone) — UI Polish & Mobile Fixes: scroll to last completed day on plan open, RunDetailModal cross-navigation badge, CoachPanel scroll-to-bottom on open, unlink run feature (API + UI + agent XML tag), rows=4 notes in both modals, mobile Safari layout fixes (responsive filter grids, overflow-y-auto modals, 16px font-size), running shoe favicon, theme-color meta for Safari address bar, removed Update Plan button (compact inline Archive), Coach Feedback panel redesigned with header button (Get plan feedback / Refresh feedback), conditional expand only when feedback exists, paragraph spacing, and Log run button on completed days without linked run. 307 web tests, 172 API tests all passing.
+Phase 4 complete — Dashboard & Plan Import: real dashboard home page with date-filtered training stats (Total Distance, Total Runs, Total Time, Adherence), Weekly Volume bar chart, Pace Trend line chart, and Pace vs Heart Rate ComposedChart (dual Y-axes). Adherence card shown only on Current Plan filter. AppShell route-aware: CoachPanel and FAB suppressed on /archive/:id routes so the ArchivePlan readonly panel and gray FAB are visible. 411 web tests, 181 API tests, 59 E2E tests all passing.
 
 ---
-*Last updated: 2026-04-06 after Phase 3.3: UI Polish & Mobile Fixes*
+*Last updated: 2026-04-10 after Phase 4: Dashboard*

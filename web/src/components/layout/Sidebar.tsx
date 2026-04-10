@@ -1,10 +1,10 @@
 import { NavLink } from "react-router-dom";
 
 const navItems = [
+  { path: "/dashboard", label: "Dashboard", icon: "📊" },
   { path: "/plan", label: "Training Plan", icon: "📅" },
   { path: "/runs", label: "Runs", icon: "🏃" },
   { path: "/archive", label: "Archive", icon: "🗄️" },
-  { path: "/dashboard", label: "Dashboard", icon: "📊" },
 ];
 
 export function Sidebar() {

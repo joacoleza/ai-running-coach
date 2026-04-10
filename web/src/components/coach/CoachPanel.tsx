@@ -5,11 +5,27 @@ import { ChatMessage } from './ChatMessage';
 interface CoachPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  readonly?: boolean;
+  initialMessages?: { role: 'user' | 'assistant'; content: string }[];
 }
 
-export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
-  const { messages, plan, isStreaming, isGeneratingPlan, isLoading, isBusy, error, sendMessage, startPlan, startOver, clearError } =
+// Strip XML tags from message content (same stripping pattern as useChat on mount)
+function stripXmlTags(content: string): string {
+  // Strip <training_plan>...</training_plan> blocks
+  let result = content.replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '').trim();
+  // Strip self-closing XML tags like <app:navigate .../>, <plan:update .../>
+  result = result.replace(/<[^>]+\/>/g, '').trim();
+  return result;
+}
+
+export function CoachPanel({ isOpen, onClose, readonly, initialMessages }: CoachPanelProps) {
+  const { messages: contextMessages, plan, isStreaming, isGeneratingPlan, isLoading, isBusy, error, sendMessage, startPlan, startOver, clearError } =
     useChatContext();
+
+  // In readonly mode, use provided initialMessages (XML-stripped); otherwise use context messages
+  const messages = readonly
+    ? (initialMessages ?? []).map(m => ({ ...m, content: stripXmlTags(m.content), timestamp: '' }))
+    : contextMessages;
   const [input, setInput] = useState('');
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -69,7 +85,7 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     : 'hidden md:flex md:flex-col md:w-80 lg:w-96 md:border-l md:border-gray-200 md:bg-white md:h-screen md:sticky md:top-0';
 
   // Determine header title
-  const headerTitle = !plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat';
+  const headerTitle = readonly ? 'Plan History' : (!plan ? 'AI Coach' : plan.status === 'onboarding' ? 'Onboarding' : 'Coach Chat');
 
   return (
     <>
@@ -84,9 +100,9 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
     <aside className={asideClass} data-testid="coach-panel">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">{headerTitle}</h2>
+        <h2 className={`text-lg font-semibold ${readonly ? 'text-gray-500' : 'text-gray-900'}`}>{headerTitle}</h2>
         <div className="flex items-center gap-2">
-          {plan?.status === 'onboarding' && (
+          {!readonly && plan?.status === 'onboarding' && (
             <button
               onClick={startOver}
               disabled={isActive}
@@ -109,8 +125,8 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
         </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
+      {/* Error banner — hidden in readonly mode */}
+      {!readonly && error && (
         <div className="px-4 py-2 bg-red-50 border-b border-red-200 text-sm text-red-700 flex justify-between items-center">
           <span>{error}</span>
           <button onClick={clearError} className="cursor-pointer text-red-500 hover:text-red-700 text-xs ml-2">
@@ -121,7 +137,14 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
 
       {/* Messages area */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto overscroll-contain p-4">
-        {isLoading ? (
+        {readonly ? (
+          /* Readonly mode — render provided messages, no loading/plan-check logic */
+          <>
+            {messages.map((msg, i) => (
+              <ChatMessage key={i} role={msg.role} content={msg.content} />
+            ))}
+          </>
+        ) : isLoading ? (
           <p className="text-center text-gray-400 text-sm mt-8">Loading...</p>
         ) : !plan ? (
           /* No plan -- show start options */
@@ -171,8 +194,8 @@ export function CoachPanel({ isOpen, onClose }: CoachPanelProps) {
         )}
       </div>
 
-      {/* Input area -- only show when plan exists */}
-      {plan && (
+      {/* Input area -- only show when plan exists and not readonly */}
+      {!readonly && plan && (
         <div className="border-t border-gray-200 p-3">
           <div className="flex gap-2 items-end">
             <textarea

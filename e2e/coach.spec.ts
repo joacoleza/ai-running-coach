@@ -81,7 +81,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
     // Wait for the main app shell to load
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
   }
 
   test('shows welcome screen with Start New Plan button when no plan exists', async ({ page }) => {
@@ -171,8 +171,8 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
     // Close via the X button inside the panel
     await page.getByRole('button', { name: 'Close coach' }).click()
 
-    // Main content (Training Plan) should be visible again
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 10_000 })
+    // Main content (Dashboard) should be visible again
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
   })
 
   test('planGenerated=true: re-fetches plan via GET /api/plan, never calls /api/plan/generate', async ({ page }) => {
@@ -243,7 +243,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
 
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 
     await page.getByRole('button', { name: 'Start New Plan' }).click()
     await expect(page.getByText('Here is your training plan!')).toBeVisible({ timeout: 15_000 })

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { CoachPanel } from '../coach/CoachPanel'
 import { useChatContext } from '../../contexts/ChatContext'
@@ -11,6 +12,8 @@ export function AppShell({ children }: AppShellProps) {
   const [coachOpen, setCoachOpen] = useState(false)
   const { plan } = useChatContext()
   const prevPlanStatusRef = useRef<string | undefined>(undefined)
+  const { pathname } = useLocation()
+  const isArchivePlanRoute = /^\/archive\/.+/.test(pathname)
 
   useEffect(() => {
     const handler = () => setCoachOpen(true);
@@ -49,10 +52,12 @@ export function AppShell({ children }: AppShellProps) {
       <main className="flex-1 overflow-y-auto">
         {children}
       </main>
-      <CoachPanel isOpen={coachOpen} onClose={() => setCoachOpen(false)} />
+      {!isArchivePlanRoute && (
+        <CoachPanel isOpen={coachOpen} onClose={() => setCoachOpen(false)} />
+      )}
 
       {/* Mobile FAB — opens coach panel; hidden on desktop */}
-      {showFab && (
+      {showFab && !isArchivePlanRoute && (
         <button
           onClick={() => setCoachOpen(true)}
           aria-label={fabLabel ?? 'Open coach'}

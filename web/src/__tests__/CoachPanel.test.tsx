@@ -131,6 +131,60 @@ describe('CoachPanel — cursor-pointer on interactive elements', () => {
   });
 });
 
+describe('CoachPanel — readonly mode', () => {
+  const initialMessages = [
+    { role: 'assistant' as const, content: 'Hello, let me help you with your training plan.' },
+    { role: 'user' as const, content: 'How did I do last week?' },
+  ];
+
+  beforeEach(() => {
+    // readonly mode uses initialMessages instead of context — context still returns defaults
+    mockUseChatContext.mockReturnValue(makeChatContext());
+  });
+
+  it('renders Plan History title', () => {
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    expect(screen.getByText('Plan History')).toBeInTheDocument();
+  });
+
+  it('does not render textarea input', () => {
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('does not render Send button', () => {
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    expect(screen.queryByRole('button', { name: /^send$/i })).not.toBeInTheDocument();
+  });
+
+  it('renders provided messages', () => {
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    expect(screen.getByText('Hello, let me help you with your training plan.')).toBeInTheDocument();
+    expect(screen.getByText('How did I do last week?')).toBeInTheDocument();
+  });
+
+  it('header title has text-gray-500 class in readonly mode', () => {
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    const heading = screen.getByText('Plan History');
+    expect(heading.className).toContain('text-gray-500');
+  });
+
+  it('does not show Start Over button in readonly mode', () => {
+    // Even with onboarding plan context, Start Over should be hidden
+    const onboardingPlan: PlanData = {
+      _id: 'p1',
+      status: 'onboarding',
+      onboardingMode: 'conversational',
+      onboardingStep: 2,
+      goal: { eventType: '10K', targetDate: '2026-06-01', weeklyMileage: 30, availableDays: 4, units: 'km' },
+      phases: [],
+    };
+    mockUseChatContext.mockReturnValue(makeChatContext({ plan: onboardingPlan }));
+    render(<CoachPanel isOpen={true} onClose={onClose} readonly={true} initialMessages={initialMessages} />);
+    expect(screen.queryByText('Start Over')).not.toBeInTheDocument();
+  });
+});
+
 describe('CoachPanel — active plan (no start button)', () => {
   beforeEach(() => { mockSendMessage.mockClear(); });
 
