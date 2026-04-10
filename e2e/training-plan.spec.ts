@@ -926,7 +926,9 @@ test.describe('Archive section (Phase 2.1)', () => {
     await page.goto('/')
     await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
     await page.reload()
-    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 15_000 })
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+    await page.goto('/plan')
+    await expect(page.getByRole('heading', { name: 'Training Plan' })).toBeVisible({ timeout: 10_000 })
 
     // Click "Get plan feedback" button
     const feedbackButton = page.getByRole('button', { name: /Get plan feedback/i })

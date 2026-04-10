@@ -143,7 +143,7 @@ function groupRunsByWeek(runs: Run[]): WeekBucket[] {
 
 function countNonRestDays(plan: PlanData): number {
   let count = 0
-  for (const phase of plan.phases) {
+  for (const phase of (plan.phases ?? [])) {
     for (const week of phase.weeks) {
       for (const day of week.days) {
         if (day.type !== 'rest' && day.label !== '') {
@@ -157,7 +157,7 @@ function countNonRestDays(plan: PlanData): number {
 
 function countCompletedNonRestDays(plan: PlanData): number {
   let count = 0
-  for (const phase of plan.phases) {
+  for (const phase of (plan.phases ?? [])) {
     for (const week of phase.weeks) {
       for (const day of week.days) {
         if (day.type !== 'rest' && day.label !== '' && day.completed) {

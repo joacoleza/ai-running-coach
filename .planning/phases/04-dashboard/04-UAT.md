@@ -58,11 +58,17 @@ result: issue
 reported: "The regular blue coach chat FAB is showing instead of the gray 'View plan history' button. The 'View plan history' FAB is not visible at all. The AppShell coach FAB is overriding/covering the archive-specific one."
 severity: major
 
+### 10. E2E test suite passes
+expected: Running `npx playwright test` produces 0 failures. All specs (auth, coach, runs, training-plan, dashboard) pass.
+result: issue
+reported: "E2E tests are failing."
+severity: major
+
 ## Summary
 
-total: 9
+total: 10
 passed: 5
-issues: 4
+issues: 5
 pending: 0
 skipped: 0
 blocked: 0
@@ -132,4 +138,18 @@ blocked: 0
     - "Add PaceBpmDataPoint type { weekLabel, pace: number|null, avgBPM: number|null }"
     - "Derive and export paceBpmData from hook"
     - "Add ComposedChart to Dashboard.tsx with dual Y-axes (pace left, BPM right)"
+  debug_session: ""
+
+- truth: "Full Playwright E2E suite passes with 0 failures after Phase 4 changes"
+  status: failed
+  reason: "User reported: E2E tests are failing."
+  severity: major
+  test: 10
+  root_cause: "Phase 04-01 changed the home route from /plan to /dashboard. The loginWithMocks helper in e2e/helpers (used by auth.spec.ts, coach.spec.ts, runs.spec.ts, training-plan.spec.ts) asserts toHaveURL(/\\/plan/) after goto('/') — this assertion now fails because / redirects to /dashboard. 48 pre-existing failures documented in 04-05-SUMMARY.md as deferred."
+  artifacts:
+    - path: "e2e/"
+      issue: "loginWithMocks helper or individual specs assert /plan as post-login URL; must be updated to /dashboard"
+  missing:
+    - "Update loginWithMocks (or equivalent) post-navigation assertion from /plan to /dashboard"
+    - "Audit auth.spec.ts, coach.spec.ts, runs.spec.ts, training-plan.spec.ts for any other hardcoded /plan home-route assumptions"
   debug_session: ""
