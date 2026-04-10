@@ -262,3 +262,78 @@ describe('Plan CRUD', () => {
     expect(result.status).toBe(401);
   });
 });
+
+describe('PATCH /api/plan - patchPlan', () => {
+  async function seedActivePlan() {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: validGoal,
+      phases: validPhases,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  it('returns 400 when body has no updatable fields', async () => {
+    await seedActivePlan();
+    const req = makeReq('PATCH', {});
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('No updatable fields provided');
+  });
+
+  it('saves progressFeedback and returns 200 (no regression)', async () => {
+    await seedActivePlan();
+    const req = makeReq('PATCH', { progressFeedback: 'Great week!' });
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(200);
+  });
+
+  it('saves targetDate when non-empty and returns 200', async () => {
+    await seedActivePlan();
+    const req = makeReq('PATCH', { targetDate: '2026-11-01' });
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    // verify in DB
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    expect(plan?.targetDate).toBe('2026-11-01');
+  });
+
+  it('unsets targetDate when empty string and returns 200', async () => {
+    // Insert plan with existing targetDate
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: validGoal,
+      phases: validPhases,
+      targetDate: '2026-06-01',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    const req = makeReq('PATCH', { targetDate: '' });
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    // targetDate should be absent (unset), not empty string
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    expect(plan?.targetDate).toBeUndefined();
+  });
+
+  it('saves both targetDate and progressFeedback together', async () => {
+    await seedActivePlan();
+    const req = makeReq('PATCH', { targetDate: '2026-11-01', progressFeedback: 'On track!' });
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    expect(plan?.targetDate).toBe('2026-11-01');
+    expect(plan?.progressFeedback).toBe('On track!');
+  });
+
+  it('returns 404 when no active plan exists', async () => {
+    const req = makeReq('PATCH', { targetDate: '2026-11-01' });
+    const result = await handlers.get('patchPlan')!(req, ctx);
+    expect(result.status).toBe(404);
+  });
+});

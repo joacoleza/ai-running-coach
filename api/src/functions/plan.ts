@@ -117,22 +117,36 @@ app.http('patchPlan', {
     const denied = await requirePassword(req);
     if (denied) return denied;
 
-    let body: { progressFeedback?: string };
+    let body: { progressFeedback?: string; targetDate?: string };
     try {
       body = (await req.json()) as typeof body;
     } catch {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } };
     }
 
-    if (body.progressFeedback === undefined) {
+    if (body.progressFeedback === undefined && body.targetDate === undefined) {
       return { status: 400, jsonBody: { error: 'No updatable fields provided' } };
     }
 
     try {
       const db = await getDb();
+
+      const $set: Record<string, unknown> = { updatedAt: new Date() };
+      const $unset: Record<string, unknown> = {};
+      if (body.progressFeedback !== undefined) $set['progressFeedback'] = body.progressFeedback;
+      if (body.targetDate !== undefined) {
+        if (body.targetDate === '') {
+          $unset['targetDate'] = '';
+        } else {
+          $set['targetDate'] = body.targetDate;
+        }
+      }
+      const updateDoc: Record<string, unknown> = { $set };
+      if (Object.keys($unset).length > 0) updateDoc['$unset'] = $unset;
+
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] } },
-        { $set: { progressFeedback: body.progressFeedback, updatedAt: new Date() } },
+        updateDoc,
         { returnDocument: 'after' },
       );
       if (!result) return { status: 404, jsonBody: { error: 'No active plan found' } };
