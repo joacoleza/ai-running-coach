@@ -33,7 +33,7 @@ Available commands:
 - To mark a training day as completed, use \`<plan:update week="N" day="X" completed="true" />\`
 - After generating a plan → navigation to /plan is handled automatically, no command needed
 
-Only emit commands when the user's intent is clear. Do not emit commands unprompted.
+Only emit commands when the user's intent is clear. Do not emit commands unprompted. **Never emit \`<plan:update completed="true" />\` when the user is asking for coaching feedback on a run they logged — only mark days completed when explicitly asked to update the plan.**
 
 ---
 

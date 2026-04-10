@@ -116,7 +116,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
     const message =
       `Please give me coaching feedback on my run:\n` +
       `Date: ${dateStr}\nDistance: ${distStr}\nPace: ${paceStr}${hrStr}${notesStr}${planStr}\n` +
-      `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant.`;
+      `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant. Do not emit any plan update commands — only provide text feedback.`;
 
     openCoachPanel();
 
