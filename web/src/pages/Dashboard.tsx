@@ -2,8 +2,10 @@ import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar,
   LineChart, Line,
+  ComposedChart,
   XAxis, YAxis,
   CartesianGrid, Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { useDashboard, type FilterPreset } from '../hooks/useDashboard'
@@ -26,6 +28,7 @@ export function Dashboard() {
     stats,
     weeklyData,
     paceData,
+    paceBpmData,
     isLoading,
     hasPlan,
   } = useDashboard()
@@ -88,15 +91,17 @@ export function Dashboard() {
               <p className="text-xs font-medium text-gray-600 mb-1">Total Time</p>
               <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.totalTime}</p>
             </div>
-            {/* Adherence — clickable per D-11 */}
-            <div
-              role="button"
-              onClick={() => navigate('/plan')}
-              className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:shadow-sm transition-all"
-            >
-              <p className="text-xs font-medium text-gray-600 mb-1">Adherence</p>
-              <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.adherence}</p>
-            </div>
+            {/* Adherence — only shown for current-plan filter per UAT test 3 */}
+            {activeFilter === 'current-plan' && (
+              <div
+                role="button"
+                onClick={() => navigate('/plan')}
+                className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:shadow-sm transition-all"
+              >
+                <p className="text-xs font-medium text-gray-600 mb-1">Adherence</p>
+                <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.adherence}</p>
+              </div>
+            )}
           </div>
 
           {/* Loading spinner */}
@@ -160,6 +165,61 @@ export function Dashboard() {
                         activeDot={{ r: 6 }}
                       />
                     </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Pace vs Heart Rate composed chart — only if BPM data exists */}
+              {paceBpmData.length > 0 && (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 md:col-span-2">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Pace vs Heart Rate</h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={paceBpmData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                      <XAxis dataKey="weekLabel" tick={{ fontSize: 12, fill: '#6b7280' }} />
+                      <YAxis
+                        yAxisId="pace"
+                        orientation="left"
+                        label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#6b7280' } }}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        domain={['auto', 'auto']}
+                      />
+                      <YAxis
+                        yAxisId="bpm"
+                        orientation="right"
+                        label={{ value: 'BPM', angle: 90, position: 'insideRight', style: { fontSize: 12, fill: '#6b7280' } }}
+                        tick={{ fontSize: 12, fill: '#6b7280' }}
+                        domain={['auto', 'auto']}
+                      />
+                      <Tooltip
+                        formatter={(v, name) =>
+                          name === 'pace'
+                            ? [`${Number(v).toFixed(2)} min/km`, 'Avg Pace']
+                            : [`${Number(v).toFixed(0)} bpm`, 'Avg HR']
+                        }
+                      />
+                      <Legend />
+                      <Line
+                        yAxisId="pace"
+                        type="monotone"
+                        dataKey="pace"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: '#3b82f6' }}
+                        activeDot={{ r: 6 }}
+                        connectNulls
+                      />
+                      <Line
+                        yAxisId="bpm"
+                        type="monotone"
+                        dataKey="avgBPM"
+                        stroke="#ef4444"
+                        strokeWidth={2}
+                        dot={{ r: 4, fill: '#ef4444' }}
+                        activeDot={{ r: 6 }}
+                        connectNulls
+                      />
+                    </ComposedChart>
                   </ResponsiveContainer>
                 </div>
               )}
