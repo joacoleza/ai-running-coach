@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 04-dashboard
 source: [04-01-SUMMARY.md, 04-02-SUMMARY.md, 04-03-SUMMARY.md, 04-04-SUMMARY.md, 04-05-SUMMARY.md]
 started: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:00:00Z
+updated: 2026-04-10T00:00:00Z
 ---
 
 ## Current Test
@@ -76,7 +76,7 @@ blocked: 0
 ## Gaps
 
 - truth: "Adherence stat card is visible on Dashboard only when activeFilter === 'current-plan' (where it is meaningful and navigates to /plan on click). It is hidden for all other filter presets."
-  status: failed
+  status: resolved
   reason: "User reported: Adherence shows a meaningless value on date-based filters. Clarified: keep the card on Dashboard for Current Plan filter only (with click-to-plan nav). Hide it when any other filter is active."
   severity: major
   test: 3
@@ -92,7 +92,7 @@ blocked: 0
   debug_session: ".planning/debug/adherence-placement-wrong.md"
 
 - truth: "Archived plan page shows only the readonly Plan History panel — the live coach chat (AppShell CoachPanel) must be hidden when on the ArchivePlan route"
-  status: failed
+  status: resolved
   reason: "User reported: The Plan History panel shows correctly, but the active Coach chat is also visible. On the archived plan page only the readonly Plan History panel should be shown — not the live coach chat."
   severity: major
   test: 8
@@ -108,7 +108,7 @@ blocked: 0
   debug_session: ".planning/debug/appshell-coachpanel-archive-overlap.md"
 
 - truth: "On mobile, the archived plan page shows a gray 'View plan history' FAB (not the regular blue coach FAB). Tapping it opens the readonly Plan History overlay. The AppShell coach FAB must be suppressed on the /archive/:id route."
-  status: failed
+  status: resolved
   reason: "User reported: The regular blue coach chat FAB is showing instead of the gray 'View plan history' button. The 'View plan history' FAB is not visible at all. The AppShell coach FAB is overriding/covering the archive-specific one."
   severity: major
   test: 9
@@ -123,7 +123,7 @@ blocked: 0
   debug_session: ".planning/debug/appshell-coachpanel-archive-overlap.md"
 
 - truth: "Dashboard has a combined Pace + BPM chart showing both metrics together per run/week, so the relationship between effort (BPM) and speed (pace) is visible"
-  status: failed
+  status: resolved
   reason: "User reported: pace alone is misleading — low BPM naturally produces lower pace (easy runs). Want a chart combining pace and BPM so they can be read together. Keep the existing Pace Trend chart, add the new combined one."
   severity: minor
   test: 5
@@ -141,7 +141,7 @@ blocked: 0
   debug_session: ""
 
 - truth: "Full Playwright E2E suite passes with 0 failures after Phase 4 changes"
-  status: failed
+  status: resolved
   reason: "User reported: E2E tests are failing."
   severity: major
   test: 10
