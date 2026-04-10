@@ -1,9 +1,9 @@
 ---
-status: resolved
+status: complete
 phase: 04-dashboard
-source: [04-01-SUMMARY.md, 04-02-SUMMARY.md, 04-03-SUMMARY.md, 04-04-SUMMARY.md, 04-05-SUMMARY.md]
-started: 2026-04-09T00:00:00Z
-updated: 2026-04-10T00:00:00Z
+source: [04-06-SUMMARY.md, 04-07-SUMMARY.md]
+started: 2026-04-10T00:00:00Z
+updated: 2026-04-10T12:00:00Z
 ---
 
 ## Current Test
@@ -13,143 +13,33 @@ updated: 2026-04-10T00:00:00Z
 
 ## Tests
 
-### 1. Dashboard is the app home
-expected: Open the app (or navigate to /) in the browser. The URL should automatically redirect to /dashboard and the Dashboard page should be visible — not the Training Plan. The sidebar should show Dashboard as the first nav item (before Training Plan, Runs, Archive).
+### 1. Adherence card hidden on date-based filters
+expected: On the Dashboard, switch to any filter other than "Current Plan" (e.g. "Last 4 weeks", "Last 8 weeks", "This year", "All time"). Only 3 stat cards should be visible: Total Distance, Total Runs, Total Time. The Adherence card should NOT appear for any date-based filter.
 result: pass
 
-### 2. Filter presets row
-expected: The Dashboard shows a row of 7 filter pills at the top: "Current Plan", "Last 4 weeks", "Last 8 weeks", "Last 3 months", "Last 12 months", "This year", "All time". The active filter has a gray-200 background highlight. Clicking a different preset switches the highlight to the new selection.
+### 2. Adherence card visible on Current Plan filter
+expected: On the Dashboard, select the "Current Plan" filter. The Adherence card should appear as a 4th stat card. Clicking it navigates to /plan (Training Plan page). The card shows a percentage value.
 result: pass
 
-### 3. Stat cards show live data
-expected: With at least one run logged, the 4 stat cards (Total Distance, Total Runs, Total Time, Adherence) all show real values — not dashes. Total Distance shows a number with "km", Total Runs shows a count, Total Time shows "Xh Ym" or "Ym", Adherence shows a percentage.
-result: issue
-reported: "Adherence shows a meaningless value on date-based filters. Revised: show Adherence card only when Current Plan filter is active (where it is meaningful). Hide it for all other filters."
-severity: major
-
-### 4. Adherence card navigates to Training Plan
-expected: Click the Adherence stat card. The app navigates to /plan (Training Plan page). The card should visually indicate it's clickable (cursor changes to pointer on hover).
-result: pass
-note: Card navigation works. Per test 3 issue, card will be conditional — visible only on Current Plan filter.
-
-### 5. Charts render with data
-expected: With runs in the selected filter period, the Dashboard shows two charts below the stat cards: "Weekly Volume" (bar chart with green bars) and "Pace Trend" (line chart with blue line). Hovering over bars/points shows a tooltip with values.
-result: issue
-reported: "Charts work. Want an additional chart that combines pace and BPM — low BPM naturally produces lower pace so the two need to be read together. Keep the Pace Trend chart, add a new combined Pace + BPM chart."
-severity: minor
-
-### 6. Empty state — no active plan
-expected: With no training plan (or with "Current Plan" filter selected when there's no active plan), the Dashboard shows "No active training plan" message and a "Start Planning" button. The charts section should not appear.
+### 3. Pace vs Heart Rate chart (with HR data)
+expected: If you have any runs logged with a heart rate (avgHR) value, a "Pace vs Heart Rate" chart should appear below the Weekly Volume and Pace Trend charts. It has two Y-axes: pace (min/km) on the left and Avg BPM on the right. If no runs have HR data, the chart is simply absent — that's fine.
 result: pass
 
-### 7. Empty state — no runs
-expected: With an active plan but no runs logged yet, the stat cards show "—" values and the chart area is hidden (no "Weekly Volume" or "Pace Trend" sections).
+### 4. Archived plan — live chat suppressed on desktop
+expected: Open Archive from the sidebar, click on an archived plan. On a wide (desktop) viewport, you should see ONLY the readonly "Plan History" panel on the right — NOT the live blue Coach Chat column. The Plan History panel title is in gray and shows old messages with no input field.
 result: pass
 
-### 8. Archived plan — Plan History panel (desktop)
-expected: Navigate to an archived plan (Archive page → click a plan). On desktop (wide viewport), the page shows the archived plan details on the left and a "Plan History" coach panel on the right. The panel shows previous chat messages but has NO text input, NO Send button, and NO Start Over button. The title reads "Plan History" in gray (not blue).
-result: issue
-reported: "The Plan History panel shows correctly, but the active Coach chat is also visible. On the archived plan page only the readonly Plan History panel should be shown — not the live coach chat."
-severity: major
-
-### 9. Archived plan — mobile FAB opens readonly panel
-expected: On a mobile-sized viewport (or narrow browser window), the archived plan page shows a gray clock-icon FAB button ("View plan history"). Tapping it opens the readonly Plan History panel as an overlay. The panel has no input area.
-result: issue
-reported: "The regular blue coach chat FAB is showing instead of the gray 'View plan history' button. The 'View plan history' FAB is not visible at all. The AppShell coach FAB is overriding/covering the archive-specific one."
-severity: major
-
-### 10. E2E test suite passes
-expected: Running `npx playwright test` produces 0 failures. All specs (auth, coach, runs, training-plan, dashboard) pass.
-result: issue
-reported: "E2E tests are failing."
-severity: major
+### 5. Archived plan — gray FAB visible on mobile
+expected: On the archived plan page, resize the browser to a narrow (mobile) viewport. A gray clock-icon FAB labeled "View plan history" should appear at the bottom-right. The regular blue coach chat FAB should NOT be visible — it should be fully suppressed on this route.
+result: pass
 
 ## Summary
 
-total: 10
+total: 5
 passed: 5
-issues: 5
+issues: 0
 pending: 0
 skipped: 0
 blocked: 0
 
 ## Gaps
-
-- truth: "Adherence stat card is visible on Dashboard only when activeFilter === 'current-plan' (where it is meaningful and navigates to /plan on click). It is hidden for all other filter presets."
-  status: resolved
-  reason: "User reported: Adherence shows a meaningless value on date-based filters. Clarified: keep the card on Dashboard for Current Plan filter only (with click-to-plan nav). Hide it when any other filter is active."
-  severity: major
-  test: 3
-  root_cause: "Adherence card (Dashboard.tsx lines 92-99) is always rendered regardless of activeFilter. The adherence value in computeStats() (useDashboard.ts lines 184-199) uses linkedRuns.size / totalNonRest — neither is date-windowed, so it is meaningless on any filter other than current-plan."
-  artifacts:
-    - path: "web/src/pages/Dashboard.tsx"
-      issue: "Adherence card rendered unconditionally (lines 92-99) — needs activeFilter === 'current-plan' guard"
-    - path: "web/src/hooks/useDashboard.ts"
-      issue: "adherence computed in computeStats() always (lines 184-199) — no filter-awareness"
-  missing:
-    - "Wrap Adherence card in Dashboard.tsx with {activeFilter === 'current-plan' && ...}"
-    - "No change needed to useDashboard.ts — computation is fine for current-plan, just hidden otherwise"
-  debug_session: ".planning/debug/adherence-placement-wrong.md"
-
-- truth: "Archived plan page shows only the readonly Plan History panel — the live coach chat (AppShell CoachPanel) must be hidden when on the ArchivePlan route"
-  status: resolved
-  reason: "User reported: The Plan History panel shows correctly, but the active Coach chat is also visible. On the archived plan page only the readonly Plan History panel should be shown — not the live coach chat."
-  severity: major
-  test: 8
-  root_cause: "AppShell.tsx (line 52) always mounts CoachPanel. When isOpen=false, CoachPanel applies 'hidden md:flex md:flex-col md:w-80' — making it always visible as a right column on desktop. AppShell has no useLocation() route-awareness so it renders on every page including /archive/:id."
-  artifacts:
-    - path: "web/src/components/layout/AppShell.tsx"
-      issue: "No route-awareness — CoachPanel rendered on all routes including /archive/:id (line 52)"
-    - path: "web/src/components/coach/CoachPanel.tsx"
-      issue: "isOpen=false branch uses 'hidden md:flex' (line 85) — always visible as desktop column"
-  missing:
-    - "Add useLocation() to AppShell.tsx, derive isArchivePlanRoute = /^\\/archive\\/.+/.test(pathname)"
-    - "Skip rendering AppShell's CoachPanel when isArchivePlanRoute"
-  debug_session: ".planning/debug/appshell-coachpanel-archive-overlap.md"
-
-- truth: "On mobile, the archived plan page shows a gray 'View plan history' FAB (not the regular blue coach FAB). Tapping it opens the readonly Plan History overlay. The AppShell coach FAB must be suppressed on the /archive/:id route."
-  status: resolved
-  reason: "User reported: The regular blue coach chat FAB is showing instead of the gray 'View plan history' button. The 'View plan history' FAB is not visible at all. The AppShell coach FAB is overriding/covering the archive-specific one."
-  severity: major
-  test: 9
-  root_cause: "AppShell FAB (lines 55-70, fixed bottom-6 right-4 z-40 md:hidden) and ArchivePlan FAB (lines 114-125, same fixed position and z-index) occupy identical screen coordinates. AppShell's FAB renders after {children} in DOM order, so it paints on top and completely covers the gray ArchivePlan FAB."
-  artifacts:
-    - path: "web/src/components/layout/AppShell.tsx"
-      issue: "FAB rendered on all routes at fixed bottom-6 right-4 z-40 (lines 55-70) — same position as ArchivePlan FAB"
-    - path: "web/src/pages/ArchivePlan.tsx"
-      issue: "Gray FAB at same coordinates (lines 114-125) — completely covered by AppShell FAB"
-  missing:
-    - "Gate AppShell FAB with && !isArchivePlanRoute (same flag as CoachPanel suppression)"
-  debug_session: ".planning/debug/appshell-coachpanel-archive-overlap.md"
-
-- truth: "Dashboard has a combined Pace + BPM chart showing both metrics together per run/week, so the relationship between effort (BPM) and speed (pace) is visible"
-  status: resolved
-  reason: "User reported: pace alone is misleading — low BPM naturally produces lower pace (easy runs). Want a chart combining pace and BPM so they can be read together. Keep the existing Pace Trend chart, add the new combined one."
-  severity: minor
-  test: 5
-  root_cause: "groupRunsByWeek() in useDashboard.ts reads pace into paceValues[] but never reads run.avgHR. PaceDataPoint type has no avgBPM field. No ComposedChart exists in Dashboard.tsx. avgHR is fully stored on run documents (available in Run interface)."
-  artifacts:
-    - path: "web/src/hooks/useDashboard.ts"
-      issue: "WeekBucket has no hrValues[]; groupRunsByWeek() ignores run.avgHR; PaceDataPoint has no avgBPM; no paceBpmData export"
-    - path: "web/src/pages/Dashboard.tsx"
-      issue: "No ComposedChart import or rendering; recharts imports missing ComposedChart"
-  missing:
-    - "Add hrValues: number[] to WeekBucket; accumulate run.avgHR in groupRunsByWeek()"
-    - "Add PaceBpmDataPoint type { weekLabel, pace: number|null, avgBPM: number|null }"
-    - "Derive and export paceBpmData from hook"
-    - "Add ComposedChart to Dashboard.tsx with dual Y-axes (pace left, BPM right)"
-  debug_session: ""
-
-- truth: "Full Playwright E2E suite passes with 0 failures after Phase 4 changes"
-  status: resolved
-  reason: "User reported: E2E tests are failing."
-  severity: major
-  test: 10
-  root_cause: "Phase 04-01 changed the home route from /plan to /dashboard. The loginWithMocks helper in e2e/helpers (used by auth.spec.ts, coach.spec.ts, runs.spec.ts, training-plan.spec.ts) asserts toHaveURL(/\\/plan/) after goto('/') — this assertion now fails because / redirects to /dashboard. 48 pre-existing failures documented in 04-05-SUMMARY.md as deferred."
-  artifacts:
-    - path: "e2e/"
-      issue: "loginWithMocks helper or individual specs assert /plan as post-login URL; must be updated to /dashboard"
-  missing:
-    - "Update loginWithMocks (or equivalent) post-navigation assertion from /plan to /dashboard"
-    - "Audit auth.spec.ts, coach.spec.ts, runs.spec.ts, training-plan.spec.ts for any other hardcoded /plan home-route assumptions"
-  debug_session: ""
