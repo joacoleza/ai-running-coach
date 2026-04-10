@@ -342,7 +342,7 @@ Plans:
 
 **Note:** IMP-01/02/03 (plan import from LLM) dropped by user — not needed. DASH-04 (generic chat history section) replaced by archived plan readonly chat (D-17 through D-23).
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 
 Plans:
 - [x] 04-01-PLAN.md — Routing changes (/ → /dashboard), Sidebar reorder (Dashboard first), Recharts install, Dashboard scaffold
@@ -350,7 +350,7 @@ Plans:
 - [x] 04-03-PLAN.md — Dashboard UI (stat cards wired to useDashboard, Recharts bar + line charts, empty states)
 - [x] 04-04-PLAN.md — CoachPanel readonly mode + ArchivePlan wiring (chat history fetch, right panel, mobile FAB)
 - [x] 04-05-PLAN.md — E2E tests (dashboard routing, filters, stats, Adherence navigation, archived plan FAB)
-- [ ] 04-06-PLAN.md — Gap closure: Adherence card conditional on current-plan filter + Pace+BPM ComposedChart
+- [x] 04-06-PLAN.md — Gap closure: Adherence card conditional on current-plan filter + Pace+BPM ComposedChart
 - [x] 04-07-PLAN.md — Gap closure: AppShell route-awareness to suppress CoachPanel and FAB on /archive/:id
 
 **Deliverables:**
