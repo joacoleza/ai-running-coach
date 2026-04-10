@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: "Phase 04 shipped -- PR #56"
-last_updated: "2026-04-09T17:07:47.459Z"
+last_updated: "2026-04-10T10:44:13.742Z"
 progress:
   total_phases: 10
-  completed_phases: 10
-  total_plans: 43
-  completed_plans: 43
-  percent: 100
+  completed_phases: 9
+  total_plans: 45
+  completed_plans: 44
+  percent: 98
 ---
 
 # State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 04
 **Status:** Phase 04 shipped -- PR #56
 **Plans:** 5/5
-**Progress:** [██████████] 100%
+**Progress:** [██████████] 98%
 
 ## Milestone
 
@@ -154,6 +154,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 04-03]: Re-export FILTER_PRESETS from Dashboard.tsx for backward compat with pages.test.tsx
 - [Phase 04-03]: Recharts Tooltip formatter uses Number(v) cast to satisfy ValueType|undefined TS union
 - [Phase 04-dashboard]: All 7 dashboard/archive E2E tests pass; 48 pre-existing failures in other specs are out of scope caused by Phase 04-01 home route change
+- [Phase 04-dashboard]: AppShell uses /^\/archive\/.+/ regex via useLocation to suppress CoachPanel and FAB on archive detail routes
+- [Phase 04-dashboard]: Pace vs Heart Rate ComposedChart uses dual YAxis (left=pace, right=BPM) with connectNulls for sparse data
 
 ## Accumulated Context
 
@@ -191,6 +193,7 @@ _Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LL
 | Phase 04-dashboard P02 | 5min | 2 tasks | 2 files |
 | Phase 04-dashboard P03 | 10min | 2 tasks | 3 files |
 | Phase 04-dashboard P05 | 8min | 1 tasks | 1 files |
+| Phase 04-dashboard P07 | 12min | 2 tasks | 2 files |
 
 ### Quick Tasks Completed
 
