@@ -29,6 +29,12 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [ ] Coach parses Apple Health data and provides feedback via chat
 - [x] Dashboard shows run history stats (distance, runs, time, adherence), weekly volume chart, pace trend chart, and date-filtered views — Validated in Phase 4: Dashboard
 - [x] Archived plan chat history is viewable in readonly mode on the Archive page — Validated in Phase 4: Dashboard
+- [x] Agent can add a new phase to the plan via chat — Validated in Phase 5: Missing Features
+- [x] Agent can update the plan's target race date via chat — Validated in Phase 5: Missing Features
+- [x] Agent can log a run on the user's behalf via chat — Validated in Phase 5: Missing Features
+- [x] Agent can save a coaching insight to a run record — Validated in Phase 5: Missing Features
+- [x] User can add a new phase to the training plan via UI button — Validated in Phase 5: Missing Features
+- [x] User can edit the target race date inline in the Training Plan header — Validated in Phase 5: Missing Features
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
 - _Plan import from LLM conversation (IMP-01/02/03) — dropped, not needed_
@@ -72,7 +78,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-03-25 — Phase 2.1 complete (Training Plan Redesign)
+Last updated: 2026-04-11 — Phase 5 complete (Missing Features)
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
