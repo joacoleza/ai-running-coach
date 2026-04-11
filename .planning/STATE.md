@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-10T23:03:33.452Z"
+last_updated: "2026-04-11T19:00:32.607Z"
 progress:
   total_phases: 11
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 49
-  completed_plans: 46
-  percent: 94
+  completed_plans: 49
+  percent: 100
 ---
 
 # State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 **Phase:** 4
 **Status:** Executing Phase 05
 **Plans:** 5/5
-**Progress:** [█████████░] 94%
+**Progress:** [██████████] 100%
 
 ## Milestone
 
@@ -160,6 +160,8 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 04-dashboard]: Adherence stat card gated behind activeFilter === 'current-plan' inline guard
 - [Phase 05-01]: addPhase uses assignPlanStructure on full phases array (not $push) to ensure correct global week numbers
 - [Phase 05-01]: Empty targetDate uses MongoDB $unset (not $set to empty string) to match frontend falsy check
+- [Phase 05-04]: useChat tag test mock order: GET plan + GET messages on mount, stream, fetchPlan after done, tag API call, fetchPlan inside applyPlanOperations
+- [Phase 05-04]: run:update-insight: plan-updated NOT dispatched for insight-only; hasPlanMutation excludes runInsightMatches
 
 ## Accumulated Context
 
@@ -201,6 +203,7 @@ _Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LL
 | Phase 04-dashboard P07 | 12min | 2 tasks | 2 files |
 | Phase 04-dashboard P06 | 15 | 2 tasks | 3 files |
 | Phase 05-missing-features P01 | 346s | 3 tasks | 6 files |
+| Phase 05-missing-features P04 | 10min | 4 tasks | 2 files |
 
 ### Quick Tasks Completed
 
