@@ -778,6 +778,10 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
                         .replace(/<plan:unlink[^/]*\/>/g, '')
+                        .replace(/<plan:add-phase[^/]*\/>/g, '')
+                        .replace(/<plan:update-goal[^/]*\/>/g, '')
+                        .replace(/<run:create[^/]*\/>/g, '')
+                        .replace(/<run:update-insight[^/]*\/>/g, '')
                         .trim(),
                     };
                   }
