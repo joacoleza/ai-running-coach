@@ -384,13 +384,14 @@ Plans:
 
 **Depends on:** Phase 4
 
-**Plans:** 4/4 plans complete
+**Plans:** 5 plans (4 complete + 1 gap closure)
 
 Plans:
 - [x] 05-01-PLAN.md — API extensions: POST /api/plan/phases, extend PATCH /api/plan for targetDate, system prompt updates (all 4 new XML commands), RunId in synthetic plan-state context
 - [x] 05-02-PLAN.md — useChat tag handling: 4 new handlers in applyPlanOperations, strip in both locations
 - [x] 05-03-PLAN.md — Frontend UI: + Add phase button in PlanView, inline target date editor in TrainingPlan header
 - [x] 05-04-PLAN.md — Tests: API unit tests, useChat unit tests, E2E tests covering all 4 features
+- [ ] 05-05-PLAN.md — Gap closure: Nyquist tests for addWeekToPhase API, run:create auto-insight, plan:add-week and plan:update-feedback useChat handlers
 
 ---
 
