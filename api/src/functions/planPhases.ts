@@ -99,6 +99,49 @@ app.http('addPhase', {
   },
 });
 
+app.http('addWeekToPhase', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'plan/phases/{phaseIndex}/weeks',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requirePassword(req);
+    if (denied) return denied;
+
+    const phaseIndexParam = req.params['phaseIndex'];
+    const phaseIndex = Number(phaseIndexParam);
+    if (!phaseIndexParam || isNaN(phaseIndex) || phaseIndex < 0 || !Number.isInteger(phaseIndex)) {
+      return { status: 400, jsonBody: { error: 'Invalid phaseIndex. Expected a non-negative integer.' } };
+    }
+
+    const db = await getDb();
+    try {
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+      if (phaseIndex >= plan.phases.length) {
+        return { status: 404, jsonBody: { error: `Phase index ${phaseIndex} does not exist` } };
+      }
+
+      const updatedPhases = plan.phases.map((phase, i) =>
+        i === phaseIndex
+          ? { ...phase, weeks: [...phase.weeks, { weekNumber: 0, days: [] }] }
+          : phase
+      );
+      const recomputed = assignPlanStructure(updatedPhases);
+
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { status: { $in: ['active', 'onboarding'] } },
+        { $set: { phases: recomputed, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      if (!result) return { status: 404, jsonBody: { error: 'Plan not found' } };
+      return { status: 201, jsonBody: { plan: result } };
+    } catch (err) {
+      context.log('Error adding week to phase:', err);
+      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
+    }
+  },
+});
+
 app.http('deleteLastPhase', {
   methods: ['DELETE'],
   authLevel: 'anonymous',

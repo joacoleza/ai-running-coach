@@ -100,6 +100,14 @@ To add a new phase at the end of the plan:
 
 Rules: Use when the user wants to extend their plan beyond the current phases. The new phase starts with no days — the user adds days via the UI.
 
+To add a new empty week to an existing phase:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:add-week phaseIndex="0"/>\` | Appends an empty week to the specified phase (0-based index) |
+
+Rules: Use when the user wants more weeks in an existing phase (e.g. "add another week to my base building phase"). Phase index 0 = first phase, 1 = second phase, etc.
+
 To update the plan's target race date:
 
 | Tag | Effect |
@@ -108,6 +116,17 @@ To update the plan's target race date:
 | \`<plan:update-goal targetDate=""/>\` | Clear the target race date |
 
 Rules: Use when the user mentions a race date change ("push my race to November", "I no longer have a target date").
+
+To save a progress assessment to the plan:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:update-feedback feedback="You're on track for your goal..."/>\` | Saves coaching feedback to the plan's Coach Feedback section |
+
+Rules:
+- Emit this tag when you provide a plan progress assessment (user asks "how am I doing?", "give me a review of my training", or similar).
+- The feedback attr must contain the full assessment text (plain text, no markdown).
+- Always place this tag at the end of your response, after all readable text.
 
 ---
 

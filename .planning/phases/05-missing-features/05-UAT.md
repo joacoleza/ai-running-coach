@@ -8,8 +8,6 @@ updated: 2026-04-13T00:00:00Z
 
 ## Current Test
 
-## Current Test
-
 [testing complete]
 
 ## Tests
@@ -52,11 +50,23 @@ result: issue
 reported: "Run was added and linked correctly but the coaching feedback shown in chat was not saved to the run's insight field. Linked run detail shows no insight."
 severity: major
 
+### 10. Add a week to a phase manually
+expected: On the Training Plan page, within a phase that has fewer than max weeks, a "+ Add week" button is visible at the bottom of that phase's week list. Clicking it adds a new empty week to the phase and it appears immediately.
+result: issue
+reported: "No + Add week button exists. Cannot add more weeks to a phase manually."
+severity: major
+
+### 11. Plan progress feedback saved from chat
+expected: Ask the coach "how am I doing?" or a similar progress question in the CoachPanel. The coach responds with a plan assessment. That feedback text is saved and visible in the "Coach Feedback" section on the Training Plan page.
+result: issue
+reported: "Coach gives feedback in chat but it is not stored in the Coach feedback section on the Training Plan page."
+severity: major
+
 ## Summary
 
-total: 9
+total: 11
 passed: 8
-issues: 1
+issues: 3
 pending: 0
 skipped: 0
 blocked: 0
@@ -75,4 +85,40 @@ blocked: 0
   missing:
     - "In run:create handler, read response JSON to get created run _id"
     - "After successful create, call PATCH /api/runs/:id with { insight: accumulatedText (stripped of XML tags) }"
+  debug_session: ""
+
+- truth: "+ Add week button exists in each phase to add empty weeks to that phase"
+  status: failed
+  reason: "User reported: No + Add week button exists. Cannot add more weeks to a phase manually."
+  severity: major
+  test: 10
+  root_cause: "Explicitly deferred in Phase 5 CONTEXT.md ('+ Add week — user chose add phase only for simplicity'). Needs new API endpoint POST /api/plan/phases/:index/weeks, + Add week button in PlanView per phase, and optionally a plan:add-week agent command."
+  artifacts:
+    - path: "web/src/components/plan/PlanView.tsx"
+      issue: "No + Add week button rendered per phase"
+    - path: "api/src/functions/planPhases.ts"
+      issue: "No addWeek handler or route exists"
+  missing:
+    - "POST /api/plan/phases/:index/weeks endpoint — appends empty week to phase, calls assignPlanStructure"
+    - "+ Add week button in PlanView at the bottom of each phase's week list (non-readonly only)"
+    - "usePlan.addWeek(phaseIndex) function"
+    - "Optional: plan:add-week agent command in system prompt + useChat.ts handler"
+  debug_session: ""
+
+- truth: "Coach feedback from organic chat ('how am I doing?') is saved to plan.progressFeedback and visible in Coach Feedback section"
+  status: failed
+  reason: "User reported: Coach gives feedback in chat but it is not stored in the Coach feedback section on the Training Plan page."
+  severity: major
+  test: 11
+  root_cause: "progressFeedback is only saved by TrainingPlan.handleGetFeedback (the explicit 'Get feedback' button). When the coach answers a progress question organically in CoachPanel, there is no plan:update-feedback tag or equivalent mechanism. System prompt has no such command; applyPlanOperations does not handle it."
+  artifacts:
+    - path: "api/src/shared/prompts.ts"
+      issue: "No plan:update-feedback command documented"
+    - path: "web/src/hooks/useChat.ts"
+      issue: "applyPlanOperations has no handler for plan:update-feedback tag"
+  missing:
+    - "PATCH /api/plan already supports progressFeedback — no API change needed"
+    - "Add plan:update-feedback tag to system prompt with instruction to emit when giving plan progress assessment"
+    - "Add plan:update-feedback handler in applyPlanOperations: PATCH /api/plan { progressFeedback }, dispatch plan-updated"
+    - "Strip plan:update-feedback tag during streaming in both onText callbacks"
   debug_session: ""

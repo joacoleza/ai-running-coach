@@ -128,12 +128,13 @@ interface PlanViewProps {
   onUpdatePhase?: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
   onDeletePhase?: () => Promise<void>;
   onAddPhase?: () => Promise<void>;
+  onAddWeek?: (phaseIndex: number) => Promise<void>;
   readonly?: boolean;
   lastCompletedDayRef?: React.RefObject<HTMLDivElement | null>;
   dayRefsMap?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
-export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
+export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, onAddWeek, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
   const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
 
@@ -243,6 +244,15 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
                 </div>
               );
             })}
+            {!readonly && onAddWeek && (
+              <button
+                onClick={() => void onAddWeek(idx)}
+                className="cursor-pointer mt-2 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                title="Add a week to this phase"
+              >
+                + Add week
+              </button>
+            )}
           </section>
         ))}
         {!readonly && onAddPhase && (
