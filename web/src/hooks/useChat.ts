@@ -467,6 +467,30 @@ export function useChat(): UseChatReturn {
           if (!res.ok) {
             const errBody = await res.json().catch(() => ({})) as { error?: string };
             runCreateErrors.push(errBody.error ?? 'Could not create run');
+          } else {
+            // Auto-save the coaching response as insight for the newly created run.
+            // run:update-insight requires a runId that doesn't exist during generation,
+            // so we capture the _id from the POST response and save insight immediately.
+            const created = await res.json().catch(() => ({})) as { _id?: string };
+            if (created._id) {
+              const insightText = accumulatedText
+                .replace(/<plan:update-phase[^/]*\/>/g, '')
+                .replace(/<plan:delete-phase[^/]*\/>/g, '')
+                .replace(/<plan:update[^/]*\/>/g, '')
+                .replace(/<plan:add[^/]*\/>/g, '')
+                .replace(/<plan:unlink[^/]*\/>/g, '')
+                .replace(/<plan:add-phase[^/]*\/>/g, '')
+                .replace(/<plan:update-goal[^/]*\/>/g, '')
+                .replace(/<run:create[^/]*\/>/g, '')
+                .replace(/<run:update-insight[^/]*\/>/g, '')
+                .replace(/<app:[^/]*\/>/g, '')
+                .trim();
+              await fetch(`/api/runs/${created._id}`, {
+                method: 'PATCH',
+                headers: authHeaders(),
+                body: JSON.stringify({ insight: insightText }),
+              }).catch(() => { /* non-fatal */ });
+            }
           }
         } catch {
           runCreateErrors.push('run:create: network error');
