@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePlan } from '../hooks/usePlan';
@@ -13,7 +13,7 @@ function openCoachPanel() {
 }
 
 export function TrainingPlan() {
-  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan } = usePlan();
+  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan, addPhase, addWeek } = usePlan();
   const { sendMessage } = useChatContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,6 +23,9 @@ export function TrainingPlan() {
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const lastCompletedRef = useRef<HTMLDivElement | null>(null);
   const dayRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+  const [editingDate, setEditingDate] = useState(false);
+  const [dateValue, setDateValue] = useState(plan?.targetDate ?? '');
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const hasActivePlan = !!plan && plan.status === 'active' && plan.phases?.length > 0;
 
@@ -75,6 +78,37 @@ export function TrainingPlan() {
     window.addEventListener('navigate-to-day', handler);
     return () => window.removeEventListener('navigate-to-day', handler);
   }, []);
+
+  // Sync dateValue when plan changes (e.g. after agent update)
+  useEffect(() => {
+    setDateValue(plan?.targetDate ?? '');
+  }, [plan?.targetDate]);
+
+  // Focus date input when editing opens
+  useEffect(() => {
+    if (editingDate) dateInputRef.current?.focus();
+  }, [editingDate]);
+
+  const saveDate = useCallback(async () => {
+    const trimmed = dateValue.trim();
+    if (trimmed === (plan?.targetDate ?? '')) {
+      setEditingDate(false);
+      return;
+    }
+    try {
+      await fetch('/api/plan', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-app-password': localStorage.getItem('app_password') ?? '',
+        },
+        body: JSON.stringify({ targetDate: trimmed }),
+      });
+      await refreshPlan();
+    } finally {
+      setEditingDate(false);
+    }
+  }, [dateValue, plan?.targetDate, refreshPlan]);
 
   if (isLoading) {
     return <div className="p-6 text-gray-400">Loading plan...</div>;
@@ -135,7 +169,38 @@ export function TrainingPlan() {
               <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
                 <div className="flex flex-wrap items-baseline gap-x-2">
                   <span className="font-semibold capitalize">{plan.objective.replace('-', ' ')}</span>
-                  {plan.targetDate && <span className="text-gray-600">Target: {plan.targetDate}</span>}
+                  {editingDate ? (
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      value={dateValue}
+                      min="2000-01-01"
+                      onChange={(e) => setDateValue(e.target.value)}
+                      onBlur={() => void saveDate()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') void saveDate();
+                        if (e.key === 'Escape') {
+                          setDateValue(plan.targetDate ?? '');
+                          setEditingDate(false);
+                        }
+                      }}
+                      className="border-b-2 border-blue-400 outline-none bg-transparent text-[16px]"
+                    />
+                  ) : plan.targetDate ? (
+                    <span
+                      className="cursor-pointer text-gray-600 hover:text-blue-700"
+                      onClick={() => setEditingDate(true)}
+                    >
+                      Target: {plan.targetDate}
+                    </span>
+                  ) : (
+                    <span
+                      className="cursor-pointer text-gray-400 text-sm hover:text-blue-600"
+                      onClick={() => setEditingDate(true)}
+                    >
+                      + Set target date
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -183,7 +248,7 @@ export function TrainingPlan() {
       {/* Scrollable content area — PlanView and empty states */}
       <div className="px-6 pt-4 pb-6">
         {hasActivePlan && plan ? (
-          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
+          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} onAddPhase={addPhase} onAddWeek={addWeek} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         ) : !plan || plan.status === 'onboarding' ? (
           <p className="mt-4 text-gray-600">
             {plan?.status === 'onboarding'

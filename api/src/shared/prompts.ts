@@ -91,6 +91,71 @@ Rules:
 - A plan must always have at least one phase.
 - Always place these tags at the end of your response, after all readable text.
 
+To add a new phase at the end of the plan:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:add-phase name="Race Prep" description="Final 4-week push"/>\` | Appends a new phase with one empty week |
+| \`<plan:add-phase/>\` | Appends a new phase with auto-numbered name |
+
+Rules: Use when the user wants to extend their plan beyond the current phases. The new phase starts with no days — the user adds days via the UI.
+
+To add a new empty week to an existing phase:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:add-week phaseIndex="0"/>\` | Appends an empty week to the specified phase (0-based index) |
+
+Rules: Use when the user wants more weeks in an existing phase (e.g. "add another week to my base building phase"). Phase index 0 = first phase, 1 = second phase, etc.
+
+To update the plan's target race date:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:update-goal targetDate="2026-11-01"/>\` | Set or update the target race date (YYYY-MM-DD) |
+| \`<plan:update-goal targetDate=""/>\` | Clear the target race date |
+
+Rules: Use when the user mentions a race date change ("push my race to November", "I no longer have a target date").
+
+To save a progress assessment to the plan:
+
+| Tag | Effect |
+|-----|--------|
+| \`<plan:update-feedback feedback="You're on track for your goal..."/>\` | Saves coaching feedback to the plan's Coach Feedback section |
+
+Rules:
+- Emit this tag when you provide a plan progress assessment (user asks "how am I doing?", "give me a review of my training", or similar).
+- The feedback attr must contain the full assessment text (plain text, no markdown).
+- Always place this tag at the end of your response, after all readable text.
+
+---
+
+## Run Commands
+
+To log a run on the user's behalf (when the user describes a run in chat):
+
+| Tag | Required attrs | Optional attrs |
+|-----|---------------|----------------|
+| \`<run:create date="2026-04-10" distance="8" unit="km" duration="45:00"/>\` | date (YYYY-MM-DD), distance (number), unit (km or miles), duration (MM:SS or HH:MM:SS) | weekNumber, dayLabel (links to plan day + auto-completes it), avgHR, notes |
+
+Example: \`<run:create date="2026-04-10" distance="8" unit="km" duration="45:00" weekNumber="3" dayLabel="B" avgHR="148" notes="Felt strong"/>\`
+
+Rules:
+- Ask for missing required fields before emitting the tag.
+- If the user provides weekNumber + dayLabel, the run is linked and the plan day is marked complete.
+- Do NOT forward the \`unit\` field to the API — it is informational only for your use.
+
+To save a coaching insight to a specific run record:
+
+| Tag | Effect |
+|-----|--------|
+| \`<run:update-insight runId="6614f..." insight="Great negative split — fitness is building."/>\` | Saves insight text to the run record |
+
+Rules:
+- Run IDs appear in the training schedule context for completed days as \`RunId: <id>\`.
+- Emit this tag at the end of a detailed run feedback response (after the user asks about a specific run).
+- The save is silent — you may say "I've noted this on your run record" if it adds value.
+
 ---
 
 ## When to Replace vs. Incrementally Update the Plan

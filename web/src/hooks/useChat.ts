@@ -202,6 +202,12 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
                         .replace(/<plan:unlink[^/]*\/>/g, '')
+                        .replace(/<plan:add-phase[^/]*\/>/g, '')
+                        .replace(/<plan:add-week[^/]*\/>/g, '')
+                        .replace(/<plan:update-goal[^/]*\/>/g, '')
+                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                        .replace(/<run:create[^/]*\/>/g, '')
+                        .replace(/<run:update-insight[^/]*\/>/g, '')
                         .replace(/<app:[^/]*\/>/g, '')
                         .trim()
                     : m.content,
@@ -238,13 +244,27 @@ export function useChat(): UseChatReturn {
     const phaseUpdateRegex = /<plan:update-phase\s+([^/]+)\/>/g;
     const phaseDeleteRegex = /<plan:delete-phase\s*\/>/g;
     const planUnlinkRegex = /<plan:unlink\s+([^/]+)\/>/g;
+    const addPhaseRegex = /<plan:add-phase\s*([^/]*)\/>/g;
+    const addWeekRegex = /<plan:add-week\s+([^/]+)\/>/g;
+    const updateGoalRegex = /<plan:update-goal\s+([^/]+)\/>/g;
+    const updateFeedbackRegex = /<plan:update-feedback\s+((?:(?!\/>)[\s\S])+)\/>/g;
+    const runCreateRegex = /<run:create\s+([^/]+)\/>/g;
+    const runInsightRegex = /<run:update-insight\s+([^/]+)\/>/g;
     const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
     const planAdds = [...accumulatedText.matchAll(planAddRegex)];
     const phaseUpdates = [...accumulatedText.matchAll(phaseUpdateRegex)];
     const phaseDeletes = [...accumulatedText.matchAll(phaseDeleteRegex)];
     const planUnlinks = [...accumulatedText.matchAll(planUnlinkRegex)];
+    const addPhaseMatches = [...accumulatedText.matchAll(addPhaseRegex)];
+    const addWeekMatches = [...accumulatedText.matchAll(addWeekRegex)];
+    const updateGoalMatches = [...accumulatedText.matchAll(updateGoalRegex)];
+    const updateFeedbackMatches = [...accumulatedText.matchAll(updateFeedbackRegex)];
+    const runCreateMatches = [...accumulatedText.matchAll(runCreateRegex)];
+    const runInsightMatches = [...accumulatedText.matchAll(runInsightRegex)];
 
-    if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0 || planUnlinks.length > 0) {
+    if (planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0 || phaseDeletes.length > 0 || planUnlinks.length > 0
+        || addPhaseMatches.length > 0 || addWeekMatches.length > 0 || updateGoalMatches.length > 0 || updateFeedbackMatches.length > 0
+        || runCreateMatches.length > 0 || runInsightMatches.length > 0) {
       if (!aliveCheck || aliveCheck()) {
         // Strip tags from displayed message
         setMessages((prev) => {
@@ -259,6 +279,12 @@ export function useChat(): UseChatReturn {
                 .replace(/<plan:update\s+([^/]+)\/>/g, '')
                 .replace(/<plan:add\s+([^/]+)\/>/g, '')
                 .replace(/<plan:unlink\s+([^/]+)\/>/g, '')
+                .replace(/<plan:add-phase[^/]*\/>/g, '')
+                .replace(/<plan:add-week[^/]*\/>/g, '')
+                .replace(/<plan:update-goal[^/]*\/>/g, '')
+                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                .replace(/<run:create[^/]*\/>/g, '')
+                .replace(/<run:update-insight[^/]*\/>/g, '')
                 .trim(),
             };
           }
@@ -379,7 +405,178 @@ export function useChat(): UseChatReturn {
         }
       }
 
-      const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors, ...unlinkErrors];
+      // Add a new phase
+      const addPhaseErrors: string[] = [];
+      for (const match of addPhaseMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        try {
+          const res = await fetch('/api/plan/phases', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ name: attrs.name, description: attrs.description }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({})) as { error?: string };
+            addPhaseErrors.push(body.error ?? 'Could not add phase');
+          }
+        } catch {
+          addPhaseErrors.push('plan:add-phase: network error');
+        }
+      }
+
+      // Add a week to an existing phase
+      const addWeekErrors: string[] = [];
+      for (const match of addWeekMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        const phaseIndex = attrs.phaseIndex;
+        if (phaseIndex === undefined) {
+          addWeekErrors.push('plan:add-week: phaseIndex is required');
+          continue;
+        }
+        try {
+          const res = await fetch(`/api/plan/phases/${phaseIndex}/weeks`, {
+            method: 'POST',
+            headers: authHeaders(),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({})) as { error?: string };
+            addWeekErrors.push(body.error ?? `Could not add week to phase ${phaseIndex}`);
+          }
+        } catch {
+          addWeekErrors.push(`plan:add-week: network error for phase ${phaseIndex}`);
+        }
+      }
+
+      // Update plan goal / target date
+      const updateGoalErrors: string[] = [];
+      for (const match of updateGoalMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        try {
+          const res = await fetch('/api/plan', {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ targetDate: attrs.targetDate ?? '' }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({})) as { error?: string };
+            updateGoalErrors.push(body.error ?? 'Could not update goal');
+          }
+        } catch {
+          updateGoalErrors.push('plan:update-goal: network error');
+        }
+      }
+
+      // Save plan progress feedback (from organic "how am I doing?" coach responses)
+      const updateFeedbackErrors: string[] = [];
+      for (const match of updateFeedbackMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (!attrs.feedback) continue;
+        try {
+          const res = await fetch('/api/plan', {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ progressFeedback: attrs.feedback }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({})) as { error?: string };
+            updateFeedbackErrors.push(body.error ?? 'Could not save plan feedback');
+          }
+        } catch {
+          updateFeedbackErrors.push('plan:update-feedback: network error');
+        }
+      }
+
+      // Create a run on behalf of the user (unit attr intentionally not forwarded)
+      const runCreateErrors: string[] = [];
+      for (const match of runCreateMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (!attrs.date || !attrs.distance || !attrs.duration) {
+          runCreateErrors.push('run:create: date, distance, and duration are required');
+          continue;
+        }
+        const body: Record<string, unknown> = {
+          date: attrs.date,
+          distance: Number(attrs.distance),
+          duration: attrs.duration,
+        };
+        if (attrs.avgHR) body.avgHR = Number(attrs.avgHR);
+        if (attrs.notes) body.notes = attrs.notes;
+        if (attrs.weekNumber && attrs.dayLabel) {
+          body.weekNumber = Number(attrs.weekNumber);
+          body.dayLabel = attrs.dayLabel;
+        }
+        // attrs.unit intentionally NOT forwarded — POST /api/runs does not accept it
+        try {
+          const res = await fetch('/api/runs', {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({})) as { error?: string };
+            runCreateErrors.push(errBody.error ?? 'Could not create run');
+          } else {
+            // Auto-save the coaching response as insight for the newly created run.
+            // run:update-insight requires a runId that doesn't exist during generation,
+            // so we capture the _id from the POST response and save insight immediately.
+            const created = await res.json().catch(() => ({})) as { _id?: string };
+            if (created._id) {
+              const insightText = accumulatedText
+                .replace(/<plan:update-phase[^/]*\/>/g, '')
+                .replace(/<plan:delete-phase[^/]*\/>/g, '')
+                .replace(/<plan:update[^/]*\/>/g, '')
+                .replace(/<plan:add[^/]*\/>/g, '')
+                .replace(/<plan:unlink[^/]*\/>/g, '')
+                .replace(/<plan:add-phase[^/]*\/>/g, '')
+                .replace(/<plan:add-week[^/]*\/>/g, '')
+                .replace(/<plan:update-goal[^/]*\/>/g, '')
+                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                .replace(/<run:create[^/]*\/>/g, '')
+                .replace(/<run:update-insight[^/]*\/>/g, '')
+                .replace(/<app:[^/]*\/>/g, '')
+                .trim();
+              await fetch(`/api/runs/${created._id}`, {
+                method: 'PATCH',
+                headers: authHeaders(),
+                body: JSON.stringify({ insight: insightText }),
+              }).catch(() => { /* non-fatal */ });
+            }
+          }
+        } catch {
+          runCreateErrors.push('run:create: network error');
+        }
+      }
+
+      // Save coaching insight to a specific run (silent, no plan refresh)
+      const runInsightErrors: string[] = [];
+      for (const match of runInsightMatches) {
+        if (aliveCheck && !aliveCheck()) return;
+        const attrs = parseXmlAttrs(match[1]);
+        if (!attrs.runId || !attrs.insight) {
+          runInsightErrors.push('run:update-insight: runId and insight are required');
+          continue;
+        }
+        try {
+          const res = await fetch(`/api/runs/${attrs.runId}`, {
+            method: 'PATCH',
+            headers: authHeaders(),
+            body: JSON.stringify({ insight: attrs.insight }),
+          });
+          if (!res.ok) {
+            const errBody = await res.json().catch(() => ({})) as { error?: string };
+            runInsightErrors.push(errBody.error ?? `Could not update insight for run ${attrs.runId}`);
+          }
+        } catch {
+          runInsightErrors.push(`run:update-insight ${attrs.runId}: network error`);
+        }
+      }
+
+      const allErrors = [...updateErrors, ...addErrors, ...phaseUpdateErrors, ...phaseDeleteErrors, ...unlinkErrors, ...addPhaseErrors, ...addWeekErrors, ...updateGoalErrors, ...updateFeedbackErrors, ...runCreateErrors, ...runInsightErrors];
       if (allErrors.length > 0 && (!aliveCheck || aliveCheck())) {
         setMessages((prev) => {
           const updated = [...prev];
@@ -391,11 +588,16 @@ export function useChat(): UseChatReturn {
         });
       }
 
-      // Re-fetch plan after all updates applied and notify the plan page
+      // Re-fetch plan after all updates applied and notify the plan page.
+      // Skip plan-updated dispatch if ONLY insight tags were processed (no structural plan changes).
+      const hasPlanMutation = planUpdates.length > 0 || planAdds.length > 0 || phaseUpdates.length > 0
+        || phaseDeletes.length > 0 || planUnlinks.length > 0
+        || addPhaseMatches.length > 0 || addWeekMatches.length > 0 || updateGoalMatches.length > 0 || updateFeedbackMatches.length > 0 || runCreateMatches.length > 0;
+
       const refreshedPlan = await fetchPlan();
       if (aliveCheck && !aliveCheck()) return;
       if (refreshedPlan) setPlan(refreshedPlan);
-      window.dispatchEvent(new Event('plan-updated'));
+      if (hasPlanMutation) window.dispatchEvent(new Event('plan-updated'));
       setIsGeneratingPlan(false);
     } else if (planUpdateDetected) {
       // Tags were detected during streaming but not in accumulated text (edge case) — reset
@@ -445,7 +647,7 @@ export function useChat(): UseChatReturn {
       const accumulatedText = await streamChatResponse(response, {
         onText: (acc) => {
           // Show plan-update indicator as soon as plan modification tags are detected
-          if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase'))) {
+          if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase') || acc.includes('<plan:add-phase') || acc.includes('<plan:add-week') || acc.includes('<plan:update-feedback') || acc.includes('<run:create'))) {
             planUpdateDetected = true;
             setIsGeneratingPlan(true);
           }
@@ -464,6 +666,12 @@ export function useChat(): UseChatReturn {
                   .replace(/<plan:update[^/]*\/>/g, '')
                   .replace(/<plan:add[^/]*\/>/g, '')
                   .replace(/<plan:unlink[^/]*\/>/g, '')
+                  .replace(/<plan:add-phase[^/]*\/>/g, '')
+                  .replace(/<plan:add-week[^/]*\/>/g, '')
+                  .replace(/<plan:update-goal[^/]*\/>/g, '')
+                  .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                  .replace(/<run:create[^/]*\/>/g, '')
+                  .replace(/<run:update-insight[^/]*\/>/g, '')
                   .trim(),
               };
             }
@@ -633,7 +841,7 @@ export function useChat(): UseChatReturn {
             alive,
             onText: (acc) => {
               // Show plan-update indicator as soon as plan modification tags are detected
-              if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase'))) {
+              if (!planUpdateDetected && (acc.includes('<plan:update') || acc.includes('<plan:add') || acc.includes('<plan:update-phase') || acc.includes('<plan:delete-phase') || acc.includes('<plan:add-phase') || acc.includes('<plan:add-week') || acc.includes('<plan:update-feedback') || acc.includes('<run:create'))) {
                 planUpdateDetected = true;
                 if (alive()) setIsGeneratingPlan(true);
               }
@@ -651,6 +859,12 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:update[^/]*\/>/g, '')
                         .replace(/<plan:add[^/]*\/>/g, '')
                         .replace(/<plan:unlink[^/]*\/>/g, '')
+                        .replace(/<plan:add-phase[^/]*\/>/g, '')
+                        .replace(/<plan:add-week[^/]*\/>/g, '')
+                        .replace(/<plan:update-goal[^/]*\/>/g, '')
+                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                        .replace(/<run:create[^/]*\/>/g, '')
+                        .replace(/<run:update-insight[^/]*\/>/g, '')
                         .trim(),
                     };
                   }

@@ -948,3 +948,252 @@ test.describe('Archive section (Phase 2.1)', () => {
     }).toPass({ timeout: 5_000 })
   })
 })
+
+test.describe('Phase 5 features — Add phase and target date editing', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('shows + Add phase button and creates a new phase on click', async ({ page }) => {
+    let addPhaseCalled = false
+    const planWithNewPhase = {
+      ...mockActivePlan,
+      phases: [
+        ...mockActivePlan.phases,
+        { name: 'Phase 2', description: '', weeks: [{ weekNumber: 2, days: [] }] },
+      ],
+    }
+
+    await page.route('**/api/plan', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ plan: addPhaseCalled ? planWithNewPhase : mockActivePlan, linkedRuns: {} }),
+      })
+    })
+    await page.route('**/api/plan/phases', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        addPhaseCalled = true
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: planWithNewPhase }),
+        })
+      }
+    })
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plan/days', async (route: any) => {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plans/archived', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: [] }) })
+    })
+    await page.route('**/api/plan/archive', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    })
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: makeSseBody('Sure!'),
+      })
+    })
+
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // + Add phase button visible
+    await expect(page.getByText('+ Add phase')).toBeVisible({ timeout: 5_000 })
+
+    // Click it — POST to /api/plan/phases should be called
+    await page.getByText('+ Add phase').click()
+
+    // New phase should appear
+    await expect(async () => {
+      expect(addPhaseCalled).toBe(true)
+    }).toPass({ timeout: 8_000 })
+  })
+
+  test('shows target date and allows entering edit mode', async ({ page }) => {
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+
+    // Target date shown as clickable text
+    await expect(page.getByText('Target: 2026-06-01')).toBeVisible({ timeout: 10_000 })
+
+    // Click to enter edit mode
+    await page.getByText('Target: 2026-06-01').click()
+
+    // Date input should now be visible
+    await expect(page.locator('input[type="date"]')).toBeVisible({ timeout: 5_000 })
+
+    // Press Escape — should revert to display mode
+    await page.keyboard.press('Escape')
+    await expect(page.getByText('Target: 2026-06-01')).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('shows + Set target date when no target date is set', async ({ page }) => {
+    const planNoDate = { ...mockActivePlan, targetDate: undefined }
+
+    await page.route('**/api/plan', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ plan: planNoDate, linkedRuns: {} }),
+      })
+    })
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: planNoDate }) })
+    })
+    await page.route('**/api/plan/days', async (route: any) => {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: planNoDate }) })
+    })
+    await page.route('**/api/plans/archived', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: [] }) })
+    })
+    await page.route('**/api/plan/archive', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    })
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: makeSseBody('Sure!'),
+      })
+    })
+
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('+ Set target date')).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('pressing Enter after editing target date calls PATCH /api/plan', async ({ page }) => {
+    let patchBody: Record<string, unknown> | null = null
+
+    await page.route('**/api/plan', async (route: any) => {
+      const method = route.request().method()
+      if (method === 'PATCH') {
+        patchBody = route.request().postDataJSON() as Record<string, unknown>
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: { ...mockActivePlan, targetDate: patchBody?.targetDate ?? '' } }) })
+      } else {
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan, linkedRuns: {} }) })
+      }
+    })
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plan/days', async (route: any) => {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plans/archived', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: [] }) })
+    })
+    await page.route('**/api/plan/archive', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    })
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: makeSseBody('Sure!'),
+      })
+    })
+
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Target: 2026-06-01')).toBeVisible({ timeout: 10_000 })
+
+    // Enter edit mode
+    await page.getByText('Target: 2026-06-01').click()
+    const dateInput = page.locator('input[type="date"]')
+    await expect(dateInput).toBeVisible({ timeout: 5_000 })
+
+    // Type a new date and press Enter
+    await dateInput.fill('2026-11-01')
+    await dateInput.press('Enter')
+
+    await expect(async () => {
+      expect(patchBody).not.toBeNull()
+      expect((patchBody as any).targetDate).toBe('2026-11-01')
+    }).toPass({ timeout: 8_000 })
+  })
+
+  test('shows + Add week button and calls POST /api/plan/phases/:phaseIndex/weeks on click', async ({ page }) => {
+    let addWeekCalled = false
+
+    await page.route('**/api/plan', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan, linkedRuns: {} }) })
+    })
+    await page.route('**/api/plan/phases/0/weeks', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        addWeekCalled = true
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+      }
+    })
+    await page.route('**/api/plan/days/**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plan/days', async (route: any) => {
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan }) })
+    })
+    await page.route('**/api/plans/archived', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: [] }) })
+    })
+    await page.route('**/api/plan/archive', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+    })
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+    await page.route('**/api/chat', async (route: any) => {
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' },
+        body: makeSseBody('Sure!'),
+      })
+    })
+
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // + Add week button visible inside the phase
+    await expect(page.getByText('+ Add week')).toBeVisible({ timeout: 5_000 })
+
+    // Click it — POST to /api/plan/phases/0/weeks should be called
+    await page.getByText('+ Add week').click()
+
+    await expect(async () => {
+      expect(addWeekCalled).toBe(true)
+    }).toPass({ timeout: 8_000 })
+  })
+})

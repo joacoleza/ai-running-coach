@@ -53,6 +53,8 @@ interface UsePlanReturn {
   archivePlan: () => Promise<void>;
   updatePhase: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
   deleteLastPhase: () => Promise<void>;
+  addPhase: (name?: string, description?: string) => Promise<void>;
+  addWeek: (phaseIndex: number) => Promise<void>;
 }
 
 function authHeaders(): Record<string, string> {
@@ -147,6 +149,31 @@ export function usePlan(): UsePlanReturn {
     await refreshPlan();
   }, [refreshPlan]);
 
+  const addPhase = useCallback(async (name?: string, description?: string) => {
+    const res = await fetch('/api/plan/phases', {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name, description }),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to add phase' })) as { error?: string };
+      throw new Error(errData.error ?? 'Failed to add phase');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
+  const addWeek = useCallback(async (phaseIndex: number) => {
+    const res = await fetch(`/api/plan/phases/${phaseIndex}/weeks`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to add week' })) as { error?: string };
+      throw new Error(errData.error ?? 'Failed to add week');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
   const archivePlan = useCallback(async () => {
     const res = await fetch('/api/plan/archive', {
       method: 'POST',
@@ -165,5 +192,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, linkedRuns, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase };
+  return { plan, linkedRuns, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, addPhase, addWeek };
 }

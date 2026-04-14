@@ -1,7 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { requirePassword } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import type { Plan } from '../shared/types.js';
+import type { Plan, PlanPhase } from '../shared/types.js';
+import { assignPlanStructure } from '../shared/planUtils.js';
 
 app.http('patchPhase', {
   methods: ['PATCH'],
@@ -54,6 +55,88 @@ app.http('patchPhase', {
       return { status: 200, jsonBody: { plan: result } };
     } catch (err) {
       context.log('Error patching phase:', err);
+      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
+    }
+  },
+});
+
+app.http('addPhase', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'plan/phases',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requirePassword(req);
+    if (denied) return denied;
+
+    let body: { name?: string; description?: string } = {};
+    try { body = (await req.json()) as typeof body; } catch { /* body is optional */ }
+
+    const db = await getDb();
+    try {
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+
+      const newPhase: PlanPhase = {
+        name: body.name?.trim() || `Phase ${plan.phases.length + 1}`,
+        description: body.description ?? '',
+        weeks: [{ weekNumber: 0, days: [] }],
+      };
+
+      // CRITICAL: use assignPlanStructure to assign correct sequential week numbers
+      // Do NOT use $push alone — week numbers must be recomputed globally
+      const updatedPhases = assignPlanStructure([...plan.phases, newPhase]);
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { status: { $in: ['active', 'onboarding'] } },
+        { $set: { phases: updatedPhases, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      if (!result) return { status: 404, jsonBody: { error: 'Plan not found' } };
+      return { status: 201, jsonBody: { plan: result } };
+    } catch (err) {
+      context.log('Error adding phase:', err);
+      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
+    }
+  },
+});
+
+app.http('addWeekToPhase', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'plan/phases/{phaseIndex}/weeks',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requirePassword(req);
+    if (denied) return denied;
+
+    const phaseIndexParam = req.params['phaseIndex'];
+    const phaseIndex = Number(phaseIndexParam);
+    if (!phaseIndexParam || isNaN(phaseIndex) || phaseIndex < 0 || !Number.isInteger(phaseIndex)) {
+      return { status: 400, jsonBody: { error: 'Invalid phaseIndex. Expected a non-negative integer.' } };
+    }
+
+    const db = await getDb();
+    try {
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+      if (phaseIndex >= plan.phases.length) {
+        return { status: 404, jsonBody: { error: `Phase index ${phaseIndex} does not exist` } };
+      }
+
+      const updatedPhases = plan.phases.map((phase, i) =>
+        i === phaseIndex
+          ? { ...phase, weeks: [...phase.weeks, { weekNumber: 0, days: [] }] }
+          : phase
+      );
+      const recomputed = assignPlanStructure(updatedPhases);
+
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { status: { $in: ['active', 'onboarding'] } },
+        { $set: { phases: recomputed, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      if (!result) return { status: 404, jsonBody: { error: 'Plan not found' } };
+      return { status: 201, jsonBody: { plan: result } };
+    } catch (err) {
+      context.log('Error adding week to phase:', err);
       return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
     }
   },

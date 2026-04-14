@@ -209,3 +209,25 @@ describe('buildSystemPrompt — summary', () => {
     expect(prompt).toContain('User ran 5K last week');
   });
 });
+
+describe('buildSystemPrompt — Phase 5 agent commands', () => {
+  it('documents plan:add-phase command', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('plan:add-phase');
+  });
+
+  it('documents plan:update-goal command', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('plan:update-goal');
+  });
+
+  it('documents run:create command', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('run:create');
+  });
+
+  it('documents run:update-insight command', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('run:update-insight');
+  });
+});

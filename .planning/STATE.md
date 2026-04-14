@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: completed
-last_updated: "2026-04-10T10:52:43.023Z"
+status: Phase 5 shipped — PR #59
+last_updated: "2026-04-14"
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 45
-  completed_plans: 45
+  total_phases: 11
+  completed_phases: 11
+  total_plans: 49
+  completed_plans: 49
   percent: 100
 ---
 
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-21)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 04 — dashboard
+**Current focus:** Phase 05 — missing-features
 
 ## Current Phase
 
-**Phase:** 4
+**Phase:** 05
 **Status:** Milestone complete
 **Plans:** 5/5
 **Progress:** [██████████] 100%
@@ -158,6 +158,10 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 - [Phase 04-dashboard]: Pace vs Heart Rate ComposedChart uses dual YAxis (left=pace, right=BPM) with connectNulls for sparse data
 - [Phase 04-dashboard]: paceBpmData includes weeks where avgPace !== null OR hrValues.length > 0; avgBPM is null when no HR data
 - [Phase 04-dashboard]: Adherence stat card gated behind activeFilter === 'current-plan' inline guard
+- [Phase 05-01]: addPhase uses assignPlanStructure on full phases array (not $push) to ensure correct global week numbers
+- [Phase 05-01]: Empty targetDate uses MongoDB $unset (not $set to empty string) to match frontend falsy check
+- [Phase 05-04]: useChat tag test mock order: GET plan + GET messages on mount, stream, fetchPlan after done, tag API call, fetchPlan inside applyPlanOperations
+- [Phase 05-04]: run:update-insight: plan-updated NOT dispatched for insight-only; hasPlanMutation excludes runInsightMatches
 
 ## Accumulated Context
 
@@ -198,6 +202,8 @@ _Last updated: 2026-04-07 — quick task 260407-wjz shipped — UI polish and LL
 | Phase 04-dashboard P05 | 8min | 1 tasks | 1 files |
 | Phase 04-dashboard P07 | 12min | 2 tasks | 2 files |
 | Phase 04-dashboard P06 | 15 | 2 tasks | 3 files |
+| Phase 05-missing-features P01 | 346s | 3 tasks | 6 files |
+| Phase 05-missing-features P04 | 10min | 4 tasks | 2 files |
 
 ### Quick Tasks Completed
 

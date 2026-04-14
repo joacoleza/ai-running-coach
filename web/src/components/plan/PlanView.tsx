@@ -127,12 +127,14 @@ interface PlanViewProps {
   onAddDay?: (phaseName: string, weekNumber: number, fields: Record<string, string>) => Promise<void>;
   onUpdatePhase?: (phaseIndex: number, updates: { name?: string; description?: string }) => Promise<void>;
   onDeletePhase?: () => Promise<void>;
+  onAddPhase?: () => Promise<void>;
+  onAddWeek?: (phaseIndex: number) => Promise<void>;
   readonly?: boolean;
   lastCompletedDayRef?: React.RefObject<HTMLDivElement | null>;
   dayRefsMap?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
-export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
+export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, onAddWeek, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
   const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
 
@@ -155,7 +157,7 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
     <>
       <div>
         {plan.phases.map((phase, idx) => (
-          <section key={phase.name} className="mb-8">
+          <section key={idx} className="mb-8">
             <PhaseHeader
               phase={phase}
               phaseIndex={idx}
@@ -242,8 +244,25 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
                 </div>
               );
             })}
+            {!readonly && onAddWeek && (
+              <button
+                onClick={() => void onAddWeek(idx)}
+                className="cursor-pointer mt-2 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                title="Add a week to this phase"
+              >
+                + Add week
+              </button>
+            )}
           </section>
         ))}
+        {!readonly && onAddPhase && (
+          <button
+            onClick={() => void onAddPhase()}
+            className="cursor-pointer mt-4 text-sm text-gray-400 hover:text-blue-600 transition-colors"
+          >
+            + Add phase
+          </button>
+        )}
       </div>
 
       {/* Link Run Modal */}
