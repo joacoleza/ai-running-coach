@@ -49,7 +49,7 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 | Frontend | React + TypeScript + Vite                                 |
 | Hosting  | Azure Static Web Apps (free tier)                         |
 | Backend  | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
-| Database | Azure Cosmos DB for MongoDB (free tier)                   |
+| Database | MongoDB Atlas (free tier M0)                              |
 | AI       | Claude API (Anthropic)                                    |
 | Auth     | Pre-shared password (stored in Azure config)              |
 
@@ -130,15 +130,11 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 2. **Deployment secret** — Azure automatically creates a repo secret named `AZURE_STATIC_WEB_APPS_API_TOKEN_<resource-name>` when linking the GitHub repo. Ensure the [workflow file](.github/workflows/azure-static-web-apps.yml) references the correct secret name.
 
-3. **Create Cosmos DB database** (requires an existing free-tier Cosmos DB for MongoDB account):
-
-   ```bash
-   COSMOS_ACCOUNT_NAME=your-account RESOURCE_GROUP=your-rg ./scripts/setup-cosmos-db.sh
-   ```
+3. **Create MongoDB Atlas database** — Sign up at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas), create a free M0 cluster, add a database user with read/write access, and allow connections from `0.0.0.0/0` (Network Access).
 
 4. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
    - `APP_PASSWORD` — the password used to access the app
-   - `MONGODB_CONNECTION_STRING` — from Cosmos DB account → **Connection strings** → Primary Connection String
+   - `MONGODB_CONNECTION_STRING` — from Atlas cluster → **Connect** → **Drivers** → copy the `mongodb+srv://` connection string
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
 ## Roadmap
