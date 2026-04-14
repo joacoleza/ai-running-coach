@@ -10,16 +10,22 @@ vi.mock('../components/coach/CoachPanel', () => ({
   ),
 }));
 
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
-
-vi.mock('react-markdown', () => ({
-  default: ({ children, remarkPlugins }: { children: string; remarkPlugins?: unknown[] }) => (
-    <div data-testid="markdown" data-plugins={remarkPlugins?.length ?? 0}>{children}</div>
+vi.mock('../components/plan/PlanView', () => ({
+  PlanView: ({ plan, readonly }: { plan: { phases: unknown[] }; readonly?: boolean }) => (
+    <div data-testid="plan-view" data-readonly={String(readonly)} data-phases={plan.phases.length} />
   ),
 }));
 
-vi.mock('remark-gfm', () => ({ default: () => {} }));
+vi.mock('../components/runs/RunDetailModal', () => ({
+  RunDetailModal: ({ run, onClose }: { run: { _id: string }; onClose: () => void }) => (
+    <div data-testid="run-detail-modal" data-run-id={run._id}>
+      <button onClick={onClose}>Close</button>
+    </div>
+  ),
+}));
+
+const mockFetch = vi.fn();
+vi.stubGlobal('fetch', mockFetch);
 
 beforeEach(() => {
   mockFetch.mockReset();
@@ -65,6 +71,9 @@ function mockFetchWithMessages(planResponse: { ok: boolean; json?: () => Promise
     if (typeof url === 'string' && url.includes('/api/messages')) {
       return Promise.resolve({ ok: true, json: async () => ({ messages: [] }) });
     }
+    if (typeof url === 'string' && url.includes('/api/runs/')) {
+      return Promise.resolve({ ok: true, json: async () => ({ _id: 'run1', date: '2026-04-01', distance: 10, duration: '50:00', pace: 5.0 }) });
+    }
     if (planResponse.ok && planResponse.json) {
       return Promise.resolve({ ok: true, json: planResponse.json });
     }
@@ -79,20 +88,18 @@ describe('ArchivePlan', () => {
     expect(screen.getByText('Loading plan...')).toBeInTheDocument();
   });
 
-  it('renders plan markdown after load', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+  it('renders PlanView after load', async () => {
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
-    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
     expect(screen.getByRole('link', { name: /back to archive/i })).toHaveAttribute('href', '/archive');
   });
 
-  it('passes remark-gfm plugin to ReactMarkdown (enables strikethrough for completed days)', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+  it('renders PlanView in readonly mode', async () => {
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
-    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
-    const md = screen.getByTestId('markdown');
-    // data-plugins counts the remarkPlugins array length — should be 1 (remark-gfm)
-    expect(md.getAttribute('data-plugins')).toBe('1');
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
+    expect(screen.getByTestId('plan-view').getAttribute('data-readonly')).toBe('true');
   });
 
   it('shows error when fetch fails', async () => {
@@ -102,39 +109,48 @@ describe('ArchivePlan', () => {
   });
 
   it('shows not found when plan is null', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: null }) });
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: null, linkedRuns: {} }) });
     renderWithId('plan1');
     await waitFor(() => expect(screen.getByText('Plan not found.')).toBeInTheDocument());
   });
 
   it('fetches chat history on mount after plan loads', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
-    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
     // Verify fetch was called with messages endpoint
     const calls = mockFetch.mock.calls.map((c: unknown[]) => c[0] as string);
     expect(calls.some((url: string) => url.includes('api/messages?planId='))).toBe(true);
   });
 
   it('renders CoachPanel in readonly mode', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
     await waitFor(() => expect(screen.getByTestId('coach-panel')).toBeInTheDocument());
     expect(screen.getByTestId('coach-panel').getAttribute('data-readonly')).toBe('true');
   });
 
   it('renders FAB with aria-label View plan history', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
-    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /view plan history/i })).toBeInTheDocument();
   });
 
   it('FAB has bg-gray-500 class', async () => {
-    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan }) });
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
     renderWithId('plan1');
-    await waitFor(() => expect(screen.getByTestId('markdown')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
     const fab = screen.getByRole('button', { name: /view plan history/i });
     expect(fab.className).toContain('bg-gray-500');
+  });
+
+  it('open-run-detail event fetches run and shows RunDetailModal', async () => {
+    mockFetchWithMessages({ ok: true, json: async () => ({ plan: mockPlan, linkedRuns: {} }) });
+    renderWithId('plan1');
+    await waitFor(() => expect(screen.getByTestId('plan-view')).toBeInTheDocument());
+    window.dispatchEvent(new CustomEvent('open-run-detail', { detail: { runId: 'run1' } }));
+    await waitFor(() => expect(screen.getByTestId('run-detail-modal')).toBeInTheDocument());
+    expect(screen.getByTestId('run-detail-modal').getAttribute('data-run-id')).toBe('run1');
   });
 });
