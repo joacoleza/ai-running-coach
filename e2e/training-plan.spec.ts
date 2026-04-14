@@ -87,7 +87,7 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: 
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: mockArchivedPlans }) })
   })
   await page.route('**/api/plans/archived/**', async (route: any) => {
-    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: { ...mockArchivedPlans[0], phases: [] } }) })
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: { ...mockArchivedPlans[0], phases: [] }, linkedRuns: {} }) })
   })
   await page.route('**/api/plan/archive', async (route: any) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
@@ -838,7 +838,7 @@ test.describe('Archive section (Phase 2.1)', () => {
     await expect(page.getByText('Build base fitness')).toBeVisible({ timeout: 10_000 })
   })
 
-  test('clicking an archived plan navigates to readonly view', async ({ page }) => {
+  test('clicking an archived plan navigates to readonly view with PlanView', async ({ page }) => {
     await loginWithPlan(page)
     await page.getByRole('link', { name: /archive/i }).click()
 
@@ -847,6 +847,72 @@ test.describe('Archive section (Phase 2.1)', () => {
     await expect(page.url()).toContain('/archive/')
     // ArchivePlan renders a "← Back to Archive" link
     await expect(page.getByText(/back to archive/i)).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('archived plan shows linked run date and opens RunDetailModal on click', async ({ page }) => {
+    const archivedPlanWithRun = {
+      ...mockArchivedPlans[0],
+      phases: [
+        {
+          name: 'Base Building',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [
+                {
+                  label: 'A',
+                  type: 'run',
+                  guidelines: 'Easy run 5km',
+                  completed: true,
+                  skipped: false,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+    const linkedRuns = {
+      '1-A': {
+        _id: 'run-archived-001',
+        date: '2026-03-10',
+        distance: 5,
+        duration: '30:00',
+        pace: 6.0,
+        planId: 'archived-001',
+        weekNumber: 1,
+        dayLabel: 'A',
+      },
+    }
+
+    await loginWithPlan(page)
+
+    // Override the archived plan detail mock to return plan with phases + linkedRuns
+    await page.route('**/api/plans/archived/archived-001', async (route: any) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ plan: archivedPlanWithRun, linkedRuns }),
+      })
+    })
+    // Mock the run fetch when RunDetailModal opens
+    await page.route('**/api/runs/run-archived-001', async (route: any) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(linkedRuns['1-A']),
+      })
+    })
+
+    await page.getByRole('link', { name: /archive/i }).click()
+    await page.getByText('Build base fitness').click()
+    await expect(page.getByText(/back to archive/i)).toBeVisible({ timeout: 10_000 })
+
+    // The linked run date button should be visible inside the completed day row
+    await expect(page.getByText('10/03/2026')).toBeVisible({ timeout: 10_000 })
+
+    // Clicking the run date should open RunDetailModal (identified by its Close button)
+    await page.getByText('10/03/2026').click()
+    await expect(page.getByRole('button', { name: /close/i })).toBeVisible({ timeout: 10_000 })
   })
 
   test('COACH-04: TrainingPlan strips XML tags from coach response before saving progressFeedback', async ({ page }) => {

@@ -184,7 +184,7 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
 
               return (
                 <div key={week.weekNumber} className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
+                  <h3 id={`week-${week.weekNumber}`} className="text-lg font-semibold text-gray-800 mb-2">Week {week.weekNumber}</h3>
                   <div className="space-y-1">
                     {activeDays.map(day => {
                       const dayKey = `${week.weekNumber}-${day.label}`;

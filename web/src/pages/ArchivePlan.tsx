@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import type { Components } from 'react-markdown';
 import type { PlanData } from '../hooks/usePlan';
-import { planToMarkdown } from '../utils/planToMarkdown';
+import { PlanView } from '../components/plan/PlanView';
+import { RunDetailModal } from '../components/runs/RunDetailModal';
+import type { Run } from '../hooks/useRuns';
 import { CoachPanel } from '../components/coach/CoachPanel';
 
 function authHeaders(): Record<string, string> {
@@ -14,31 +13,18 @@ function authHeaders(): Record<string, string> {
   };
 }
 
-const mdComponents: Components = {
-  h1: ({ children }) => <h1 className="text-2xl font-bold text-gray-900 mt-6 mb-2">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-xl font-semibold text-gray-800 mt-5 mb-1">{children}</h2>,
-  h3: ({ children }) => {
-    const text = typeof children === 'string' ? children : Array.isArray(children) ? children.join('') : '';
-    const weekMatch = text.match(/^Week (\d+)$/);
-    const id = weekMatch ? `week-${weekMatch[1]}` : undefined;
-    return <h3 id={id} className="text-lg font-medium text-gray-700 mt-4 mb-1">{children}</h3>;
-  },
-  p: ({ children }) => <p className="text-gray-600 text-sm mb-2">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc list-inside space-y-1 mb-3">{children}</ul>,
-  li: ({ children }) => <li className="text-sm text-gray-700">{children}</li>,
-  strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-  em: ({ children }) => <em className="text-gray-500 italic">{children}</em>,
-};
-
 export function ArchivePlan() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const [plan, setPlan] = useState<PlanData | null>(null);
+  const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [selectedRun, setSelectedRun] = useState<Run | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchChatHistory(planId: string) {
@@ -62,8 +48,10 @@ export function ArchivePlan() {
         const res = await fetch(`/api/plans/archived/${id}`, { headers: authHeaders() });
         if (!res.ok) throw new Error('Failed to fetch plan');
         const data = await res.json();
-        const fetchedPlan = (data as { plan?: PlanData }).plan ?? null;
+        const fetchedPlan = (data as { plan?: PlanData; linkedRuns?: Record<string, Run> }).plan ?? null;
         setPlan(fetchedPlan);
+        const rawLinkedRuns = (data as { plan?: PlanData; linkedRuns?: Record<string, Run> }).linkedRuns ?? {};
+        setLinkedRuns(new Map(Object.entries(rawLinkedRuns)));
         if (fetchedPlan?._id) {
           void fetchChatHistory(fetchedPlan._id);
         }
@@ -86,11 +74,32 @@ export function ArchivePlan() {
     }
   }, [plan]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Listen for open-run-detail events from DayRow run date clicks
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ runId: string }>).detail;
+      setSelectedRunId(detail.runId);
+    };
+    window.addEventListener('open-run-detail', handler);
+    return () => window.removeEventListener('open-run-detail', handler);
+  }, []);
+
+  // Fetch the run when selectedRunId changes
+  useEffect(() => {
+    if (!selectedRunId) return;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/runs/${selectedRunId}`, {
+          headers: { 'x-app-password': localStorage.getItem('app_password') ?? '' },
+        });
+        if (res.ok) setSelectedRun(await res.json() as Run);
+      } catch { /* ignore */ }
+    })();
+  }, [selectedRunId]);
+
   if (isLoading) return <div className="p-6 text-gray-400">Loading plan...</div>;
   if (error) return <div className="p-6 text-red-600">{error}</div>;
   if (!plan) return <div className="p-6 text-gray-600">Plan not found.</div>;
-
-  const markdown = planToMarkdown(plan);
 
   return (
     <div className="flex flex-1 overflow-hidden h-full">
@@ -98,9 +107,25 @@ export function ArchivePlan() {
       <div className="flex-1 overflow-y-auto p-6">
         <Link to="/archive" className="text-blue-600 hover:underline text-sm mb-4 inline-block">&larr; Back to Archive</Link>
         <div className="w-full">
-          <ReactMarkdown components={mdComponents} remarkPlugins={[remarkGfm]}>{markdown}</ReactMarkdown>
+          <PlanView
+            plan={plan}
+            linkedRuns={linkedRuns}
+            onUpdateDay={async () => {}}
+            onDeleteDay={async () => {}}
+            readonly={true}
+          />
         </div>
       </div>
+
+      {/* RunDetailModal — opened when a linked run date is clicked */}
+      {selectedRun && (
+        <RunDetailModal
+          run={selectedRun}
+          onClose={() => { setSelectedRun(null); setSelectedRunId(null); }}
+          onUpdated={(updated) => setSelectedRun(updated)}
+          onDeleted={() => { setSelectedRun(null); setSelectedRunId(null); }}
+        />
+      )}
 
       {/* Readonly CoachPanel — right column on desktop, overlay on mobile */}
       <CoachPanel
