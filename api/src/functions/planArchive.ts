@@ -125,7 +125,15 @@ app.http('getArchivedPlan', {
         return { status: 404, jsonBody: { error: 'Archived plan not found' } };
       }
 
-      return { status: 200, jsonBody: { plan: result } };
+      const runs = await db.collection('runs').find({ planId: result._id }).toArray();
+      const linkedRuns: Record<string, unknown> = {};
+      for (const run of runs) {
+        if (run.weekNumber != null && run.dayLabel) {
+          linkedRuns[`${run.weekNumber}-${run.dayLabel}`] = run;
+        }
+      }
+
+      return { status: 200, jsonBody: { plan: result, linkedRuns } };
     } catch (err) {
       context.log('Error fetching archived plan:', err);
       return {
