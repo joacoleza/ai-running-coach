@@ -2,11 +2,23 @@
 
 ## What This Is
 
-A personal web app — accessible only to the owner — that acts as an AI running coach. The user sets a goal (e.g. a half marathon), the coach asks questions and generates a structured training plan, and after each run the user logs the data so the coach can give feedback and adjust the plan. A dashboard shows training stats, volume charts, and pace trends.
+A multi-user web app that acts as a personal AI running coach. Each user sets a goal (e.g. a half marathon), the coach asks questions and generates a structured training plan, and after each run the user logs the data so the coach can give feedback and adjust the plan. A dashboard shows training stats, volume charts, and pace trends. User accounts are admin-provisioned — no public registration.
 
 ## Core Value
 
 A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened — not generic training templates.
+
+## Current Milestone: v2.0 Multi-User Support
+
+**Goal:** Replace the single-user password gate with per-user JWT authentication and an admin panel for managing users — so multiple people can each have their own independent coaching session, plan, and run history.
+
+**Target features:**
+- Email + password login with JWT sessions (JWT_SECRET env var; passwords bcrypt-hashed)
+- First-login force-change-password flow
+- Admin UI page: list users, add user with auto-generated temp password (shown once), trigger password reset
+- Per-user data isolation: plans, runs, and chat history scoped to authenticated user
+- Logout / session management
+- No public registration — admin provisions all accounts
 
 ## Requirements
 
@@ -38,7 +50,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 ### Out of Scope
 
-- Multi-user support — personal tool, no auth system beyond a simple gate
+- Multi-user support — personal tool, no auth system beyond a simple gate [moved to v2.0]
 - Real-time Apple Watch sync — export upload is sufficient and simpler
 - Mobile native app — web app only
 - Strava/Garmin integrations — Apple Health export covers the use case
@@ -48,16 +60,16 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 ## Context
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
-- **Auth:** Pre-shared password (`APP_PASSWORD` env var); 30-failure global lockout stored in MongoDB
+- **Auth:** JWT-based per-user auth (v2.0+); previously pre-shared password (APP_PASSWORD); bcrypt password hashing, JWT_SECRET env var
 - **Test coverage:** 205 API tests, 424 web tests, 65 E2E tests — all green as of v1.1
 - **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
-- **Single user:** No signup flows; minimal auth; solo usage keeps Claude API costs ~$1–3/month
+- **Users:** Admin-provisioned accounts only; no signup flows; small closed user base keeps Claude API costs low
 
 ## Constraints
 
 - **Deployment:** Azure — use free-tier services wherever possible
-- **Single user:** No need for multi-user auth or management
-- **API cost:** Claude API usage should be minimal — just one user, occasional sessions
+- **Multi-user:** Admin-provisioned accounts only; no public registration
+- **API cost:** Claude API usage should stay minimal — small number of known users
 - **Stack:** Keep it simple — avoid over-engineering for a personal tool
 
 ## Key Decisions
@@ -79,7 +91,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-04-14 after v1.1 milestone complete.
+Last updated: 2026-04-15 — v2.0 milestone started.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -95,4 +107,4 @@ Last updated: 2026-04-14 after v1.1 milestone complete.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-14 after v1.1 milestone*
+*Last updated: 2026-04-15 — v2.0 milestone started*
