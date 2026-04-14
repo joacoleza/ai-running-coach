@@ -143,18 +143,4 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 ## Roadmap
 
-See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
-
-### ✅ v1.1 — Personal AI Running Coach (shipped 2026-04-14)
-
-- ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev, CI/CD)~~ ✓
-- ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, brute-force lockout)~~ ✓
-- ~~**Phase 1.2** — Testing Strategy & CI (unit, E2E, coverage badges, GitHub Actions)~~ ✓
-- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, plan gen)~~ ✓
-- ~~**Phase 2.1** — Training Plan Redesign (phases/weeks/days, inline editing, agent updates)~~ ✓
-- ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, run/plan linking)~~ ✓
-- ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
-- ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
-- ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll, favicon, run/plan cross-linking, mobile Safari)~~ ✓
-- ~~**Phase 4** — Dashboard (filter presets, stat cards, volume + pace charts, readonly archive history)~~ ✓
-- ~~**Phase 5** — Agent Commands (add phase/week, set target date, log runs, save insights via chat)~~ ✓
+See [.planning/ROADMAP.md](.planning/ROADMAP.md).
