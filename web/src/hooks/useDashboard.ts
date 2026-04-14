@@ -128,7 +128,7 @@ export function groupRunsByWeek(runs: Run[]): WeekBucket[] {
     }
 
     const bucket = buckets.get(key)!
-    bucket.distance = Math.round((bucket.distance + run.distance) * 10) / 10
+    bucket.distance += run.distance
     bucket.totalDurationMinutes += parseDurationToMinutes(run.duration)
     if (run.avgHR && run.avgHR > 0) {
       bucket.hrValues.push(run.avgHR)
@@ -144,7 +144,7 @@ export function groupRunsByWeek(runs: Run[]): WeekBucket[] {
         bucket.totalDurationMinutes > 0 && bucket.distance > 0
           ? bucket.totalDurationMinutes / bucket.distance
           : null
-      return { ...bucket, avgPace }
+      return { ...bucket, distance: Math.round(bucket.distance * 10) / 10, avgPace }
     })
 
   return sorted

@@ -169,4 +169,18 @@ describe('groupRunsByWeek', () => {
     expect(buckets).toHaveLength(1)
     expect(buckets[0].avgPace).toBeNull()
   })
+
+  it('single run with fractional distance (e.g. 6.03km): pace uses exact distance, not rounded', () => {
+    // 6.03km in 45:01 → 45.0167 min / 6.03 ≈ 7.465, NOT 45.0167 / 6.0 = 7.503
+    // Regression: bucket.distance was being rounded after each run, causing inflated pace
+    const runs = [makeRun({ date: '2026-04-14', distance: 6.03, duration: '45:01' })]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    const expectedPace = (45 + 1 / 60) / 6.03
+    expect(buckets[0].avgPace).toBeCloseTo(expectedPace, 3)
+    // Must NOT equal the rounded-distance version
+    expect(buckets[0].avgPace).not.toBeCloseTo((45 + 1 / 60) / 6.0, 2)
+    // Displayed distance is still rounded to 1 decimal
+    expect(buckets[0].distance).toBe(6.0)
+  })
 });
