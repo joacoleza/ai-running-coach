@@ -464,6 +464,126 @@ describe('sendMessage — phase 5 new tag handlers', () => {
     expect(lastMsg.content).not.toContain('plan:add-phase')
   })
 
+  // --- plan:add-week ---
+
+  it('strips plan:add-week tag and POSTs to /api/plan/phases/:phaseIndex/weeks', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Added a week <plan:add-week phaseIndex=\\"0\\"\\/>."}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    // GET /api/plan (onDone fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // POST /api/plan/phases/0/weeks
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan (applyPlanOperations fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('add a week to phase 1')
+    })
+
+    const addWeekCalls = mockFetch.mock.calls.filter(([url, opts]: any[]) =>
+      url === '/api/plan/phases/0/weeks' && opts?.method === 'POST'
+    )
+    expect(addWeekCalls).toHaveLength(1)
+
+    const lastMsg = result.current.messages[result.current.messages.length - 1]
+    expect(lastMsg.content).not.toContain('plan:add-week')
+  })
+
+  it('shows ⚠️ error when plan:add-week has no phaseIndex attr', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    // Tag matches the regex (has whitespace + attr) but phaseIndex attr is absent
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"Added a week <plan:add-week name=\\"Base\\"\\/>."}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    // GET /api/plan (onDone fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan (applyPlanOperations fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('add a week')
+    })
+
+    const addWeekCalls = mockFetch.mock.calls.filter(([url, opts]: any[]) =>
+      typeof url === 'string' && url.includes('/weeks') && opts?.method === 'POST'
+    )
+    expect(addWeekCalls).toHaveLength(0)
+
+    const lastMsg = result.current.messages[result.current.messages.length - 1]
+    expect(lastMsg.content).toContain('⚠️')
+  })
+
+  // --- plan:update-feedback ---
+
+  it('strips plan:update-feedback tag and PATCHes /api/plan with progressFeedback', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"You\'re on track! <plan:update-feedback feedback=\\"Great progress this week.\\"\\/>."}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    // GET /api/plan (onDone fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // PATCH /api/plan
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan (applyPlanOperations fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('how am I doing?')
+    })
+
+    const feedbackCalls = mockFetch.mock.calls.filter(([url, opts]: any[]) =>
+      url === '/api/plan' && opts?.method === 'PATCH'
+    )
+    expect(feedbackCalls).toHaveLength(1)
+    const body = JSON.parse(feedbackCalls[0][1].body as string)
+    expect(body.progressFeedback).toBe('Great progress this week.')
+
+    const lastMsg = result.current.messages[result.current.messages.length - 1]
+    expect(lastMsg.content).not.toContain('plan:update-feedback')
+  })
+
+  it('skips plan:update-feedback PATCH when feedback attr is empty', async () => {
+    const { result } = renderHook(() => useChat(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    mockFetch.mockReturnValueOnce(
+      makeStreamResponse([
+        'data: {"text":"No feedback <plan:update-feedback feedback=\\"\\"\\/>."}\n\n',
+        'data: {"done":true,"planGenerated":false}\n\n',
+      ])
+    )
+    // GET /api/plan (onDone fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+    // GET /api/plan (applyPlanOperations fetchPlan)
+    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
+
+    await act(async () => {
+      await result.current.sendMessage('anything')
+    })
+
+    const feedbackCalls = mockFetch.mock.calls.filter(([url, opts]: any[]) =>
+      url === '/api/plan' && opts?.method === 'PATCH'
+    )
+    expect(feedbackCalls).toHaveLength(0)
+  })
+
   // --- plan:update-goal ---
 
   it('strips plan:update-goal and PATCHes /api/plan with targetDate', async () => {

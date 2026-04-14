@@ -170,6 +170,55 @@ describe('TrainingPlan', () => {
     render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
     expect(screen.queryByText(/Target:/)).not.toBeInTheDocument();
   });
+
+  it('shows "+ Set target date" prompt when plan has no targetDate', () => {
+    const planNoDate = { ...activePlan, targetDate: undefined };
+    defaultUsePlan({ plan: planNoDate });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    expect(screen.getByText('+ Set target date')).toBeInTheDocument();
+  });
+
+  it('clicking target date text enters edit mode and shows a date input', () => {
+    defaultUsePlan({ plan: activePlan });
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Target: 2026-10-01'));
+    const input = document.querySelector('input[type="date"]') as HTMLInputElement;
+    expect(input).not.toBeNull();
+    expect(input.value).toBe('2026-10-01');
+  });
+
+  it('pressing Escape in date edit mode reverts to display without saving', () => {
+    defaultUsePlan({ plan: activePlan });
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Target: 2026-10-01'));
+    const input = document.querySelector('input[type="date"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '2027-01-01' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(screen.getByText('Target: 2026-10-01')).toBeInTheDocument();
+    expect(mockFetch).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('pressing Enter in date edit mode calls PATCH /api/plan with new targetDate', async () => {
+    const refreshPlan = vi.fn().mockResolvedValue(undefined);
+    defaultUsePlan({ plan: activePlan, refreshPlan });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+    render(<MemoryRouter><TrainingPlan /></MemoryRouter>);
+    fireEvent.click(screen.getByText('Target: 2026-10-01'));
+    const input = document.querySelector('input[type="date"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '2027-03-15' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() => {
+      const patchCall = mockFetch.mock.calls.find((c: unknown[]) => c[0] === '/api/plan');
+      expect(patchCall).toBeDefined();
+      const body = JSON.parse((patchCall![1] as { body: string }).body);
+      expect(body.targetDate).toBe('2027-03-15');
+    });
+    vi.unstubAllGlobals();
+  });
 });
 
 describe('handleGetFeedback XML stripping', () => {

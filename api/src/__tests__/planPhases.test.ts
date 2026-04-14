@@ -251,6 +251,83 @@ describe('POST /api/plan/phases', () => {
   });
 });
 
+function makeAddWeekReq(phaseIndex: string): HttpRequest {
+  const url = `http://localhost/api/plan/phases/${phaseIndex}/weeks`;
+  const req = new HttpRequest({
+    method: 'POST',
+    url,
+    headers: { 'x-app-password': 'test-pw' },
+    params: { phaseIndex },
+  });
+  return req;
+}
+
+describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
+  it('returns 404 when no active plan exists', async () => {
+    const req = makeAddWeekReq('0');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('No active plan found');
+  });
+
+  it('returns 400 for non-integer phaseIndex', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('abc');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid phaseIndex');
+  });
+
+  it('returns 400 for negative phaseIndex', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('-1');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid phaseIndex');
+  });
+
+  it('returns 404 when phaseIndex is out of bounds', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('5');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('Phase index 5 does not exist');
+  });
+
+  it('adds an empty week to the specified phase and returns 201', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('0');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    // Phase 0 originally had 1 week; should now have 2
+    expect(result.jsonBody.plan.phases[0].weeks).toHaveLength(2);
+    expect(result.jsonBody.plan.phases[0].weeks[1].days).toHaveLength(0);
+  });
+
+  it('recomputes globally sequential week numbers after adding a week', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('0');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    // validActivePlan: phase0 week1, phase1 week2. After adding week to phase0:
+    // phase0: week1, week2; phase1: week3
+    expect(result.jsonBody.plan.phases[0].weeks[0].weekNumber).toBe(1);
+    expect(result.jsonBody.plan.phases[0].weeks[1].weekNumber).toBe(2);
+    expect(result.jsonBody.plan.phases[1].weeks[0].weekNumber).toBe(3);
+  });
+
+  it('does not modify other phases', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const req = makeAddWeekReq('1');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+    // Phase 0 unchanged (still 1 week)
+    expect(result.jsonBody.plan.phases[0].weeks).toHaveLength(1);
+    // Phase 1 now has 2 weeks
+    expect(result.jsonBody.plan.phases[1].weeks).toHaveLength(2);
+  });
+});
+
 describe('DELETE /api/plan/phases/last', () => {
   it('returns 400 when only one phase exists', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
