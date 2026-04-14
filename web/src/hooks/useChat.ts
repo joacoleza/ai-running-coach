@@ -205,7 +205,7 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:add-phase[^/]*\/>/g, '')
                         .replace(/<plan:add-week[^/]*\/>/g, '')
                         .replace(/<plan:update-goal[^/]*\/>/g, '')
-                        .replace(/<plan:update-feedback[^/]*\/>/g, '')
+                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
                         .replace(/<run:create[^/]*\/>/g, '')
                         .replace(/<run:update-insight[^/]*\/>/g, '')
                         .replace(/<app:[^/]*\/>/g, '')
@@ -247,7 +247,7 @@ export function useChat(): UseChatReturn {
     const addPhaseRegex = /<plan:add-phase\s*([^/]*)\/>/g;
     const addWeekRegex = /<plan:add-week\s+([^/]+)\/>/g;
     const updateGoalRegex = /<plan:update-goal\s+([^/]+)\/>/g;
-    const updateFeedbackRegex = /<plan:update-feedback\s+([^/]+)\/>/g;
+    const updateFeedbackRegex = /<plan:update-feedback\s+((?:(?!\/>)[\s\S])+)\/>/g;
     const runCreateRegex = /<run:create\s+([^/]+)\/>/g;
     const runInsightRegex = /<run:update-insight\s+([^/]+)\/>/g;
     const planUpdates = [...accumulatedText.matchAll(planUpdateRegex)];
@@ -282,7 +282,7 @@ export function useChat(): UseChatReturn {
                 .replace(/<plan:add-phase[^/]*\/>/g, '')
                 .replace(/<plan:add-week[^/]*\/>/g, '')
                 .replace(/<plan:update-goal[^/]*\/>/g, '')
-                .replace(/<plan:update-feedback[^/]*\/>/g, '')
+                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
                 .replace(/<run:create[^/]*\/>/g, '')
                 .replace(/<run:update-insight[^/]*\/>/g, '')
                 .trim(),
@@ -535,7 +535,7 @@ export function useChat(): UseChatReturn {
                 .replace(/<plan:add-phase[^/]*\/>/g, '')
                 .replace(/<plan:add-week[^/]*\/>/g, '')
                 .replace(/<plan:update-goal[^/]*\/>/g, '')
-                .replace(/<plan:update-feedback[^/]*\/>/g, '')
+                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
                 .replace(/<run:create[^/]*\/>/g, '')
                 .replace(/<run:update-insight[^/]*\/>/g, '')
                 .replace(/<app:[^/]*\/>/g, '')
@@ -669,7 +669,7 @@ export function useChat(): UseChatReturn {
                   .replace(/<plan:add-phase[^/]*\/>/g, '')
                   .replace(/<plan:add-week[^/]*\/>/g, '')
                   .replace(/<plan:update-goal[^/]*\/>/g, '')
-                  .replace(/<plan:update-feedback[^/]*\/>/g, '')
+                  .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
                   .replace(/<run:create[^/]*\/>/g, '')
                   .replace(/<run:update-insight[^/]*\/>/g, '')
                   .trim(),
@@ -862,7 +862,7 @@ export function useChat(): UseChatReturn {
                         .replace(/<plan:add-phase[^/]*\/>/g, '')
                         .replace(/<plan:add-week[^/]*\/>/g, '')
                         .replace(/<plan:update-goal[^/]*\/>/g, '')
-                        .replace(/<plan:update-feedback[^/]*\/>/g, '')
+                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
                         .replace(/<run:create[^/]*\/>/g, '')
                         .replace(/<run:update-insight[^/]*\/>/g, '')
                         .trim(),

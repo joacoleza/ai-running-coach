@@ -169,7 +169,16 @@ app.http('chat', {
           ? `Coach's previous progress assessment: ${plan.progressFeedback}\n\n`
           : '';
 
-        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\n${feedbackPrefix}${lines.join('\n')}`;
+        // Build phase index summary so Claude can reference 0-based phaseIndex in plan:add-week
+        const phaseSummary = phases.map((p, i) => {
+          const weekNums = p.weeks.map(w => w.weekNumber).sort((a, b) => a - b);
+          const weekRange = weekNums.length === 0 ? 'no weeks'
+            : weekNums.length === 1 ? `Week ${weekNums[0]}`
+            : `Weeks ${weekNums[0]}-${weekNums[weekNums.length - 1]}`;
+          return `  Phase ${i} (index=${i}): ${p.name} — ${weekRange}`;
+        }).join('\n');
+
+        const planStateContent = `[Current training plan — authoritative, reflects all manual changes made outside this chat]\n\nPhases (use 0-based index for plan:add-week, plan:update-phase, plan:delete-phase):\n${phaseSummary}\n\n${feedbackPrefix}${lines.join('\n')}`;
 
         // Insert synthetic pair before the last message (the current user message)
         const currentUserMsg = contextMessages.pop()!;
