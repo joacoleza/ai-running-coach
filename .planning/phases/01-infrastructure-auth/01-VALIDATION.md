@@ -1,10 +1,12 @@
 ---
 phase: 1
 slug: infrastructure-auth
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-21
+updated: 2026-04-14
+note: "Phase predates Nyquist adoption. VERIFICATION.md passed 11/11. Auth tests in Phase 1.2 provide automated coverage for AUTH-01/02/03."
 ---
 
 # Phase 1 — Validation Strategy

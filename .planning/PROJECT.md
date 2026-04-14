@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A personal web app — accessible only to the owner — that acts as an AI running coach. The user sets a goal (e.g. a half marathon), the coach asks questions and generates a training plan, and after each run the user uploads Apple Health data so the coach can give feedback and adjust the plan. A dashboard shows the training calendar, run history, and progress toward the goal.
+A personal web app — accessible only to the owner — that acts as an AI running coach. The user sets a goal (e.g. a half marathon), the coach asks questions and generates a structured training plan, and after each run the user logs the data so the coach can give feedback and adjust the plan. A dashboard shows training stats, volume charts, and pace trends.
 
 ## Core Value
 
@@ -12,73 +12,74 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 ### Validated
 
-- [x] App is deployed to Azure using free-tier services (Azure Functions + free DB) — Validated in Phase 1: Infrastructure & Auth
-- [x] Access is restricted to a single authorized user — Validated in Phase 1: Infrastructure & Auth
-- [x] Testing pyramid established (unit → integration → E2E) with CI on every PR — Validated in Phase 1.2: Testing Strategy & CI
+- ✓ App deployed to Azure using free-tier services — v1.1
+- ✓ Access restricted to a single authorized user via pre-shared password — v1.1
+- ✓ Testing pyramid established (unit → integration → E2E) with CI on every PR — v1.1
+- ✓ User can set a running goal (event type, target date, current fitness level) — v1.1
+- ✓ Coach asks onboarding questions via chat and generates a training plan — v1.1
+- ✓ User can view the training plan as a hierarchical view (phases/weeks/days) — v1.1
+- ✓ User can manually log a run (distance, duration, date, notes) — v1.1
+- ✓ User can view logged runs in a filterable, paginated Runs list — v1.1
+- ✓ Coach receives run history in context and can provide feedback via chat — v1.1
+- ✓ Coach can adjust the training plan based on run history — v1.1
+- ✓ Dashboard shows run history stats, weekly volume chart, pace trend chart, date-filtered views — v1.1
+- ✓ Archived plan chat history is viewable in readonly mode on the Archive page — v1.1
+- ✓ Agent can add a new phase/week to the plan via chat — v1.1
+- ✓ Agent can update the plan's target race date via chat — v1.1
+- ✓ Agent can log a run on the user's behalf via chat — v1.1
+- ✓ Agent can save a coaching insight to a run record — v1.1
+- ✓ User can add a new phase to the training plan via UI button — v1.1
+- ✓ User can edit the target race date inline in the Training Plan header — v1.1
 
 ### Active
 
-- [x] User can set a running goal (event type, target date, current fitness level) — Validated in Phase 2: Coach Chat
-- [x] Coach asks onboarding questions via chat and generates a training plan — Validated in Phase 2: Coach Chat
-- [x] User can view the training plan as a structured hierarchical view (phases/weeks/days) — Validated in Phase 2.1: Training Plan Redesign
-- [x] User can manually log a run (distance, duration, date, notes) — Validated in Phase 3: Run Logging & Feedback
-- [x] User can view logged runs in a filterable, paginated Runs list — Validated in Phase 3: Run Logging & Feedback
-- [x] Coach receives run history in context and can provide feedback via chat — Validated in Phase 3: Run Logging & Feedback
-- [x] Coach can adjust the training plan based on run history — Validated in Phase 3: Run Logging & Feedback
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
-- [x] Dashboard shows run history stats (distance, runs, time, adherence), weekly volume chart, pace trend chart, and date-filtered views — Validated in Phase 4: Dashboard
-- [x] Archived plan chat history is viewable in readonly mode on the Archive page — Validated in Phase 4: Dashboard
-- [x] Agent can add a new phase to the plan via chat — Validated in Phase 5: Missing Features
-- [x] Agent can update the plan's target race date via chat — Validated in Phase 5: Missing Features
-- [x] Agent can log a run on the user's behalf via chat — Validated in Phase 5: Missing Features
-- [x] Agent can save a coaching insight to a run record — Validated in Phase 5: Missing Features
-- [x] User can add a new phase to the training plan via UI button — Validated in Phase 5: Missing Features
-- [x] User can edit the target race date inline in the Training Plan header — Validated in Phase 5: Missing Features
-- [ ] User can upload Apple Health export (ZIP/XML) after each run
-- [ ] Coach parses Apple Health data and provides feedback via chat
-- _Plan import from LLM conversation (IMP-01/02/03) — dropped, not needed_
 
 ### Out of Scope
 
-- Multi-user support — this is a personal tool, no auth system needed beyond a simple gate
+- Multi-user support — personal tool, no auth system beyond a simple gate
 - Real-time Apple Watch sync — export upload is sufficient and simpler
-- Mobile native app — web app only for v1
+- Mobile native app — web app only
 - Strava/Garmin integrations — Apple Health export covers the use case
 - Screenshot-based run data entry — structured XML export is more reliable
+- Plan import from LLM conversation — dropped by user decision (IMP-01/02/03)
 
 ## Context
 
-- Solo user — authentication can be minimal (e.g. a shared secret or Azure Static Web Apps built-in auth)
-- Apple Health export format: a ZIP file containing `export.xml` with structured workout data (distance, pace, heart rate, splits, duration)
-- Azure free tier targets: Azure Functions (consumption plan, 1M free executions/month), Cosmos DB free tier (1000 RU/s, 25 GB), or Azure Static Web Apps (free hosting)
-- AI coaching powered by the Claude API (Anthropic) — conversational chat interface
-- Plan import: user pastes raw LLM conversation text, the app extracts and structures the training plan
+- **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
+- **Auth:** Pre-shared password (`APP_PASSWORD` env var); 30-failure global lockout stored in MongoDB
+- **Test coverage:** 205 API tests, 424 web tests, 65 E2E tests — all green as of v1.1
+- **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
+- **Single user:** No signup flows; minimal auth; solo usage keeps Claude API costs ~$1–3/month
 
 ## Constraints
 
-- **Deployment**: Azure — use free-tier services wherever possible (Functions, Cosmos DB or Azure SQL free tier, Static Web Apps)
-- **Single user**: No need for multi-user auth, user management, or signup flows
-- **API cost**: Claude API usage should be minimal — just one user, occasional sessions
-- **Stack**: Keep it simple — avoid over-engineering for a personal tool
+- **Deployment:** Azure — use free-tier services wherever possible
+- **Single user:** No need for multi-user auth or management
+- **API cost:** Claude API usage should be minimal — just one user, occasional sessions
+- **Stack:** Keep it simple — avoid over-engineering for a personal tool
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Apple Health XML export (not screenshot OCR) | Structured data is more reliable; user comfortable with export flow | — Pending |
-| Chat interface for coaching | Natural for open-ended coaching questions and feedback | — Pending |
-| Azure free tier deployment | User wants minimal cost; usage will be low (solo) | — Pending |
-| Plan import via raw text paste | Simple, no special format required; Claude parses it | — Pending |
-| Frontend in `web/` (not repo root) | Keeps root clean; symmetric with `api/` and `shared/` | Confirmed Phase 1 |
-| No SWA CLI in local dev | Auth emulation added friction with no real benefit; auth tested against deployed Azure | Confirmed Phase 1 |
-| SWA Free plan uses `az staticwebapp users update` for role assignment (not a runtime function) | Runtime role-assignment functions require Standard plan ($9/mo) | Confirmed Phase 1 |
+| Apple Health XML export (not screenshot OCR) | Structured data is more reliable; user comfortable with export flow | Pending (not yet implemented) |
+| Chat interface for coaching | Natural for open-ended coaching questions and feedback | ✓ Good — used daily |
+| Azure free tier deployment | User wants minimal cost; usage will be low (solo) | ✓ Good — $0/month infra |
+| Replace GitHub OAuth with pre-shared password (Phase 1.1) | OAuth added friction with no benefit for solo use | ✓ Good — simpler, just as secure |
+| Hierarchical plan model: phases → weeks → days (Phase 2.1) | Flat sessions were too rigid for real coaching plans | ✓ Good — flexible and agent-friendly |
+| Server-side plan saving in chat.ts (not POST /api/plan/generate) | Eliminates race between stream close and client-fetch | ✓ Good — no race conditions |
+| Agent XML tag protocol for plan mutations | Clean separation of display and operations; strippable during streaming | ✓ Good — scales well as new tags added |
+| Dashboard as home page (Phase 4) | More useful landing view than the plan itself | ✓ Good — immediate training context |
+| Drop plan import from LLM (IMP-01/02/03) | User decided not needed — manual logging + agent is sufficient | ✓ Correct call |
+| Global sequential week numbers + A–G day labels (no calendar dates in plan) | Removes timezone complexity; labels are stable across plan edits | ✓ Good — consistent behavior |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-04-11 — Phase 5 complete (Missing Features)
+Last updated: 2026-04-14 after v1.1 milestone complete.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -93,9 +94,5 @@ Last updated: 2026-04-11 — Phase 5 complete (Missing Features)
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
-## Current State
-
-Phase 4 complete — Dashboard & Plan Import: real dashboard home page with date-filtered training stats (Total Distance, Total Runs, Total Time, Adherence), Weekly Volume bar chart, Pace Trend line chart, and Pace vs Heart Rate ComposedChart (dual Y-axes). Adherence card shown only on Current Plan filter. AppShell route-aware: CoachPanel and FAB suppressed on /archive/:id routes so the ArchivePlan readonly panel and gray FAB are visible. 411 web tests, 181 API tests, 59 E2E tests all passing.
-
 ---
-*Last updated: 2026-04-10 after Phase 4: Dashboard*
+*Last updated: 2026-04-14 after v1.1 milestone*

@@ -143,16 +143,4 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 ## Roadmap
 
-See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
-
-- ~~**Phase 1** — Infrastructure & Auth (Azure setup, local dev)~~ ✓
-- ~~**Phase 1.1** — Replace Auth with Simple Password (pre-shared secret, no OAuth)~~ ✓
-- ~~**Phase 1.2** — Testing Strategy & CI (unit, E2E, coverage badges, GitHub Actions)~~ ✓
-- ~~**Phase 2** — Coach Chat & Plan Generation (onboarding, Claude streaming, plan gen)~~ ✓
-- ~~**Phase 2.1** — Training Plan Redesign (phases/weeks/days, inline editing, archive)~~ ✓
-- ~~**Phase 3** — Run Logging & Feedback (manual entry, post-run coaching, plan feedback)~~ ✓
-- ~~**Phase 3.1** — Fix Coach Feedback Quality (stale closure, raw XML in feedback)~~ ✓
-- ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
-- ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)~~ ✓
-- ~~**Phase 4** — Dashboard (progress tracking: filter presets, stat cards, Weekly Volume + Pace Trend charts, readonly archived chat history)~~ ✓
-- ~~**Phase 5** — Missing Features (plan extension UI + agent commands, inline target date editing, agent-created run logging, auto-saved run insights)~~ ✓
+See [.planning/ROADMAP.md](.planning/ROADMAP.md).
