@@ -18,9 +18,8 @@ result: pass
 
 ### 1b. Runs list sort and dedup after logging a past-dated run
 expected: After logging a new run with a past date via "Log a run", the run appears at its correct sorted position (newest-first) — not pinned to the top of the list. Scrolling to the bottom does not show the same run a second time.
-result: issue
-reported: "I added a run in the past, it was listed first (should not be listed first, is the last one). And then when I scrolled down, I saw it again at the bottom of the list."
-severity: major
+result: pass
+note: Confirmed working 2026-04-14. Fix was loadRuns(true) server reload on save instead of prepend.
 
 ### 2. Mobile run date layout on completed days
 expected: On the Training Plan page on mobile, find a completed day that has a linked run. The run date shown is compact and does not push the day label or guidelines onto multiple lines. Layout should not break — day label, guidelines, and run date should all fit without wrapping badly.
@@ -47,17 +46,15 @@ result: pass
 ## Summary
 
 total: 7
-passed: 5
-issues: 1
+passed: 6
+issues: 0
 pending: 0
 skipped: 1
 
 ## Gaps
 
 - truth: "After logging a run with a past date, it appears at its correct sorted position (newest-first), not pinned to the top. No duplicate appears when scrolling."
-  status: failed
-  reason: "User reported: added a run in the past, it was listed first (should not be listed first). Scrolling showed it again at the bottom."
-  severity: major
+  status: resolved
+  resolved: 2026-04-14
+  reason: "Confirmed working by user. Fix: RunEntryForm.onSave calls loadRuns(true, currentFilters()) which reloads from server in sorted order."
   test: 1b
-  artifacts: [web/src/pages/Runs.tsx]
-  missing: [reload list from server after save instead of prepending, so sort order is preserved and no duplicate appears]
