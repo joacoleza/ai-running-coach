@@ -155,3 +155,4 @@ See [.planning/ROADMAP.md](.planning/ROADMAP.md) for full details.
 - ~~**Phase 3.2** — Tech Debt Cleanup (remove dead endpoints, deduplicate SSE loop, fix docs)~~ ✓
 - ~~**Phase 3.3** — UI Polish & Mobile Fixes (scroll position, favicon, run/plan linking, mobile Safari)~~ ✓
 - ~~**Phase 4** — Dashboard (progress tracking: filter presets, stat cards, Weekly Volume + Pace Trend charts, readonly archived chat history)~~ ✓
+- ~~**Phase 5** — Missing Features (plan extension UI + agent commands, inline target date editing, agent-created run logging, auto-saved run insights)~~ ✓
