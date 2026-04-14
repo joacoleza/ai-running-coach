@@ -27,12 +27,13 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Training plan view** — View your plan as phases → weeks → days labeled Day A, Day B, Day C
 - **Inline day editing** — Click any day's objective or guidelines to edit in place; add new days to any week
 - **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
-- **Chat app control** — Tell the coach to update a day (`<plan:update>`) or add a new session (`<plan:add>`) and changes apply live — no page refresh needed
+- **Chat app control** — Tell the coach to update a day (`<plan:update>`), add a session (`<plan:add>`), add a phase (`<plan:add-phase>`), add a week (`<plan:add-week>`), or change the race date (`<plan:update-goal>`) — all applied live without a page refresh
+- **Plan structure editing** — `+ Add phase` and `+ Add week` buttons let you extend the plan from the UI; inline click-to-edit target race date on the plan header
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
-- **Run logging** — Log a run manually after each session (date, distance, duration, heart rate, notes); the coach provides feedback and can adjust the plan
+- **Run logging** — Log a run manually after each session, or tell the coach about it and it logs automatically via `<run:create>`; the coach saves feedback directly to the run record
 - **Run/plan cross-navigation** — Click a completed day's run date to open the run detail; click the Week/Day badge in a run to jump back to that training day
 - **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
-- **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go
+- **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go; progress assessments are auto-saved to the plan via `<plan:update-feedback>`
 - **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
 - **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence), weekly volume bar chart, and pace trend line chart; archived plan pages show readonly coaching chat history
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
