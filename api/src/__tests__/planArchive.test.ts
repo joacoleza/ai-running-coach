@@ -208,7 +208,7 @@ describe('GET /api/plans/archived', () => {
 });
 
 describe('GET /api/plans/archived/:id', () => {
-  it('returns single archived plan by id', async () => {
+  it('returns single archived plan by id with linkedRuns', async () => {
     const insertResult = await mongoClient.db('running-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'archived',
@@ -219,6 +219,35 @@ describe('GET /api/plans/archived/:id', () => {
     const result = await handlers.get('getArchivedPlan')!(req, ctx);
     expect(result.status).toBe(200);
     expect(result.jsonBody.plan).toBeDefined();
+    expect(result.jsonBody.linkedRuns).toBeDefined();
+    expect(typeof result.jsonBody.linkedRuns).toBe('object');
+  });
+
+  it('returns linkedRuns keyed by weekNumber-dayLabel for runs linked to archived plan', async () => {
+    const insertResult = await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...basePlan,
+      status: 'archived',
+    });
+    const planId = insertResult.insertedId;
+
+    await mongoClient.db('running-coach').collection('runs').insertOne({
+      planId,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-04-01',
+      distance: 10,
+      duration: '50:00',
+      pace: 5.0,
+    });
+
+    const id = planId.toString();
+    const req = makeReqWithParams('GET', `http://localhost/api/plans/archived/${id}`, { id });
+    const result = await handlers.get('getArchivedPlan')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.linkedRuns['1-A']).toBeDefined();
+    expect(result.jsonBody.linkedRuns['1-A'].date).toBe('2026-04-01');
+
+    await mongoClient.db('running-coach').collection('runs').deleteMany({ planId });
   });
 
   it('returns 400 for invalid ObjectId format', async () => {
