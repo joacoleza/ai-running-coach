@@ -185,7 +185,7 @@ See: .planning/PROJECT.md (updated 2026-03-21)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-04-14 — quick task 260414-gtd shipped — fix pace trend chart weekly aggregation_
+_Last updated: 2026-04-14 — quick task 260414-j28 shipped — archive plans show linked run dates with RunDetailModal_
 | Phase 03-run-logging P01 | 10 min | 2 tasks | 5 files |
 | Phase 03-run-logging P02 | 8 min | 1 tasks | 2 files |
 | Phase 03-run-logging P06 | 5min | 4 tasks | 3 files |
@@ -222,6 +222,7 @@ _Last updated: 2026-04-14 — quick task 260414-gtd shipped — fix pace trend c
 | 260407-vyb | Freeze training plan header on scroll | 2026-04-07 | c15da69 | [260407-vyb-freeze-training-plan-header-on-scroll](./quick/260407-vyb-freeze-training-plan-header-on-scroll/) |
 | 260407-wjz | UI polish and LLM run notes: server-side linkedRuns, notes in context, cursor-pointer, window.confirm, modal X, markdown feedback, equal-width fields | 2026-04-07 | 0dd233c | [260407-wjz-ui-polish-and-llm-run-notes-server-side-](./quick/260407-wjz-ui-polish-and-llm-run-notes-server-side-/) |
 | 260414-gtd | Fix pace trend chart: investigate and correct weekly aggregation and pace calculation | 2026-04-14 | fde4ab0 | [260414-gtd-fix-pace-trend-chart-investigate-and-cor](./quick/260414-gtd-fix-pace-trend-chart-investigate-and-cor/) |
+| 260414-j28 | Archive plans: show linked run dates and open RunDetailModal from archived view | 2026-04-14 | 2203177 | [260414-j28-archive-plans-show-linked-run-dates-and-](./quick/260414-j28-archive-plans-show-linked-run-dates-and-/) |
 | Phase 01.1-replace-auth P02 | 2 min | 2 tasks | 4 files |
 | Phase 01.1-replace-auth P01 | 2 | 2 tasks | 2 files |
 | Phase 01.2-testing-strategy P02 | 2 min | 2 tasks | 4 files |
