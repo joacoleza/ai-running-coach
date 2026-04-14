@@ -106,15 +106,15 @@ export function computeDateRange(
   return { dateFrom: undefined, dateTo: undefined }
 }
 
-interface WeekBucket {
+export interface WeekBucket {
   weekLabel: string
   distance: number
   avgPace: number | null
-  paceValues: number[]
+  totalDurationMinutes: number
   hrValues: number[]
 }
 
-function groupRunsByWeek(runs: Run[]): WeekBucket[] {
+export function groupRunsByWeek(runs: Run[]): WeekBucket[] {
   const buckets = new Map<string, WeekBucket>()
 
   for (const run of runs) {
@@ -124,26 +124,25 @@ function groupRunsByWeek(runs: Run[]): WeekBucket[] {
     const weekLabel = format(monday, 'MMM d')
 
     if (!buckets.has(key)) {
-      buckets.set(key, { weekLabel, distance: 0, avgPace: null, paceValues: [], hrValues: [] })
+      buckets.set(key, { weekLabel, distance: 0, avgPace: null, totalDurationMinutes: 0, hrValues: [] })
     }
 
     const bucket = buckets.get(key)!
     bucket.distance = Math.round((bucket.distance + run.distance) * 10) / 10
-    if (run.pace && run.pace > 0) {
-      bucket.paceValues.push(run.pace)
-    }
+    bucket.totalDurationMinutes += parseDurationToMinutes(run.duration)
     if (run.avgHR && run.avgHR > 0) {
       bucket.hrValues.push(run.avgHR)
     }
   }
 
-  // Compute avgPace and sort by weekStart ascending
+  // Compute avgPace as total_duration_minutes / total_distance (distance-weighted)
+  // and sort by weekStart ascending
   const sorted = Array.from(buckets.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([, bucket]) => {
       const avgPace =
-        bucket.paceValues.length > 0
-          ? bucket.paceValues.reduce((sum, p) => sum + p, 0) / bucket.paceValues.length
+        bucket.totalDurationMinutes > 0 && bucket.distance > 0
+          ? bucket.totalDurationMinutes / bucket.distance
           : null
       return { ...bucket, avgPace }
     })

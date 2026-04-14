@@ -3,7 +3,27 @@ import {
   parseDurationToMinutes,
   formatTotalTime,
   computeDateRange,
+  groupRunsByWeek,
 } from '../hooks/useDashboard';
+
+// Minimal Run stub for groupRunsByWeek tests
+function makeRun(overrides: {
+  date: string
+  distance: number
+  duration: string
+  pace?: number
+  avgHR?: number
+}): Parameters<typeof groupRunsByWeek>[0][0] {
+  return {
+    _id: 'test-id',
+    date: overrides.date,
+    distance: overrides.distance,
+    duration: overrides.duration,
+    pace: overrides.pace ?? (overrides.distance > 0 ? parseDurationToMinutes(overrides.duration) / overrides.distance : 0),
+    avgHR: overrides.avgHR,
+    notes: '',
+  } as Parameters<typeof groupRunsByWeek>[0][0]
+}
 
 describe('parseDurationToMinutes', () => {
   it('parses MM:SS format', () => {
@@ -98,4 +118,55 @@ describe('computeDateRange', () => {
     expect(range!.dateTo).toBe('2026-04-08');
     expect(range!.dateFrom).toBe('2026-01-07');
   });
+});
+
+describe('groupRunsByWeek', () => {
+  it('single run in a week: avgPace equals total_duration / total_distance', () => {
+    // 5km in 40 minutes → pace = 40/5 = 8.0 min/km
+    const runs = [makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' })]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].avgPace).toBeCloseTo(8.0, 4)
+  })
+
+  it('two runs same week with equal distance/pace: avgPace equals that pace', () => {
+    // Both 5km @ 8:00/km (40 min each). Weighted = (40+40)/(5+5) = 80/10 = 8.0
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' }),
+      makeRun({ date: '2026-04-08', distance: 5, duration: '40:00' }),
+    ]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].avgPace).toBeCloseTo(8.0, 4)
+  })
+
+  it('two runs same week with different distances: avgPace is distance-weighted (NOT arithmetic mean)', () => {
+    // 5km @ 8:00/km (40 min) + 10km @ 7:00/km (70 min)
+    // Arithmetic mean of paces: (8.0 + 7.0) / 2 = 7.5 (WRONG)
+    // Correct: (40 + 70) / (5 + 10) = 110 / 15 ≈ 7.333
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00', pace: 8.0 }),
+      makeRun({ date: '2026-04-08', distance: 10, duration: '1:10:00', pace: 7.0 }),
+    ]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    // Must be close to 7.333, NOT 7.5
+    expect(buckets[0].avgPace).toBeCloseTo(110 / 15, 4)
+    expect(buckets[0].avgPace).not.toBeCloseTo(7.5, 2)
+  })
+
+  it('run with zero distance: bucket avgPace is null if all runs have zero distance', () => {
+    const runs = [makeRun({ date: '2026-04-07', distance: 0, duration: '0:00' })]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].avgPace).toBeNull()
+  })
+
+  it('run with "0:00" duration and valid distance: avgPace is 0 (no movement time)', () => {
+    // totalDurationMinutes = 0, distance = 5 → avgPace = 0/5 = 0, but our guard requires totalDurationMinutes > 0
+    const runs = [makeRun({ date: '2026-04-07', distance: 5, duration: '0:00' })]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].avgPace).toBeNull()
+  })
 });
