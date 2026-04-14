@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ✅ **v1.1 Personal AI Running Coach** — Phases 1–5 (shipped 2026-04-14) — [archive](.planning/milestones/v1.1-ROADMAP.md)
+- ✅ **v1.1 Personal AI Running Coach** — Phases 1–5 (shipped 2026-04-14) — [archive](milestones/v1.1-ROADMAP.md)
 
 ## Phases
 
