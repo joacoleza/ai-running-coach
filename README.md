@@ -89,31 +89,22 @@ cd api && npm install && cd ..
 }
 ```
 
-**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then from the `api/` directory:
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh):
 
-```bash
-cd api
-node -e "
-const bcrypt = require('bcrypt');
-const { MongoClient } = require('mongodb');
-bcrypt.hash('changeme123', 10).then(async hash => {
-  const client = new MongoClient('mongodb://localhost:27017');
-  await client.connect();
-  await client.db('running-coach').collection('users').insertOne({
-    email: 'you@example.com',
-    passwordHash: hash,
-    isAdmin: true,
-    tempPassword: true,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  });
-  console.log('Done. Login: you@example.com / changeme123');
-  await client.close();
-});
-"
+```json
+{
+  "email": "you@example.com",
+  "passwordHash": "<bcrypt hash of your chosen password>",
+  "isAdmin": true,
+  "tempPassword": true,
+  "createdAt": "<now>",
+  "updatedAt": "<now>"
+}
 ```
 
-Replace `you@example.com` and `changeme123` with your own values. `tempPassword: true` means the app will prompt you to set a new password on first login.
+To generate the bcrypt hash: `node -e "require('bcrypt').hash('yourpassword', 10).then(console.log)"` from the `api/` directory.
+
+`tempPassword: true` means the app will prompt you to set a new password on first login.
 
 **Check everything compiles:**
 
@@ -160,7 +151,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
-5. **Seed your first user** — run the **Seed your first user** script from the Getting Started section above, replacing `mongodb://localhost:27017` with your Atlas `mongodb+srv://...` URI. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
+5. **Seed your first user** — insert the document from the **Seed your first user** step above into your Atlas `running-coach.users` collection. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
 
 ## Roadmap
 
