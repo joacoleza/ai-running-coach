@@ -60,8 +60,8 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 ## Context
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
-- **Auth:** JWT-based per-user auth (v2.0+); previously pre-shared password (APP_PASSWORD); bcrypt password hashing, JWT_SECRET env var
-- **Test coverage:** 205 API tests, 424 web tests, 65 E2E tests — all green as of v1.1
+- **Auth:** JWT-based per-user auth (Phase 6 complete); login/refresh/logout endpoints in `api/src/functions/auth.ts`; `requireAuth` JWT middleware on all 8 protected routes; bcrypt password hashing, JWT_SECRET env var; refresh tokens stored as SHA-256 hashes with 30-day TTL; APP_PASSWORD removed
+- **Test coverage:** 223 API tests, 424 web tests, 65 E2E tests — all green as of Phase 6
 - **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Users:** Admin-provisioned accounts only; no signup flows; small closed user base keeps Claude API costs low
 
@@ -107,4 +107,4 @@ Last updated: 2026-04-15 — v2.0 milestone started.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 — v2.0 milestone started*
+*Last updated: 2026-04-15 — Phase 6 (Backend Auth Foundation) complete*
