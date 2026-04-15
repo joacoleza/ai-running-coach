@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
 status: executing
-last_updated: "2026-04-15T11:00:00.000Z"
-last_activity: 2026-04-15 -- Plan 06-01 complete
+last_updated: "2026-04-15T09:05:34.454Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 3
+  percent: 75
 ---
 
 # State
@@ -25,11 +25,11 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 ## Current Position
 
 Phase: 06 (backend-auth-foundation) — EXECUTING
-Plan: 2 of 4
-Status: Executing Phase 06 — Plan 01 complete, Plan 02 next
-Last activity: 2026-04-15 -- Plan 06-01 complete
+Plan: 4 of 4
+Status: Plan 06-03 complete, Plan 06-04 next
+Last activity: 2026-04-15 -- Plan 06-03 complete
 
-Progress: [███░░░░░░░] 25% (1/4 plans complete)
+Progress: [████████░░] 75% (3/4 plans complete)
 
 ## Milestone
 
@@ -64,3 +64,10 @@ Progress: [███░░░░░░░] 25% (1/4 plans complete)
 
 _Initialized: 2026-03-21_
 _Last updated: 2026-04-15 — Plan 06-01 complete_
+
+- [Phase 06]: Exported handler factory pattern (getLoginHandler, etc.) for unit testability while still registering with Azure Functions app.http()
+- [Phase 06]: Uniform 401 error message for wrong email and wrong password prevents user enumeration
+- [06-03] WeakMap used to store per-request AuthContext — no JWT re-verification, no request mutation
+- [06-03] lockout.integration.test.ts deleted — lockout feature (checkBlocked, MongoDB auth collection) fully removed with requirePassword
+
+_Last updated: 2026-04-15 — Plan 06-03 complete_
