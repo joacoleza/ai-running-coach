@@ -7,8 +7,8 @@
 
 ### AUTH — Authentication
 
-- [ ] **AUTH-01**: User can log in with email and password via a login page
-- [ ] **AUTH-02**: System issues a signed JWT on successful login (signed with JWT_SECRET env var)
+- [x] **AUTH-01**: User can log in with email and password via a login page
+- [x] **AUTH-02**: System issues a signed JWT on successful login (signed with JWT_SECRET env var)
 - [ ] **AUTH-03**: User with a temp-password flag is force-redirected to a change-password page before accessing any other route
 - [ ] **AUTH-04**: User can set a new password (enforced on first login; available anytime thereafter)
 - [ ] **AUTH-05**: User can log out (JWT cleared client-side; redirected to login page)
@@ -53,8 +53,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 6 | Pending |
-| AUTH-02 | Phase 6 | Pending |
+| AUTH-01 | Phase 6 | Complete |
+| AUTH-02 | Phase 6 | Complete |
 | AUTH-05 | Phase 6 | Pending |
 | AUTH-06 | Phase 6 | Pending |
 | AUTH-03 | Phase 7 | Pending |
