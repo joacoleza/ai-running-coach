@@ -91,14 +91,14 @@ cd api && npm install && cd ..
 
 **Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh):
 
-```json
+```js
 {
-  "email": "you@example.com",
-  "passwordHash": "<bcrypt hash of your chosen password>",
-  "isAdmin": true,
-  "tempPassword": true,
-  "createdAt": "<now>",
-  "updatedAt": "<now>"
+  email: "you@example.com",
+  passwordHash: "<bcrypt hash of your chosen password>",
+  isAdmin: true,
+  tempPassword: true,
+  createdAt: new Date(),
+  updatedAt: new Date()
 }
 ```
 
