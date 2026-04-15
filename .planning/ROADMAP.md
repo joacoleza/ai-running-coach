@@ -54,8 +54,11 @@
   3. A user with a temp-password flag is immediately redirected to a change-password page and cannot navigate elsewhere until the password is changed
   4. After changing their password, the user lands on the dashboard and the force-redirect no longer triggers
   5. Clicking logout clears the session and returns the user to the login page
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+Plans:
+- [ ] 07-01-PLAN.md — Backend change-password endpoint + AuthContext + LoginPage + ChangePasswordPage
+- [ ] 07-02-PLAN.md — App.tsx auth gate + 401 interceptor + migrate hooks and Sidebar to Bearer auth
+- [ ] 07-03-PLAN.md — Unit tests (auth gate, sidebar logout) + E2E auth spec + update existing E2E specs
 
 ### Phase 8: Data Isolation & Migration
 **Goal**: Every user sees only their own data, and existing v1.1 data is preserved under a seed admin account
@@ -86,6 +89,6 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
-| 7. Frontend Auth | 0/? | Not started | - |
+| 7. Frontend Auth | 0/3 | Not started | - |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
