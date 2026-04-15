@@ -30,13 +30,13 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 // Side-effect import registers chat handler
 import '../functions/chat.js';
 import { HttpRequest } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
@@ -124,7 +124,7 @@ afterAll(async () => {
 beforeEach(async () => {
   _resetDbForTest();
   vi.clearAllMocks();
-  vi.mocked(requirePassword).mockResolvedValue(null);
+  vi.mocked(requireAuth).mockResolvedValue(null);
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
   await mongoClient.db('running-coach').collection('messages').deleteMany({});
 });
@@ -558,7 +558,7 @@ describe('Chat Integration (COACH-01)', () => {
   });
 
   it('POST /api/chat returns 401 when password is wrong', async () => {
-    vi.mocked(requirePassword).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
+    vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
 
     const req = makeReq({ planId: 'any-plan', message: 'hello' });
     const result = await handlers.get('chat')!(req, ctx);

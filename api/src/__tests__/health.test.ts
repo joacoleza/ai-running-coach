@@ -15,11 +15,11 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 import '../functions/health.js';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const ctx = { log: vi.fn() } as any;
 
@@ -42,7 +42,7 @@ describe('health handler', () => {
   });
 
   it('returns auth error when password check fails', async () => {
-    vi.mocked(requirePassword).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } });
+    vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } });
     const handler = handlers.get('health')!;
     const res = await handler(makeReq(), ctx);
     expect(res.status).toBe(401);

@@ -17,7 +17,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
   return { ...actual, app: { http: vi.fn(), setup: vi.fn() } };
 });
-vi.mock('../middleware/auth.js', () => ({ requirePassword: vi.fn().mockResolvedValue(null) }));
+vi.mock('../middleware/auth.js', () => ({ requireAuth: vi.fn().mockResolvedValue(null) }));
 vi.mock('../shared/db.js', () => ({ getDb: vi.fn() }));
 
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
