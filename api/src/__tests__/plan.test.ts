@@ -46,7 +46,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   mongoClient = new MongoClient(mongod.getUri());
   await mongoClient.connect();
 }, 30_000);

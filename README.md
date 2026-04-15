@@ -82,7 +82,7 @@ cd api && npm install && cd ..
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "MONGODB_CONNECTION_STRING": "mongodb://localhost:27017",
-    "APP_PASSWORD": "localdev123",
+    "JWT_SECRET": "local-dev-jwt-secret-change-in-production",
     "ANTHROPIC_API_KEY": "sk-ant-..."
   },
   "Host": {
@@ -108,7 +108,6 @@ cd api && npx vitest run
 cd web && npx vitest run
 
 # E2E tests — Playwright starts the stack automatically
-# If you pre-start the API manually, use: APP_PASSWORD=e2e-test-password npm start (from api/)
 npx playwright test
 ```
 
@@ -133,8 +132,8 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 3. **Create MongoDB Atlas database** — Sign up at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas), create a free M0 cluster, add a database user with read/write access, and allow connections from `0.0.0.0/0` (Network Access).
 
 4. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
-   - `APP_PASSWORD` — the password used to access the app
    - `MONGODB_CONNECTION_STRING` — from Atlas cluster → **Connect** → **Drivers** → copy the `mongodb+srv://` connection string
+   - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
 ## Roadmap

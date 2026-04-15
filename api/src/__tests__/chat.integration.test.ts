@@ -107,7 +107,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   // Set fake key so handler's ANTHROPIC_API_KEY check passes; real SDK is mocked
   process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
   mongoClient = new MongoClient(mongod.getUri());
