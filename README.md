@@ -160,7 +160,7 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
-5. **Seed your first user** — run the seed script from step 3 of Getting Started against your Atlas connection string, replacing `mongodb://localhost:27017` with your `mongodb+srv://...` URI. Set `tempPassword: true` so the user is forced to change their password on first login.
+5. **Seed your first user** — run the **Seed your first user** script from the Getting Started section above, replacing `mongodb://localhost:27017` with your Atlas `mongodb+srv://...` URI. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
 
 ## Roadmap
 
