@@ -17,12 +17,12 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 import '../functions/messages.js';
 import { HttpRequest } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const ctx = { log: vi.fn() } as any;
 
@@ -43,7 +43,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   mongoClient = new MongoClient(mongod.getUri());
   await mongoClient.connect();
 });
@@ -57,12 +56,12 @@ afterAll(async () => {
 beforeEach(async () => {
   await mongoClient.db('running-coach').collection('messages').deleteMany({});
   _resetDbForTest();
-  vi.mocked(requirePassword).mockResolvedValue(null);
+  vi.mocked(requireAuth).mockResolvedValue(null);
 });
 
 describe('getMessages handler', () => {
   it('returns 401 when auth fails', async () => {
-    vi.mocked(requirePassword).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } });
+    vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } });
     const res = await handlers.get('getMessages')!(makeReq('p1'), ctx);
     expect(res.status).toBe(401);
   });

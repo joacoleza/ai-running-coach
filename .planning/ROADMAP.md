@@ -26,7 +26,7 @@
 
 ### v2.0 Multi-User Support (Phases 6–9)
 
-- [ ] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD
+- [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
 - [ ] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
 - [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/delete users, isAdmin guard
@@ -42,7 +42,7 @@
   2. An expired or missing JWT on any protected API route returns 401 (not 403, not 500)
   3. A valid logout request clears the token and subsequent requests with that token are rejected
   4. The old APP_PASSWORD gate is gone — sending the old password header no longer grants access
-**Plans**: TBD
+**Plans**: 4/4 complete (06-01 User model+DB, 06-02 Auth endpoints, 06-03 JWT middleware, 06-04 Tests+cleanup)
 
 ### Phase 7: Frontend Auth
 **Goal**: Users experience a complete login/logout flow and are redirected when their password needs changing
@@ -85,7 +85,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Backend Auth Foundation | 0/? | Not started | - |
+| 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 0/? | Not started | - |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |

@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 app.http('health', {
   methods: ['GET'],
@@ -8,7 +8,7 @@ app.http('health', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     context.log('Health check requested');
 
-    const authError = await requirePassword(req);
+    const authError = await requireAuth(req);
     if (authError) return authError;
 
     return {

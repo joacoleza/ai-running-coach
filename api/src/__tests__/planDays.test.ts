@@ -18,7 +18,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 // Side-effect import registers patchDay, deleteDay, addDay handlers
@@ -60,7 +60,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   mongoClient = new MongoClient(mongod.getUri());
   await mongoClient.connect();
 }, 30_000);

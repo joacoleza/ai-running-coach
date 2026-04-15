@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ObjectId } from 'mongodb';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan } from '../shared/types.js';
 
@@ -10,7 +10,7 @@ app.http('archivePlan', {
   authLevel: 'anonymous',
   route: 'plan/archive',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     try {
@@ -70,7 +70,7 @@ app.http('listArchivedPlans', {
   authLevel: 'anonymous',
   route: 'plans/archived',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     try {
@@ -101,7 +101,7 @@ app.http('getArchivedPlan', {
   authLevel: 'anonymous',
   route: 'plans/archived/{id}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const id = req.params['id'];
