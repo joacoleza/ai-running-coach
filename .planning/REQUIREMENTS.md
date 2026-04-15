@@ -12,7 +12,7 @@
 - [ ] **AUTH-03**: User with a temp-password flag is force-redirected to a change-password page before accessing any other route
 - [ ] **AUTH-04**: User can set a new password (enforced on first login; available anytime thereafter)
 - [x] **AUTH-05**: User can log out (JWT cleared client-side; redirected to login page)
-- [ ] **AUTH-06**: All API routes reject unauthenticated or expired JWTs with 401; client auto-redirects to login
+- [x] **AUTH-06**: All API routes reject unauthenticated or expired JWTs with 401; client auto-redirects to login
 
 ### USER — User Management (Admin)
 
@@ -56,7 +56,7 @@
 | AUTH-01 | Phase 6 | Complete |
 | AUTH-02 | Phase 6 | Complete |
 | AUTH-05 | Phase 6 | Complete |
-| AUTH-06 | Phase 6 | Pending |
+| AUTH-06 | Phase 6 | Complete |
 | AUTH-03 | Phase 7 | Pending |
 | AUTH-04 | Phase 7 | Pending |
 | DATA-01 | Phase 8 | Pending |

@@ -26,7 +26,7 @@
 
 ### v2.0 Multi-User Support (Phases 6–9)
 
-- [ ] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD
+- [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
 - [ ] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
 - [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/delete users, isAdmin guard
@@ -85,7 +85,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Backend Auth Foundation | 3/4 | In Progress|  |
+| 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 0/? | Not started | - |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
