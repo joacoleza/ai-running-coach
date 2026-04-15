@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan, PlanPhase } from '../shared/types.js';
 import { assignPlanStructure } from '../shared/planUtils.js';
@@ -9,7 +9,7 @@ app.http('patchPhase', {
   authLevel: 'anonymous',
   route: 'plan/phases/{phaseIndex}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const phaseIndexParam = req.params['phaseIndex'];
@@ -65,7 +65,7 @@ app.http('addPhase', {
   authLevel: 'anonymous',
   route: 'plan/phases',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     let body: { name?: string; description?: string } = {};
@@ -104,7 +104,7 @@ app.http('addWeekToPhase', {
   authLevel: 'anonymous',
   route: 'plan/phases/{phaseIndex}/weeks',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const phaseIndexParam = req.params['phaseIndex'];
@@ -147,7 +147,7 @@ app.http('deleteLastPhase', {
   authLevel: 'anonymous',
   route: 'plan/phases/last',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const db = await getDb();

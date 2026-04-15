@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { Plan, PlanGoal, Run } from '../shared/types.js';
 
@@ -8,7 +8,7 @@ app.http('getPlan', {
   authLevel: 'anonymous',
   route: 'plan',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     try {
@@ -59,7 +59,7 @@ app.http('createPlan', {
   authLevel: 'anonymous',
   route: 'plan',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     try {
@@ -114,7 +114,7 @@ app.http('patchPlan', {
   authLevel: 'anonymous',
   route: 'plan',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     let body: { progressFeedback?: string; targetDate?: string };
