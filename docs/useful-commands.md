@@ -13,13 +13,47 @@ Then run any of the commands below inside the shell.
 ```js
 use running-coach
 
-db.auth.find().toArray()                                                                // Check lockout state
+// ── Users ────────────────────────────────────────────────────────────────────
 
-db.auth.updateOne({ _id: 'lockout' }, { $set: { failureCount: 0, blocked: false } })    // Unlock the app
+db.users.find().toArray()                                                       // List all users
 
-db.plans.deleteMany({})                                                                 // Delete all plans
+db.users.insertOne({                                                            // Seed a new user
+  email: "you@example.com",
+  passwordHash: "<bcrypt hash — see below>",
+  isAdmin: true,
+  tempPassword: true,
+  createdAt: new Date(),
+  updatedAt: new Date()
+})
 
-db.messages.deleteMany({})                                                              // Delete all messages
+db.users.updateOne(                                                             // Force password reset
+  { email: "you@example.com" },
+  { $set: { tempPassword: true, updatedAt: new Date() } }
+)
 
-db.runs.deleteMany({})                                                                  // Delete all runs
+db.users.deleteOne({ email: "you@example.com" })                               // Delete a user
+
+// ── Refresh tokens ───────────────────────────────────────────────────────────
+
+db.refresh_tokens.deleteMany({})                                               // Force all users to re-login
+
+db.refresh_tokens.deleteMany({ userId: ObjectId("<user _id here>") })          // Force one user to re-login
+
+// ── App data ─────────────────────────────────────────────────────────────────
+
+db.plans.deleteMany({})                                                         // Delete all plans
+
+db.messages.deleteMany({})                                                      // Delete all messages
+
+db.runs.deleteMany({})                                                          // Delete all runs
+```
+
+---
+
+## Generate a bcrypt hash (for seeding users)
+
+Run from the `api/` directory:
+
+```bash
+node -e "require('bcrypt').hash('yourpassword', 10).then(console.log)"
 ```
