@@ -51,13 +51,11 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 | Backend  | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
 | Database | MongoDB Atlas (free tier M0)                              |
 | AI       | Claude API (Anthropic)                                    |
-| Auth     | Pre-shared password (stored in Azure config)              |
+| Auth     | JWT (bcrypt passwords, 15-min access tokens, 30-day refresh tokens) |
 
-## Personal use only
+## Access model
 
-This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
-
-After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [docs/useful-commands.md](docs/useful-commands.md)).
+This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own independent coaching session, training plan, and run history.
 
 ## Cost
 
@@ -90,6 +88,32 @@ cd api && npm install && cd ..
   }
 }
 ```
+
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then from the `api/` directory:
+
+```bash
+cd api
+node -e "
+const bcrypt = require('bcrypt');
+const { MongoClient } = require('mongodb');
+bcrypt.hash('changeme123', 10).then(async hash => {
+  const client = new MongoClient('mongodb://localhost:27017');
+  await client.connect();
+  await client.db('running-coach').collection('users').insertOne({
+    email: 'you@example.com',
+    passwordHash: hash,
+    isAdmin: true,
+    tempPassword: true,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  console.log('Done. Login: you@example.com / changeme123');
+  await client.close();
+});
+"
+```
+
+Replace `you@example.com` and `changeme123` with your own values. `tempPassword: true` means the app will prompt you to set a new password on first login.
 
 **Check everything compiles:**
 
@@ -135,6 +159,8 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `MONGODB_CONNECTION_STRING` — from Atlas cluster → **Connect** → **Drivers** → copy the `mongodb+srv://` connection string
    - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
+
+5. **Seed your first user** — run the seed script from step 3 of Getting Started against your Atlas connection string, replacing `mongodb://localhost:27017` with your `mongodb+srv://...` URI. Set `tempPassword: true` so the user is forced to change their password on first login.
 
 ## Roadmap
 
