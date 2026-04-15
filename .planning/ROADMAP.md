@@ -42,7 +42,7 @@
   2. An expired or missing JWT on any protected API route returns 401 (not 403, not 500)
   3. A valid logout request clears the token and subsequent requests with that token are rejected
   4. The old APP_PASSWORD gate is gone — sending the old password header no longer grants access
-**Plans**: TBD
+**Plans**: 3/4 complete (06-01 User model+DB, 06-02 Auth endpoints, 06-03 JWT middleware, 06-04 TBD)
 
 ### Phase 7: Frontend Auth
 **Goal**: Users experience a complete login/logout flow and are redirected when their password needs changing
