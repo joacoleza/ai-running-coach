@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: phase_6_shipped
-last_updated: "2026-04-15T12:00:00.000Z"
+status: executing
+last_updated: "2026-04-15T22:15:01.640Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
   percent: 100
 ---
 
@@ -20,13 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 06 — backend-auth-foundation
+**Current focus:** Phase 07 — frontend-auth
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
-Status: All 4 plans complete — Phase 6 done, ready for Phase 7
+Phase: 07 (frontend-auth) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-15
 
 Progress: [██████████] 100% (4/4 plans complete)
@@ -73,3 +73,6 @@ _Last updated: 2026-04-15 — Plan 06-01 complete_
 _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 
 - [Phase 06]: All 8 protected route test files mock requireAuth with unified pattern via vi.fn().mockResolvedValue(null)
+- [Phase 07-01]: Used type-only ReactNode import (verbatimModuleSyntax tsconfig requires it)
+- [Phase 07-01]: getChangePasswordHandler extracts userId from JWT directly after requireAuth validates it
+- [Phase 07-01]: ChangePasswordPage calls login() with existing token to clear tempPassword flag without re-login
