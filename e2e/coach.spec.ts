@@ -63,6 +63,14 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
       })
     })
 
+    // Mock runs to prevent 401 from real API triggering the logout interceptor
+    await page.route('**/api/runs**', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }),
+      })
+    })
+
     await page.route('**/api/chat', async (route) => {
       await route.fulfill({
         status: 200,
@@ -226,6 +234,11 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
 
     await page.route('**/api/messages**', async (route) => {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+
+    // Mock runs to prevent 401 from real API triggering logout interceptor
+    await page.route('**/api/runs**', async (route) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
     })
 
     // Chat responds with planGenerated: true — set phase BEFORE fulfilling so subsequent GETs return the saved plan

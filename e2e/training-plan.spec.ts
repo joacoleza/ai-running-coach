@@ -95,6 +95,14 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: 
   await page.route('**/api/messages**', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
   })
+  // Mock runs to prevent 401 from real API triggering the logout interceptor
+  await page.route('**/api/runs**', async (route: any) => {
+    if (!route.request().url().includes('/link') && !route.request().url().includes('/unlink')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    } else {
+      await route.continue()
+    }
+  })
   await page.route('**/api/chat', async (route: any) => {
     await route.fulfill({
       status: 200,
@@ -955,6 +963,11 @@ test.describe('Archive section (Phase 2.1)', () => {
       })
     })
 
+    // Mock /api/runs to prevent 401 from real API triggering logout interceptor
+    await page.route('**/api/runs**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    })
+
     // Mock /api/chat to return a response with XML tags
     const rawCoachReply =
       'Great progress! <plan:update week="1" day="A" guidelines="easy"/> Keep it up!'
@@ -1017,6 +1030,10 @@ test.describe('Archive section (Phase 2.1)', () => {
 
 test.describe('Phase 5 features — Add phase and target date editing', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock runs to prevent 401 from real API triggering logout interceptor
+    await page.route('**/api/runs**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    })
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
   })

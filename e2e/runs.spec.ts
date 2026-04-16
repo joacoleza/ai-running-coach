@@ -97,6 +97,11 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   await page.route('**/api/messages**', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
   })
+  // Mock runs to prevent 401 from real API triggering the logout interceptor
+  // Individual tests will override this with more specific route handlers
+  await page.route('**/api/runs**', async (route: any) => {
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+  })
   await page.route('**/api/chat', async (route: any) => {
     await route.fulfill({
       status: 200,

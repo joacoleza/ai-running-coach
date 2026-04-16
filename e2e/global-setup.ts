@@ -32,7 +32,7 @@ export default async function globalSetup() {
 
   // Seed test users for E2E auth tests
   try {
-    const db = client.db()  // uses default DB from connection string
+    const db = client.db('running-coach')  // must match db name used by the API
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
