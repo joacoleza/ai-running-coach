@@ -27,7 +27,7 @@ function AppInner() {
 
       // Do not intercept auth endpoints (prevents infinite loops)
       const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url
-      if (url.includes('/api/auth/login') || url.includes('/api/auth/refresh') || url.includes('/api/auth/logout')) {
+      if (url.includes('/api/auth/login') || url.includes('/api/auth/refresh') || url.includes('/api/auth/logout') || url.includes('/api/auth/change-password')) {
         return response
       }
 

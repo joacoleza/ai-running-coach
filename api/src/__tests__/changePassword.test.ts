@@ -7,7 +7,9 @@ const {
   mockUsersCollection,
   mockBcryptHash,
   mockJwtVerify,
+  VALID_USER_ID,
 } = vi.hoisted(() => {
+  const { ObjectId: OId } = require('mongodb') as typeof import('mongodb')
   const mockUsersCollection = {
     findOne: vi.fn(),
     updateOne: vi.fn(),
@@ -16,6 +18,7 @@ const {
     mockUsersCollection,
     mockBcryptHash: vi.fn(),
     mockJwtVerify: vi.fn(),
+    VALID_USER_ID: new OId(),
   }
 })
 
@@ -44,16 +47,16 @@ vi.mock('jsonwebtoken', () => ({
   },
 }))
 
-// Mock requireAuth to return null (authorized) by default
+// Mock requireAuth to return null (authorized) and getAuthContext to return test userId
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: VALID_USER_ID.toString(), email: 'test@example.com', isAdmin: false }),
 }))
 
 import { getChangePasswordHandler } from '../functions/auth.js'
 import { requireAuth } from '../middleware/auth.js'
 
 const TEST_SECRET = 'test-jwt-secret'
-const VALID_USER_ID = new ObjectId()
 
 function makePostRequest(body: unknown, headers: Record<string, string> = {}): HttpRequest {
   return new HttpRequest({

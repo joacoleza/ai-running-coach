@@ -96,11 +96,21 @@ describe('ChangePasswordPage validation', () => {
     expect(button).not.toBeDisabled()
   })
 
-  it('calls POST /api/auth/change-password on submit with valid inputs', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
+  it('calls POST /api/auth/change-password on submit with a fresh token after proactive refresh', async () => {
+    // The component proactively calls /api/auth/refresh first, then /api/auth/change-password
+    const mockFetch = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/auth/refresh') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'refreshed-token' }),
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
+      })
     })
     global.fetch = mockFetch
 
@@ -115,7 +125,7 @@ describe('ChangePasswordPage validation', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            Authorization: 'Bearer fake-token',
+            Authorization: 'Bearer refreshed-token',
           }),
           body: JSON.stringify({ newPassword: 'validpassword' }),
         }),
@@ -124,10 +134,20 @@ describe('ChangePasswordPage validation', () => {
   })
 
   it('calls login() with tempPassword: false after successful password change', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
+    // The component uses the refreshed token when calling login()
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url === '/api/auth/refresh') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: vi.fn().mockResolvedValue({ token: 'refreshed-token' }),
+        })
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
+      })
     })
 
     render(<ChangePasswordPage />)
@@ -137,7 +157,7 @@ describe('ChangePasswordPage validation', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith(
-        'fake-token',
+        'refreshed-token',
         'fake-refresh-token',
         'test@example.com',
         false,

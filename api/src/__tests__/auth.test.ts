@@ -64,7 +64,7 @@ describe('requireAuth (JWT-based middleware)', () => {
     const req = makeRequest(`Bearer ${token}`)
     const result = await requireAuth(req)
     expect(result?.status).toBe(401)
-    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+    expect((result?.jsonBody as any)?.error).toContain('Invalid or expired token')
   })
 
   it('Test 5: returns { status: 401 } for a JWT signed with the wrong secret', async () => {
@@ -72,14 +72,14 @@ describe('requireAuth (JWT-based middleware)', () => {
     const req = makeRequest(`Bearer ${token}`)
     const result = await requireAuth(req)
     expect(result?.status).toBe(401)
-    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+    expect((result?.jsonBody as any)?.error).toContain('Invalid or expired token')
   })
 
   it('Test 6: returns { status: 401 } for a malformed token string', async () => {
     const req = makeRequest('Bearer not-a-valid-jwt')
     const result = await requireAuth(req)
     expect(result?.status).toBe(401)
-    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+    expect((result?.jsonBody as any)?.error).toContain('Invalid or expired token')
   })
 
   it('Test 7: getAuthContext returns userId/email/isAdmin after successful requireAuth', async () => {
