@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
 status: executing
-last_updated: "2026-04-15T22:15:01.640Z"
-last_activity: 2026-04-15
+last_updated: "2026-04-16T01:24:29.303Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 7
   percent: 100
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 ## Current Position
 
 Phase: 07 (frontend-auth) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
-Last activity: 2026-04-15
+Last activity: 2026-04-16
 
 Progress: [██████████] 100% (4/4 plans complete)
 
@@ -76,3 +76,6 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 07-01]: Used type-only ReactNode import (verbatimModuleSyntax tsconfig requires it)
 - [Phase 07-01]: getChangePasswordHandler extracts userId from JWT directly after requireAuth validates it
 - [Phase 07-01]: ChangePasswordPage calls login() with existing token to clear tempPassword flag without re-login
+- [Phase 07-03]: vi.mock AuthContext per test file (not global) for explicit isolation
+- [Phase 07-03]: client.db('running-coach') in global-setup to match API database name
+- [Phase 07-03]: api/runs mock required in E2E helpers - fake JWT triggers 401 interceptor without it

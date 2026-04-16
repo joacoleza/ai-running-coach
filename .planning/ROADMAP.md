@@ -27,7 +27,7 @@
 ### v2.0 Multi-User Support (Phases 6–9)
 
 - [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
-- [ ] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button
+- [x] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button (completed 2026-04-16)
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
 - [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/delete users, isAdmin guard
 
@@ -57,8 +57,8 @@
 **Plans**: 3 plans
 Plans:
 - [x] 07-01-PLAN.md — Backend change-password endpoint + AuthContext + LoginPage + ChangePasswordPage
-- [ ] 07-02-PLAN.md — App.tsx auth gate + 401 interceptor + migrate hooks and Sidebar to Bearer auth
-- [ ] 07-03-PLAN.md — Unit tests (auth gate, sidebar logout) + E2E auth spec + update existing E2E specs
+- [x] 07-02-PLAN.md — App.tsx auth gate + 401 interceptor + migrate hooks and Sidebar to Bearer auth
+- [x] 07-03-PLAN.md — Unit tests (auth gate, sidebar logout) + E2E auth spec + update existing E2E specs
 
 ### Phase 8: Data Isolation & Migration
 **Goal**: Every user sees only their own data, and existing v1.1 data is preserved under a seed admin account
@@ -89,6 +89,6 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
-| 7. Frontend Auth | 1/3 | In Progress|  |
+| 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
