@@ -92,3 +92,14 @@ Plans:
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
+| 10. Login Rate Limiting | 0/? | Not started | - |
+
+### Phase 10: Login Rate Limiting
+
+**Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures for 15 minutes, return 429 with a clear message, reset counter on successful login. API only, no UI needed. Replaces the lockout system removed in Phase 6.
+**Requirements**: AUTH-07 (to be added)
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 10 to break down)

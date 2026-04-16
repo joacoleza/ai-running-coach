@@ -45,6 +45,9 @@ Progress: [██████████] 100% (4/4 plans complete)
 
 ## Accumulated Context
 
+### Roadmap Evolution
+- Phase 10 added: Login rate limiting (brute-force protection — failedLoginAttempts + lockedUntil on User doc, 5 attempts → 15 min lockout, 429 response). Replaces lockout system deleted in Phase 6.
+
 - Existing v1.1 data in MongoDB (plans, runs, messages) must be associated with a first/seed user record during migration
 - APP_PASSWORD env var will be retired; replaced by JWT_SECRET
 - Admin page is part of the web app (React), not a separate tool
