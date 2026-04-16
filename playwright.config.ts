@@ -23,6 +23,7 @@ export default defineConfig({
         MONGODB_CONNECTION_STRING: process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017',
         FUNCTIONS_WORKER_RUNTIME: 'node',
         AzureWebJobsStorage: 'UseDevelopmentStorage=false',
+        JWT_SECRET: process.env.JWT_SECRET || 'e2e-test-secret-key-minimum-32-chars',
         // Explicitly unset so the real Claude API is never called from the server during E2E tests.
         // Chat functionality is covered in e2e/coach.spec.ts via page.route() mocks that
         // intercept /api/chat at the browser level and return fake SSE responses — the server

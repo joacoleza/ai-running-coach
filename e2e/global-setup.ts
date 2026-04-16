@@ -1,5 +1,6 @@
 import { execSync } from 'child_process'
 import { MongoClient } from 'mongodb'
+import bcrypt from 'bcrypt'
 
 const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017'
 
@@ -18,12 +19,48 @@ export default async function globalSetup() {
     try {
       await client.connect()
       await client.db('admin').command({ ping: 1 })
-      await client.close()
-      return
+      break
     } catch (err) {
       lastError = err
+      await client.close().catch(() => {})
       await new Promise(r => setTimeout(r, 1000))
     }
   }
-  throw new Error(`MongoDB not ready after 30s: ${lastError}`)
+  if (Date.now() >= deadline) {
+    throw new Error(`MongoDB not ready after 30s: ${lastError}`)
+  }
+
+  // Seed test users for E2E auth tests
+  try {
+    const db = client.db()  // uses default DB from connection string
+    const users = db.collection('users')
+
+    // Remove existing test users (idempotent re-runs)
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com'] } })
+
+    const passwordHash = await bcrypt.hash('password123', 10)
+    const now = new Date()
+
+    // Normal user — no temp password required
+    await users.insertOne({
+      email: 'test@example.com',
+      passwordHash,
+      isAdmin: false,
+      tempPassword: false,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Temp-password user — must change password on login
+    await users.insertOne({
+      email: 'temp@example.com',
+      passwordHash,
+      isAdmin: false,
+      tempPassword: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+  } finally {
+    await client.close()
+  }
 }
