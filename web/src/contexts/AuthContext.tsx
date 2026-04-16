@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
 interface AuthState {
   token: string | null;
@@ -26,23 +26,23 @@ function readAuthFromStorage(): AuthState {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>(readAuthFromStorage);
 
-  function login(token: string, refreshToken: string, email: string, isAdmin: boolean, tempPassword: boolean) {
+  const login = useCallback((token: string, refreshToken: string, email: string, isAdmin: boolean, tempPassword: boolean) => {
     localStorage.setItem('access_token', token);
     localStorage.setItem('refresh_token', refreshToken);
     localStorage.setItem('auth_email', email);
     localStorage.setItem('auth_is_admin', String(isAdmin));
     localStorage.setItem('auth_temp_password', String(tempPassword));
     setAuth({ token, email, isAdmin, tempPassword });
-  }
+  }, []);
 
-  function logout() {
+  const logout = useCallback(() => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('auth_email');
     localStorage.removeItem('auth_is_admin');
     localStorage.removeItem('auth_temp_password');
     setAuth({ token: null, email: null, isAdmin: false, tempPassword: false });
-  }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ ...auth, login, logout }}>
