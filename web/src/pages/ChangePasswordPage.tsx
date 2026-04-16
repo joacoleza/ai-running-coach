@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function ChangePasswordPage() {
-  const { token, login, email, isAdmin } = useAuth();
+  const { token, login, logout, email, isAdmin } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +34,13 @@ export function ChangePasswordPage() {
 
       if (response.ok) {
         // Update AuthContext: clear tempPassword flag so App.tsx gate shows AppShell
-        // Preserve existing token — no need to re-login
+        // Read fresh token from localStorage — interceptor may have refreshed it during the flight
         const refreshToken = localStorage.getItem('refresh_token') ?? '';
-        login(token!, refreshToken, email ?? '', isAdmin, false);
+        const freshToken = localStorage.getItem('access_token') ?? token ?? '';
+        login(freshToken, refreshToken, email ?? '', isAdmin, false);
         // App.tsx gate will now render <BrowserRouter>...<AppShell> automatically
+      } else if (response.status === 401) {
+        logout();
       } else if (response.status === 400) {
         const data = await response.json() as { error?: string };
         setError(data.error ?? 'Invalid request');

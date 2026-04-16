@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor } from '@testing-library/react'
+import { render, screen, act, waitFor, fireEvent } from '@testing-library/react'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { App } from '../App'
 
@@ -93,5 +93,83 @@ describe('App auth gate', () => {
       expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
     })
     expect(localStorage.getItem('access_token')).toBeNull()
+  })
+
+  it('ChangePasswordPage calls logout on 401 response', async () => {
+    localStorage.setItem('access_token', 'fake-jwt')
+    localStorage.setItem('auth_temp_password', 'true')
+    localStorage.setItem('auth_email', 'test@example.com')
+
+    global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : (input as Request).url ?? String(input)
+      if (url.includes('/api/auth/change-password')) {
+        return { ok: false, status: 401 } as Response
+      }
+      return { ok: true, status: 200, json: async () => ({}) } as unknown as Response
+    })
+
+    await act(async () => {
+      render(<App />)
+    })
+
+    expect(screen.getByText('Change Your Password')).toBeInTheDocument()
+
+    const newPasswordInput = screen.getByLabelText(/new password/i)
+    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+
+    await act(async () => {
+      fireEvent.change(newPasswordInput, { target: { value: 'newpass123' } })
+      fireEvent.change(confirmPasswordInput, { target: { value: 'newpass123' } })
+    })
+
+    await act(async () => {
+      fireEvent.submit(newPasswordInput.closest('form')!)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
+    })
+    expect(localStorage.getItem('access_token')).toBeNull()
+  })
+
+  it('ChangePasswordPage reads fresh token from localStorage on success', async () => {
+    localStorage.setItem('access_token', 'old-token')
+    localStorage.setItem('refresh_token', 'r')
+    localStorage.setItem('auth_temp_password', 'true')
+    localStorage.setItem('auth_email', 'test@example.com')
+    localStorage.setItem('auth_is_admin', 'false')
+
+    global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : (input as Request).url ?? String(input)
+      if (url.includes('/api/auth/change-password')) {
+        // Simulate interceptor refreshing the token before our response handler runs
+        localStorage.setItem('access_token', 'new-token')
+        return { ok: true, status: 200 } as Response
+      }
+      return { ok: true, status: 200, json: async () => ({}) } as unknown as Response
+    })
+
+    await act(async () => {
+      render(<App />)
+    })
+
+    expect(screen.getByText('Change Your Password')).toBeInTheDocument()
+
+    const newPasswordInput = screen.getByLabelText(/new password/i)
+    const confirmPasswordInput = screen.getByLabelText(/confirm password/i)
+
+    await act(async () => {
+      fireEvent.change(newPasswordInput, { target: { value: 'newpass123' } })
+      fireEvent.change(confirmPasswordInput, { target: { value: 'newpass123' } })
+    })
+
+    await act(async () => {
+      fireEvent.submit(newPasswordInput.closest('form')!)
+    })
+
+    await waitFor(() => {
+      expect(localStorage.getItem('auth_temp_password')).toBe('false')
+    })
+    expect(localStorage.getItem('access_token')).toBe('new-token')
   })
 })
