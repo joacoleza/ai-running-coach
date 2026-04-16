@@ -4,6 +4,17 @@ import React from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { useChat } from '../hooks/useChat'
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}))
+
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
@@ -50,7 +61,7 @@ function makeStreamResponse(chunks: string[]) {
 describe('sendMessage — planState in request body', () => {
   beforeEach(() => {
     mockFetch.mockReset()
-    localStorage.setItem('app_password', 'test-pw')
+    localStorage.setItem('access_token', 'test-token')
     // Mount: return existing active plan
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
     // Messages fetch
@@ -106,7 +117,7 @@ describe('sendMessage — planState in request body', () => {
 describe('startPlan — planGenerated flow', () => {
   beforeEach(() => {
     mockFetch.mockReset()
-    localStorage.setItem('app_password', 'test-pw')
+    localStorage.setItem('access_token', 'test-token')
     // Mount: no existing plan
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: null }) })
   })
@@ -146,7 +157,7 @@ describe('startPlan — planGenerated flow', () => {
 describe('sendMessage — plan:update triggers PATCH and plan:add triggers POST', () => {
   beforeEach(() => {
     mockFetch.mockReset()
-    localStorage.setItem('app_password', 'test-pw')
+    localStorage.setItem('access_token', 'test-token')
     // Mount: active plan
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
     // Messages fetch
@@ -421,7 +432,7 @@ describe('training_plan tag stripping', () => {
 describe('sendMessage — phase 5 new tag handlers', () => {
   beforeEach(() => {
     mockFetch.mockReset()
-    localStorage.setItem('app_password', 'test-pw')
+    localStorage.setItem('access_token', 'test-token')
     // Mount: active plan
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ plan: testPlan }) })
     // Messages fetch

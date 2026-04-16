@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePlan } from '../hooks/usePlan';
 import { useChatContext } from '../contexts/ChatContext';
+import { useAuth } from '../contexts/AuthContext';
 import { PlanView } from '../components/plan/PlanView';
 import { PlanActions } from '../components/plan/PlanActions';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
@@ -13,6 +14,7 @@ function openCoachPanel() {
 }
 
 export function TrainingPlan() {
+  const { token } = useAuth();
   const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan, addPhase, addWeek } = usePlan();
   const { sendMessage } = useChatContext();
   const navigate = useNavigate();
@@ -61,7 +63,7 @@ export function TrainingPlan() {
     void (async () => {
       try {
         const res = await fetch(`/api/runs/${selectedRunId}`, {
-          headers: { 'x-app-password': localStorage.getItem('app_password') ?? '' }
+          headers: { 'Authorization': `Bearer ${token ?? ''}` }
         });
         if (res.ok) setSelectedRun(await res.json() as Run);
       } catch { /* ignore */ }

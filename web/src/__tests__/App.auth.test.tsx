@@ -8,51 +8,90 @@ import { App } from '../App'
 describe('App auth gate', () => {
   beforeEach(() => {
     localStorage.clear()
-    // Reset fetch to a default noop to prevent test pollution
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 } as Response)
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: vi.fn().mockResolvedValue({}) } as unknown as Response)
   })
 
-  it('renders PasswordPage (AI Running Coach heading) when no app_password in localStorage', () => {
+  it('renders LoginPage (AI Running Coach heading + Log In button) when no access_token in localStorage', () => {
     render(<App />)
     expect(screen.getByText('AI Running Coach')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
   })
 
-  it('renders AppShell with Dashboard nav link when app_password is set in localStorage', async () => {
-    localStorage.setItem('app_password', 'test-password')
-    // Provide a json() method so useChat's fetchPlan doesn't throw
+  it('renders ChangePasswordPage when access_token is set and auth_temp_password is true', async () => {
+    localStorage.setItem('access_token', 'fake-jwt-token')
+    localStorage.setItem('auth_temp_password', 'true')
+    localStorage.setItem('auth_email', 'test@example.com')
+
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
       json: vi.fn().mockResolvedValue({ plan: null }),
     } as unknown as Response)
 
+    render(<App />)
+    expect(screen.getByText('Change Your Password')).toBeInTheDocument()
+  })
+
+  it('renders AppShell with Dashboard nav when access_token is set and auth_temp_password is false', async () => {
+    localStorage.setItem('access_token', 'fake-jwt-token')
+    localStorage.setItem('auth_temp_password', 'false')
+    localStorage.setItem('auth_email', 'test@example.com')
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ plan: null, linkedRuns: {} }),
+    } as unknown as Response)
+
     await act(async () => {
       render(<App />)
     })
-    // Allow pending async effects (fetchPlan, fetchMessages) to resolve
     await waitFor(() => {
       const dashboardElements = screen.getAllByText('Dashboard')
       expect(dashboardElements.length).toBeGreaterThan(0)
     })
   })
 
-  it('clears localStorage and shows PasswordPage after 401 response', async () => {
-    localStorage.setItem('app_password', 'test-password')
+  it('clears access_token and shows LoginPage after 401 response when no refresh_token', async () => {
+    localStorage.setItem('access_token', 'fake-jwt-token')
+    localStorage.setItem('auth_temp_password', 'false')
 
-    // Mock fetch to return 401 so the interceptor triggers
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 401,
-    } as Response)
+    // Use a single mock function that we can control per URL
+    const mockFetchFn = vi.fn().mockImplementation(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : (input as Request).url ?? String(input)
+      if (url.includes('/api/auth/refresh')) {
+        return { ok: false, status: 401 } as Response
+      }
+      if (url.includes('/api/auth/')) {
+        return { ok: true, status: 200, json: async () => ({}) } as unknown as Response
+      }
+      if (url.includes('/api/test')) {
+        return { ok: false, status: 401 } as Response
+      }
+      // All other API calls (plan, messages, runs, etc.) succeed
+      return { ok: true, status: 200, json: async () => ({ plan: null, linkedRuns: {}, messages: [], runs: [], total: 0 }) } as unknown as Response
+    })
+    global.fetch = mockFetchFn
 
-    render(<App />)
+    await act(async () => {
+      render(<App />)
+    })
 
-    // Trigger a fetch call — the App useEffect wraps window.fetch, so calling it triggers the interceptor
+    // Wait for AppShell to render (authenticated)
+    await waitFor(() => {
+      const dashboardElements = screen.queryAllByText('Dashboard')
+      expect(dashboardElements.length).toBeGreaterThan(0)
+    })
+
+    // Trigger a fetch that returns 401 — interceptor tries refresh (also fails) → logout
     await act(async () => {
       await window.fetch('/api/test')
     })
 
-    expect(screen.getByText('AI Running Coach')).toBeInTheDocument()
-    expect(localStorage.getItem('app_password')).toBeNull()
+    // After 401 with no valid refresh, App should show LoginPage
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
+    })
+    expect(localStorage.getItem('access_token')).toBeNull()
   })
 })

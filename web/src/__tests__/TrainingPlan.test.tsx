@@ -7,6 +7,17 @@ import type { PlanData } from '../hooks/usePlan';
 const mockUpdateDay = vi.fn();
 const mockArchivePlan = vi.fn();
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}));
+
 vi.mock('../hooks/usePlan', () => ({
   usePlan: vi.fn(),
 }));

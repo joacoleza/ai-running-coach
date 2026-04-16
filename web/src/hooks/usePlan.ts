@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Run } from './useRuns';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface PlanDay {
   label: string;         // "A"-"G" for non-rest days, "" for rest days
@@ -57,18 +58,19 @@ interface UsePlanReturn {
   addWeek: (phaseIndex: number) => Promise<void>;
 }
 
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
-  };
-}
-
 export function usePlan(): UsePlanReturn {
+  const { token } = useAuth();
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [linkedRuns, setLinkedRuns] = useState<Map<string, Run>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  function authHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token ?? ''}`,
+    };
+  }
 
   const refreshPlan = useCallback(async () => {
     try {

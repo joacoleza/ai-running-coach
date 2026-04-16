@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { PlanPhase, PlanGoal } from './usePlan';
+import { useAuth } from '../contexts/AuthContext';
 
 export interface Message {
   role: 'user' | 'assistant';
@@ -31,13 +32,6 @@ interface UseChatReturn {
   startPlan: (mode: 'conversational' | 'paste') => Promise<void>;
   startOver: () => void;
   clearError: () => void;
-}
-
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
-  };
 }
 
 /**
@@ -127,6 +121,7 @@ async function streamChatResponse(
 
 
 export function useChat(): UseChatReturn {
+  const { token } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [plan, setPlan] = useState<PlanData | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -135,6 +130,13 @@ export function useChat(): UseChatReturn {
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  function authHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token ?? ''}`,
+    };
+  }
 
   /**
    * Session ID pattern: each startPlan/startOver call increments this counter.
