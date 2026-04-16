@@ -5,15 +5,10 @@ import { PlanView } from '../components/plan/PlanView';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
 import type { Run } from '../hooks/useRuns';
 import { CoachPanel } from '../components/coach/CoachPanel';
-
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
-  };
-}
+import { useAuth } from '../contexts/AuthContext';
 
 export function ArchivePlan() {
+  const { token } = useAuth();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const [plan, setPlan] = useState<PlanData | null>(null);
@@ -31,7 +26,10 @@ export function ArchivePlan() {
       setChatLoading(true);
       try {
         const res = await fetch(`/api/messages?planId=${planId}`, {
-          headers: authHeaders(),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token ?? ''}`,
+          },
         });
         if (!res.ok) return;
         const data = await res.json() as { messages: Array<{ role: 'user' | 'assistant'; content: string }> };
@@ -45,7 +43,12 @@ export function ArchivePlan() {
 
     async function fetchPlan() {
       try {
-        const res = await fetch(`/api/plans/archived/${id}`, { headers: authHeaders() });
+        const res = await fetch(`/api/plans/archived/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token ?? ''}`,
+          },
+        });
         if (!res.ok) throw new Error('Failed to fetch plan');
         const data = await res.json();
         const fetchedPlan = (data as { plan?: PlanData; linkedRuns?: Record<string, Run> }).plan ?? null;
@@ -90,7 +93,7 @@ export function ArchivePlan() {
     void (async () => {
       try {
         const res = await fetch(`/api/runs/${selectedRunId}`, {
-          headers: { 'x-app-password': localStorage.getItem('app_password') ?? '' },
+          headers: { 'Authorization': `Bearer ${token ?? ''}` },
         });
         if (res.ok) setSelectedRun(await res.json() as Run);
       } catch { /* ignore */ }

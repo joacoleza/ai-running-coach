@@ -97,6 +97,11 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   await page.route('**/api/messages**', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
   })
+  // Mock runs to prevent 401 from real API triggering the logout interceptor
+  // Individual tests will override this with more specific route handlers
+  await page.route('**/api/runs**', async (route: any) => {
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+  })
   await page.route('**/api/chat', async (route: any) => {
     await route.fulfill({
       status: 200,
@@ -106,7 +111,11 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan) {
   })
 
   await page.goto('/')
-  await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+  await page.evaluate(() => {
+    localStorage.setItem('access_token', 'e2e-test-token')
+    localStorage.setItem('auth_temp_password', 'false')
+    localStorage.setItem('auth_email', 'test@example.com')
+  })
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 }

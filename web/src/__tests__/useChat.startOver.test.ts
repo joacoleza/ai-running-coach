@@ -4,6 +4,17 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { useChat } from '../hooks/useChat';
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}));
+
 const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
@@ -12,7 +23,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) =>
 
 beforeEach(() => {
   mockFetch.mockReset();
-  localStorage.setItem('app_password', 'test-pw');
+  localStorage.setItem('access_token', 'test-token');
   // Default: no existing plan on mount
   mockFetch.mockResolvedValue({ ok: true, json: async () => ({ plan: null }) });
 });

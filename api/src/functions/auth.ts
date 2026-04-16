@@ -62,7 +62,7 @@ export function getLoginHandler() {
 
       return {
         status: 200,
-        jsonBody: { token, refreshToken: rawRefreshToken, expiresIn: 900 },
+        jsonBody: { token, refreshToken: rawRefreshToken, expiresIn: 900, tempPassword: user.tempPassword },
       };
     } catch (err) {
       return { status: 500, jsonBody: { error: 'Internal server error' } };
@@ -129,6 +129,46 @@ export function getLogoutHandler() {
   };
 }
 
+// Exported for unit testing
+export function getChangePasswordHandler() {
+  return async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
+    try {
+      const authError = await requireAuth(req);
+      if (authError) return authError;
+
+      const { newPassword } = (await req.json()) as { newPassword?: string };
+
+      if (!newPassword) {
+        return { status: 400, jsonBody: { error: 'newPassword is required' } };
+      }
+      if (newPassword.length < 8) {
+        return { status: 400, jsonBody: { error: 'Password must be at least 8 characters' } };
+      }
+
+      // Extract userId from JWT payload (requireAuth already validated the token)
+      const authHeader = req.headers.get('authorization') ?? '';
+      const token = authHeader.replace(/^Bearer\s+/i, '');
+      const secret = process.env.JWT_SECRET!;
+      const payload = jwt.verify(token, secret) as { sub: string };
+
+      const db = await getDb();
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      const result = await db.collection<User>('users').updateOne(
+        { _id: new ObjectId(payload.sub) },
+        { $set: { passwordHash, tempPassword: false, updatedAt: new Date() } },
+      );
+
+      if (result.matchedCount === 0) {
+        return { status: 404, jsonBody: { error: 'User not found' } };
+      }
+
+      return { status: 200, jsonBody: { message: 'Password updated' } };
+    } catch (err) {
+      return { status: 500, jsonBody: { error: 'Internal server error' } };
+    }
+  };
+}
+
 // Register Azure Functions handlers
 app.http('authLogin', {
   methods: ['POST'],
@@ -149,5 +189,12 @@ app.http('authLogout', {
   authLevel: 'anonymous',
   route: 'auth/logout',
   handler: getLogoutHandler(),
+});
+
+app.http('authChangePassword', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'auth/change-password',
+  handler: getChangePasswordHandler(),
 });
 

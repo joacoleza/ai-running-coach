@@ -27,7 +27,7 @@ export interface CreateRunInput {
 function authHeaders(): Record<string, string> {
   return {
     'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
+    'Authorization': `Bearer ${localStorage.getItem('access_token') ?? ''}`,
   };
 }
 

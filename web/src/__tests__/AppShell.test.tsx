@@ -8,6 +8,17 @@ vi.mock('../contexts/ChatContext', () => ({
   useChatContext: vi.fn(),
 }));
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}));
+
 vi.mock('../components/coach/CoachPanel', () => ({
   CoachPanel: ({ isOpen }: { isOpen: boolean }) => (
     <div data-testid="coach-panel" data-open={String(isOpen)} />
