@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { ObjectId } from 'mongodb';
 import { getDb } from '../shared/db.js';
 import { User, RefreshToken } from '../shared/types.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 
 function sha256(input: string): string {
   return crypto.createHash('sha256').update(input).digest('hex');
@@ -145,16 +145,13 @@ export function getChangePasswordHandler() {
         return { status: 400, jsonBody: { error: 'Password must be at least 8 characters' } };
       }
 
-      // Extract userId from JWT payload (requireAuth already validated the token)
-      const authHeader = req.headers.get('authorization') ?? '';
-      const token = authHeader.replace(/^Bearer\s+/i, '');
-      const secret = process.env.JWT_SECRET!;
-      const payload = jwt.verify(token, secret) as { sub: string };
+      // userId already verified and extracted by requireAuth — no need to re-verify JWT
+      const { userId } = getAuthContext(req);
 
       const db = await getDb();
       const passwordHash = await bcrypt.hash(newPassword, 10);
       const result = await db.collection<User>('users').updateOne(
-        { _id: new ObjectId(payload.sub) },
+        { _id: new ObjectId(userId) },
         { $set: { passwordHash, tempPassword: false, updatedAt: new Date() } },
       );
 

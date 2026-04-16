@@ -42,10 +42,11 @@ export async function requireAuth(req: HttpRequest): Promise<HttpResponseInit | 
     });
 
     return null;
-  } catch {
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
     return {
       status: 401,
-      jsonBody: { error: 'Invalid or expired token' },
+      jsonBody: { error: `Invalid or expired token: ${reason}` },
     };
   }
 }
