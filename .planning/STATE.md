@@ -82,3 +82,9 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 07-03]: vi.mock AuthContext per test file (not global) for explicit isolation
 - [Phase 07-03]: client.db('running-coach') in global-setup to match API database name
 - [Phase 07-03]: api/runs mock required in E2E helpers - fake JWT triggers 401 interceptor without it
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260416-jkp | fix change-password 401 in production - token not accepted | 2026-04-16 | 73b97da | [260416-jkp-fix-change-password-401-in-production-to](.planning/quick/260416-jkp-fix-change-password-401-in-production-to/) |
