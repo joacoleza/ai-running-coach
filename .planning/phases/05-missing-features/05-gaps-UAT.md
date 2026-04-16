@@ -1,19 +1,16 @@
 ---
-status: testing
+status: complete
 phase: 05-missing-features
 source: [05-UAT.md gaps section]
 started: 2026-04-13T20:11:41Z
-updated: 2026-04-13T20:11:41Z
+updated: 2026-04-16T00:00:00Z
+note: Archived — milestone v1.1 complete. Issues #3 and #4 were diagnosed but fix was deferred.
 note: Re-validation of 3 gaps from original UAT after fixes committed in 7e9056e and 80df606
 ---
 
 ## Current Test
 
-number: 1
-name: Coach run insight auto-saved after run:create
-expected: |
-  After the coach logs a run for you (e.g. "Log yesterday's 8km run, took 45 minutes"), the coaching insight text from that same response is automatically saved to the run's insight field. Open the run detail — the insight is visible without manually asking for feedback.
-awaiting: user response
+[testing complete]
 
 ## Tests
 

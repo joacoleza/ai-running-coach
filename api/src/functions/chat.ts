@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import Anthropic from '@anthropic-ai/sdk';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
@@ -56,7 +56,7 @@ app.http('chat', {
   authLevel: 'anonymous',
   route: 'chat',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     if (!process.env.ANTHROPIC_API_KEY) {

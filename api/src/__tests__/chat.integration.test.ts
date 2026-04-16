@@ -30,13 +30,13 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 // Side-effect import registers chat handler
 import '../functions/chat.js';
 import { HttpRequest } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
@@ -107,7 +107,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   // Set fake key so handler's ANTHROPIC_API_KEY check passes; real SDK is mocked
   process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
   mongoClient = new MongoClient(mongod.getUri());
@@ -124,7 +123,7 @@ afterAll(async () => {
 beforeEach(async () => {
   _resetDbForTest();
   vi.clearAllMocks();
-  vi.mocked(requirePassword).mockResolvedValue(null);
+  vi.mocked(requireAuth).mockResolvedValue(null);
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
   await mongoClient.db('running-coach').collection('messages').deleteMany({});
 });
@@ -558,7 +557,7 @@ describe('Chat Integration (COACH-01)', () => {
   });
 
   it('POST /api/chat returns 401 when password is wrong', async () => {
-    vi.mocked(requirePassword).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
+    vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
 
     const req = makeReq({ planId: 'any-plan', message: 'hello' });
     const result = await handlers.get('chat')!(req, ctx);

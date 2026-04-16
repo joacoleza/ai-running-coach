@@ -4,6 +4,17 @@ import { MemoryRouter } from 'react-router-dom';
 import { TrainingPlan } from '../pages/TrainingPlan';
 import type { PlanData } from '../hooks/usePlan';
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}));
+
 vi.mock('../hooks/usePlan', () => ({
   usePlan: vi.fn(),
 }));

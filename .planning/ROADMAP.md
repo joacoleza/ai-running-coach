@@ -26,8 +26,8 @@
 
 ### v2.0 Multi-User Support (Phases 6–9)
 
-- [ ] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD
-- [ ] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button
+- [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
+- [x] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button (completed 2026-04-16)
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
 - [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/delete users, isAdmin guard
 
@@ -42,7 +42,7 @@
   2. An expired or missing JWT on any protected API route returns 401 (not 403, not 500)
   3. A valid logout request clears the token and subsequent requests with that token are rejected
   4. The old APP_PASSWORD gate is gone — sending the old password header no longer grants access
-**Plans**: TBD
+**Plans**: 4/4 complete (06-01 User model+DB, 06-02 Auth endpoints, 06-03 JWT middleware, 06-04 Tests+cleanup)
 
 ### Phase 7: Frontend Auth
 **Goal**: Users experience a complete login/logout flow and are redirected when their password needs changing
@@ -54,8 +54,11 @@
   3. A user with a temp-password flag is immediately redirected to a change-password page and cannot navigate elsewhere until the password is changed
   4. After changing their password, the user lands on the dashboard and the force-redirect no longer triggers
   5. Clicking logout clears the session and returns the user to the login page
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+Plans:
+- [x] 07-01-PLAN.md — Backend change-password endpoint + AuthContext + LoginPage + ChangePasswordPage
+- [x] 07-02-PLAN.md — App.tsx auth gate + 401 interceptor + migrate hooks and Sidebar to Bearer auth
+- [x] 07-03-PLAN.md — Unit tests (auth gate, sidebar logout) + E2E auth spec + update existing E2E specs
 
 ### Phase 8: Data Isolation & Migration
 **Goal**: Every user sees only their own data, and existing v1.1 data is preserved under a seed admin account
@@ -85,7 +88,18 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Backend Auth Foundation | 0/? | Not started | - |
-| 7. Frontend Auth | 0/? | Not started | - |
+| 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
+| 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/? | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
+| 10. Login Rate Limiting | 0/? | Not started | - |
+
+### Phase 10: Login Rate Limiting
+
+**Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures for 15 minutes, return 429 with a clear message, reset counter on successful login. API only, no UI needed. Replaces the lockout system removed in Phase 6.
+**Requirements**: AUTH-07 (to be added)
+**Depends on:** Phase 7
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 10 to break down)

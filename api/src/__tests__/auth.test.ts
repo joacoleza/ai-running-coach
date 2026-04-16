@@ -1,88 +1,112 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { HttpRequest } from '@azure/functions'
+import jwt from 'jsonwebtoken'
+import { requireAuth, getAuthContext } from '../middleware/auth.js'
 
-// Use vi.hoisted to create mock functions before vi.mock hoisting
-const { mockFindOne, mockFindOneAndUpdate, mockUpdateOne } = vi.hoisted(() => ({
-  mockFindOne: vi.fn(),
-  mockFindOneAndUpdate: vi.fn(),
-  mockUpdateOne: vi.fn(),
-}))
+const TEST_SECRET = 'test-jwt-secret'
 
-// Hoist mock to module level — must come before imports of auth.ts
-vi.mock('mongodb', () => ({
-  MongoClient: vi.fn().mockImplementation(() => ({
-    connect: vi.fn().mockResolvedValue(undefined),
-    db: vi.fn().mockReturnValue({
-      collection: vi.fn().mockReturnValue({
-        findOne: mockFindOne,
-        findOneAndUpdate: mockFindOneAndUpdate,
-        updateOne: mockUpdateOne,
-      }),
-    }),
-  })),
-}))
-
-// Import AFTER mock is set up
-import { requirePassword, checkBlocked, _resetConnectionForTest } from '../middleware/auth.js'
-
-function makeRequest(password?: string): HttpRequest {
+function makeRequest(authHeader?: string): HttpRequest {
   return new HttpRequest({
     method: 'GET',
     url: 'http://localhost/api/test',
-    headers: password ? { 'x-app-password': password } : {},
+    headers: authHeader ? { authorization: authHeader } : {},
   })
 }
 
-describe('requirePassword and checkBlocked (unit — mocked MongoDB)', () => {
+function makeValidToken(overrides?: Partial<{ sub: string; email: string; isAdmin: boolean; expiresIn: string | number }>): string {
+  const payload = {
+    sub: overrides?.sub ?? 'user-id-123',
+    email: overrides?.email ?? 'test@example.com',
+    isAdmin: overrides?.isAdmin ?? false,
+  }
+  const expiresIn = overrides?.expiresIn ?? '1h'
+  return jwt.sign(payload, TEST_SECRET, { expiresIn } as jwt.SignOptions)
+}
+
+describe('requireAuth (JWT-based middleware)', () => {
+  const originalSecret = process.env.JWT_SECRET
+
   beforeEach(() => {
-    // Reset mock call history and restore default return values
-    vi.clearAllMocks()
-    // Default: not blocked (findOne returns null)
-    mockFindOne.mockResolvedValue(null)
-    mockFindOneAndUpdate.mockResolvedValue({ failureCount: 1 })
-    mockUpdateOne.mockResolvedValue({})
-    // Reset the module-level client/db singleton in auth.ts
-    _resetConnectionForTest()
-    process.env.APP_PASSWORD = 'test-secret'
-    process.env.MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017'
+    process.env.JWT_SECRET = TEST_SECRET
   })
 
-  it('Test 1: returns null when password matches APP_PASSWORD', async () => {
-    // Default mock: findOne returns null (not blocked)
-    const result = await requirePassword(makeRequest('test-secret'))
+  afterEach(() => {
+    if (originalSecret === undefined) {
+      delete process.env.JWT_SECRET
+    } else {
+      process.env.JWT_SECRET = originalSecret
+    }
+  })
+
+  it('Test 1: returns null for a valid unexpired JWT signed with JWT_SECRET', async () => {
+    const token = makeValidToken()
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
     expect(result).toBeNull()
   })
 
-  it('Test 2: returns { status: 401 } when password is wrong', async () => {
-    // Default mock: findOne returns null (not blocked)
-    const result = await requirePassword(makeRequest('wrong-password'))
+  it('Test 2: returns { status: 401 } when Authorization header is missing', async () => {
+    const req = makeRequest()
+    const result = await requireAuth(req)
     expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Authorization required')
   })
 
-  it('Test 3: returns { status: 401 } when x-app-password header is missing', async () => {
-    // Default mock: findOne returns null (not blocked)
-    const result = await requirePassword(makeRequest())
+  it('Test 3: returns { status: 401 } when Authorization header has wrong scheme', async () => {
+    const req = makeRequest('Basic dXNlcjpwYXNz')
+    const result = await requireAuth(req)
     expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Authorization required')
   })
 
-  it('Test 4: returns { status: 503 } when checkBlocked finds blocked=true', async () => {
-    // Configure findOne to return a blocked document
-    mockFindOne.mockResolvedValue({ _id: 'lockout', blocked: true, failureCount: 30 })
-
-    const result = await requirePassword(makeRequest('test-secret'))
-    expect(result?.status).toBe(503)
+  it('Test 4: returns { status: 401 } for an expired JWT', async () => {
+    const token = makeValidToken({ expiresIn: -1 })
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
   })
 
-  it('Test 5: checkBlocked returns false when no lockout document exists (findOne returns null)', async () => {
-    // Default mock: findOne returns null
-    const result = await checkBlocked()
-    expect(result).toBe(false)
+  it('Test 5: returns { status: 401 } for a JWT signed with the wrong secret', async () => {
+    const token = jwt.sign({ sub: 'u1', email: 'a@b.com', isAdmin: false }, 'wrong-secret', { expiresIn: '1h' })
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
   })
 
-  it('Test 6: checkBlocked returns true when lockout document has blocked=true', async () => {
-    mockFindOne.mockResolvedValue({ _id: 'lockout', blocked: true, failureCount: 30 })
+  it('Test 6: returns { status: 401 } for a malformed token string', async () => {
+    const req = makeRequest('Bearer not-a-valid-jwt')
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+  })
 
-    const result = await checkBlocked()
-    expect(result).toBe(true)
+  it('Test 7: getAuthContext returns userId/email/isAdmin after successful requireAuth', async () => {
+    const token = makeValidToken({ sub: 'abc123', email: 'runner@test.com', isAdmin: true })
+    const req = makeRequest(`Bearer ${token}`)
+    await requireAuth(req)
+    const ctx = getAuthContext(req)
+    expect(ctx.userId).toBe('abc123')
+    expect(ctx.email).toBe('runner@test.com')
+    expect(ctx.isAdmin).toBe(true)
+  })
+
+  it('Test 8: getAuthContext throws if called before requireAuth', () => {
+    const req = makeRequest()
+    expect(() => getAuthContext(req)).toThrow('getAuthContext called before requireAuth')
+  })
+
+  it('Test 9: getAuthContext throws if requireAuth returned an error (no context stored)', async () => {
+    const req = makeRequest()
+    await requireAuth(req) // returns 401, does not set context
+    expect(() => getAuthContext(req)).toThrow('getAuthContext called before requireAuth')
+  })
+
+  it('Test 10: throws if JWT_SECRET env var is not set', async () => {
+    delete process.env.JWT_SECRET
+    const token = makeValidToken()
+    const req = makeRequest(`Bearer ${token}`)
+    await expect(requireAuth(req)).rejects.toThrow('JWT_SECRET environment variable is not set')
   })
 })

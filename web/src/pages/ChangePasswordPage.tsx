@@ -1,0 +1,110 @@
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+
+export function ChangePasswordPage() {
+  const { token, login, email, isAdmin } = useAuth();
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Real-time validation: show mismatch error only after both fields have content
+  const bothFilled = newPassword.length > 0 && confirmPassword.length > 0;
+  const mismatch = bothFilled && newPassword !== confirmPassword;
+  const tooShort = newPassword.length > 0 && newPassword.length < 8;
+
+  const isReady = bothFilled && !mismatch && !tooShort;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!isReady) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      if (response.ok) {
+        // Update AuthContext: clear tempPassword flag so App.tsx gate shows AppShell
+        // Preserve existing token — no need to re-login
+        const refreshToken = localStorage.getItem('refresh_token') ?? '';
+        login(token!, refreshToken, email ?? '', isAdmin, false);
+        // App.tsx gate will now render <BrowserRouter>...<AppShell> automatically
+      } else if (response.status === 400) {
+        const data = await response.json() as { error?: string };
+        setError(data.error ?? 'Invalid request');
+      } else {
+        setError('Network error — please try again');
+      }
+    } catch {
+      setError('Network error — please try again');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">AI Running Coach</h1>
+        <h2 className="text-lg font-semibold text-gray-700 mb-6">Change Your Password</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="new-password" className="block text-xs font-medium text-gray-700 mb-1">
+              New Password
+            </label>
+            <input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
+              autoFocus
+              autoComplete="new-password"
+            />
+            <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+            {tooShort && (
+              <p className="text-red-600 text-sm mt-1">Password must be at least 8 characters</p>
+            )}
+          </div>
+          <div className="mb-4">
+            <label htmlFor="confirm-password" className="block text-xs font-medium text-gray-700 mb-1">
+              Confirm Password
+            </label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
+              autoComplete="new-password"
+            />
+            {mismatch && (
+              <p className="text-red-600 text-sm mt-1">Passwords do not match</p>
+            )}
+          </div>
+          {error && (
+            <p className="text-red-600 text-sm mt-2 mb-2">{error}</p>
+          )}
+          <button
+            type="submit"
+            disabled={loading || !isReady}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white text-sm font-medium py-2 px-4 rounded transition-colors disabled:cursor-not-allowed"
+          >
+            {loading ? 'Saving...' : 'Change Password'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}

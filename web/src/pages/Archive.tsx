@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ArchivedPlanSummary {
   _id: string;
@@ -8,13 +9,6 @@ interface ArchivedPlanSummary {
   targetDate?: string;
   createdAt: string;
   status: string;
-}
-
-function authHeaders(): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    'x-app-password': localStorage.getItem('app_password') ?? '',
-  };
 }
 
 function formatDate(dateStr?: string): string | null {
@@ -27,6 +21,7 @@ function formatDate(dateStr?: string): string | null {
 }
 
 export function Archive() {
+  const { token } = useAuth();
   const [plans, setPlans] = useState<ArchivedPlanSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +29,12 @@ export function Archive() {
   useEffect(() => {
     async function fetchArchived() {
       try {
-        const res = await fetch('/api/plans/archived', { headers: authHeaders() });
+        const res = await fetch('/api/plans/archived', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token ?? ''}`,
+          },
+        });
         if (!res.ok) throw new Error('Failed to fetch archived plans');
         const data = await res.json();
         setPlans((data as { plans?: ArchivedPlanSummary[] }).plans ?? []);

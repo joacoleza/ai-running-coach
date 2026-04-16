@@ -84,3 +84,21 @@ export interface Run {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface User {
+  _id?: ObjectId;
+  email: string;           // unique
+  passwordHash: string;    // bcrypt hash
+  isAdmin: boolean;
+  tempPassword: boolean;   // true = must change password on next login (Phase 7 enforces)
+  lastLoginAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RefreshToken {
+  _id?: ObjectId;
+  userId: ObjectId;
+  tokenHash: string;       // SHA-256 hex of raw refresh token
+  expiresAt: Date;         // TTL index auto-purges after this date
+}

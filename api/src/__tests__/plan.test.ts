@@ -18,13 +18,13 @@ vi.mock('@azure/functions', async (importOriginal) => {
 });
 
 vi.mock('../middleware/auth.js', () => ({
-  requirePassword: vi.fn().mockResolvedValue(null),
+  requireAuth: vi.fn().mockResolvedValue(null),
 }));
 
 // Side-effect import registers getPlan, createPlan, patchPlan handlers
 import '../functions/plan.js';
 import { HttpRequest } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
@@ -46,7 +46,6 @@ let mongoClient: MongoClient;
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
-  process.env.APP_PASSWORD = 'test-pw';
   mongoClient = new MongoClient(mongod.getUri());
   await mongoClient.connect();
 }, 30_000);
@@ -255,7 +254,7 @@ describe('Plan CRUD', () => {
   });
 
   it('GET /api/plan returns 401 without password', async () => {
-    vi.mocked(requirePassword).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
+    vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } } as any);
 
     const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
 

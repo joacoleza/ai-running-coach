@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ObjectId } from 'mongodb';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan, Run } from '../shared/types.js';
 
@@ -28,7 +28,7 @@ app.http('createRun', {
   authLevel: 'anonymous',
   route: 'runs',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     let body: {
@@ -128,7 +128,7 @@ app.http('listRuns', {
   authLevel: 'anonymous',
   route: 'runs',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     try {
@@ -188,7 +188,7 @@ app.http('getRun', {
   authLevel: 'anonymous',
   route: 'runs/{id}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const id = req.params['id'];
@@ -217,7 +217,7 @@ app.http('updateRun', {
   authLevel: 'anonymous',
   route: 'runs/{id}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const id = req.params['id'];
@@ -283,7 +283,7 @@ app.http('deleteRun', {
   authLevel: 'anonymous',
   route: 'runs/{id}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const id = req.params['id'];
@@ -323,7 +323,7 @@ app.http('unlinkRun', {
   authLevel: 'anonymous',
   route: 'runs/{id}/unlink',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const { id } = req.params;
@@ -384,7 +384,7 @@ app.http('linkRun', {
   authLevel: 'anonymous',
   route: 'runs/{id}/link',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const id = req.params['id'];

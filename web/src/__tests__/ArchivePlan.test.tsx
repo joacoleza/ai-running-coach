@@ -3,6 +3,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ArchivePlan } from '../pages/ArchivePlan';
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'test-token',
+    logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
+    tempPassword: false,
+    login: vi.fn(),
+  }),
+}));
+
 // CoachPanel mock — readonly mode renders a stub with recognizable elements
 vi.mock('../components/coach/CoachPanel', () => ({
   CoachPanel: ({ readonly, isOpen }: { readonly?: boolean; isOpen: boolean }) => (

@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -8,6 +9,7 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { token, logout } = useAuth();
   return (
     <aside
       className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-full sticky top-0 overflow-y-auto transition-all duration-200"
@@ -55,9 +57,21 @@ export function Sidebar() {
       <div className="p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          onClick={() => {
-            localStorage.removeItem("app_password");
-            window.location.href = "/";
+          onClick={async () => {
+            const refreshToken = localStorage.getItem('refresh_token');
+            try {
+              await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token ?? ''}`,
+                },
+                body: JSON.stringify({ refreshToken }),
+              });
+            } catch {
+              // ignore — clear client state regardless
+            }
+            logout();
           }}
           className="flex items-center w-full text-left px-4 py-3 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors"
         >

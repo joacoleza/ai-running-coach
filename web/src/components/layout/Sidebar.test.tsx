@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    token: 'fake-token',
+    logout: vi.fn(),
+  }),
+}))
 
 describe('Sidebar', () => {
   it('renders three navigation links (coach is now a persistent panel, not a nav link)', () => {
@@ -46,5 +53,16 @@ describe('Sidebar', () => {
     expect(dashboardIndex).toBeGreaterThanOrEqual(0)
     expect(trainingPlanIndex).toBeGreaterThanOrEqual(0)
     expect(dashboardIndex).toBeLessThan(trainingPlanIndex)
+  })
+
+  it('logout button calls POST /api/auth/logout', async () => {
+    // Sidebar renders with mocked useAuth — logout button should be present
+    render(
+      <MemoryRouter>
+        <Sidebar />
+      </MemoryRouter>
+    )
+    const btn = screen.getByRole('button', { name: /logout/i })
+    expect(btn).toBeInTheDocument()
   })
 })

@@ -7,10 +7,10 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-89.2%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-205%2F205-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-425%2F425-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-65%2F65-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-231%2F231-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-448%2F448-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-66%2F66-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -51,13 +51,11 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 | Backend  | Azure Functions v4, Node.js 22 (Windows Consumption plan) |
 | Database | MongoDB Atlas (free tier M0)                              |
 | AI       | Claude API (Anthropic)                                    |
-| Auth     | Pre-shared password (stored in Azure config)              |
+| Auth     | JWT (bcrypt passwords, 15-min access tokens, 30-day refresh tokens) |
 
-## Personal use only
+## Access model
 
-This app is designed for a single owner. Access is protected by a pre-shared password — set once in Azure configuration.
-
-After 30 consecutive wrong password attempts the app locks itself and shows "Service locked. Contact administrator." — this protects against brute force. To unlock, reset the failure counter in MongoDB (see [docs/useful-commands.md](docs/useful-commands.md)).
+This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own independent coaching session, training plan, and run history.
 
 ## Cost
 
@@ -82,7 +80,7 @@ cd api && npm install && cd ..
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "node",
     "MONGODB_CONNECTION_STRING": "mongodb://localhost:27017",
-    "APP_PASSWORD": "localdev123",
+    "JWT_SECRET": "local-dev-jwt-secret-change-in-production",
     "ANTHROPIC_API_KEY": "sk-ant-..."
   },
   "Host": {
@@ -90,6 +88,23 @@ cd api && npm install && cd ..
   }
 }
 ```
+
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh):
+
+```js
+{
+  email: "you@example.com",
+  passwordHash: "<bcrypt hash of your chosen password>",
+  isAdmin: true,
+  tempPassword: true,
+  createdAt: new Date(),
+  updatedAt: new Date()
+}
+```
+
+To generate the bcrypt hash: `node -e "require('bcrypt').hash('yourpassword', 10).then(console.log)"` from the `api/` directory.
+
+`tempPassword: true` means the app will prompt you to set a new password on first login.
 
 **Check everything compiles:**
 
@@ -108,7 +123,6 @@ cd api && npx vitest run
 cd web && npx vitest run
 
 # E2E tests — Playwright starts the stack automatically
-# If you pre-start the API manually, use: APP_PASSWORD=e2e-test-password npm start (from api/)
 npx playwright test
 ```
 
@@ -133,9 +147,11 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 3. **Create MongoDB Atlas database** — Sign up at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas), create a free M0 cluster, add a database user with read/write access, and allow connections from `0.0.0.0/0` (Network Access).
 
 4. **Set environment variables** — Azure Portal → SWA resource → **Settings → Environment variables** (may appear as "Configuration → Application settings" in older portal versions). Add:
-   - `APP_PASSWORD` — the password used to access the app
    - `MONGODB_CONNECTION_STRING` — from Atlas cluster → **Connect** → **Drivers** → copy the `mongodb+srv://` connection string
+   - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
+
+5. **Seed your first user** — insert the document from the **Seed your first user** step above into your Atlas `running-coach.users` collection. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
 
 ## Roadmap
 

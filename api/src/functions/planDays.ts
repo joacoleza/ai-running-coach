@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requirePassword } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan } from '../shared/types.js';
 
@@ -8,7 +8,7 @@ app.http('patchDay', {
   authLevel: 'anonymous',
   route: 'plan/days/{week}/{day}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const weekParam = req.params['week'];
@@ -108,7 +108,7 @@ app.http('deleteDay', {
   authLevel: 'anonymous',
   route: 'plan/days/{week}/{day}',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     const weekParam = req.params['week'];
@@ -168,7 +168,7 @@ app.http('addDay', {
   authLevel: 'anonymous',
   route: 'plan/days',
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
-    const denied = await requirePassword(req);
+    const denied = await requireAuth(req);
     if (denied) return denied;
 
     let body: {

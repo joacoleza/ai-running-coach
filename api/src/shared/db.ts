@@ -15,6 +15,8 @@ export async function getDb(): Promise<Db> {
   await db.collection('messages').createIndex({ planId: 1, timestamp: 1 });
   await db.collection('plans').createIndex({ status: 1, createdAt: -1 });
   await db.collection('runs').createIndex({ date: -1 });
+  await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await db.collection('refresh_tokens').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   return db;
 }
 

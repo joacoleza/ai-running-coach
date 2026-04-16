@@ -95,6 +95,14 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: 
   await page.route('**/api/messages**', async (route: any) => {
     await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
   })
+  // Mock runs to prevent 401 from real API triggering the logout interceptor
+  await page.route('**/api/runs**', async (route: any) => {
+    if (!route.request().url().includes('/link') && !route.request().url().includes('/unlink')) {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    } else {
+      await route.continue()
+    }
+  })
   await page.route('**/api/chat', async (route: any) => {
     await route.fulfill({
       status: 200,
@@ -104,7 +112,7 @@ async function loginWithPlan(page: any, plan: any = mockActivePlan, linkedRuns: 
   })
 
   await page.goto('/')
-  await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+  await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
   await page.reload()
   // Home redirects to /dashboard — wait for Dashboard heading
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
@@ -955,6 +963,11 @@ test.describe('Archive section (Phase 2.1)', () => {
       })
     })
 
+    // Mock /api/runs to prevent 401 from real API triggering logout interceptor
+    await page.route('**/api/runs**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    })
+
     // Mock /api/chat to return a response with XML tags
     const rawCoachReply =
       'Great progress! <plan:update week="1" day="A" guidelines="easy"/> Keep it up!'
@@ -990,7 +1003,7 @@ test.describe('Archive section (Phase 2.1)', () => {
 
     // Login and navigate to plan
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
     await page.goto('/plan')
@@ -1017,6 +1030,10 @@ test.describe('Archive section (Phase 2.1)', () => {
 
 test.describe('Phase 5 features — Add phase and target date editing', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock runs to prevent 401 from real API triggering logout interceptor
+    await page.route('**/api/runs**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }) })
+    })
     await page.goto('/')
     await page.evaluate(() => localStorage.clear())
   })
@@ -1072,7 +1089,7 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
     })
 
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 
@@ -1143,7 +1160,7 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
     })
 
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 
@@ -1187,7 +1204,7 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
     })
 
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 
@@ -1245,7 +1262,7 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
     })
 
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 

@@ -38,7 +38,10 @@ const baseRun = {
 
 beforeEach(() => {
   vi.stubGlobal('fetch', mockFetch);
-  vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('test-password');
+  vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key: string) => {
+    if (key === 'access_token') return 'test-jwt-token';
+    return null;
+  });
 });
 
 afterEach(() => {
@@ -61,7 +64,7 @@ describe('createRun', () => {
     mockFetch.mockReturnValue(mockOk(baseRun));
     await createRun({ date: '2026-04-01', distance: 5, duration: '25:00' });
     const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect((opts.headers as Record<string, string>)['x-app-password']).toBe('test-password');
+    expect((opts.headers as Record<string, string>)['Authorization']).toBe('Bearer test-jwt-token');
   });
 
   it('throws error message from response on failure', async () => {
