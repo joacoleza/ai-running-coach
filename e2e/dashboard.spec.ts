@@ -34,7 +34,9 @@ const mockRuns = [
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('app_password', 'e2e-test-password')
+      localStorage.setItem('access_token', 'e2e-test-token')
+      localStorage.setItem('auth_temp_password', 'false')
+      localStorage.setItem('auth_email', 'test@example.com')
     })
     await page.route('**/api/plan', async (route: any) => {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan, linkedRuns: { '1-A': mockRuns[0] } }) })
@@ -128,7 +130,9 @@ test.describe('Dashboard', () => {
 test.describe('ArchivePlan', () => {
   test('archived plan page shows readonly panel FAB on mobile', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('app_password', 'e2e-test-password')
+      localStorage.setItem('access_token', 'e2e-test-token')
+      localStorage.setItem('auth_temp_password', 'false')
+      localStorage.setItem('auth_email', 'test@example.com')
     })
     await page.route('**/api/plans/archived/archive-001', async (route: any) => {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: { ...mockActivePlan, _id: 'archive-001', status: 'archived' } }) })

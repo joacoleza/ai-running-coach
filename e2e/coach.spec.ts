@@ -78,7 +78,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
   ) {
     await setupMocks(page, opts)
     await page.goto('/')
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     // Wait for the main app shell to load
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
@@ -241,7 +241,7 @@ test.describe('Coach chat (E2E with mocked /api/chat)', () => {
       })
     })
 
-    await page.evaluate(() => localStorage.setItem('app_password', 'e2e-test-password'))
+    await page.evaluate(() => { localStorage.setItem('access_token', 'e2e-test-token'); localStorage.setItem('auth_temp_password', 'false'); localStorage.setItem('auth_email', 'test@example.com'); })
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
 
