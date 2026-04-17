@@ -132,7 +132,7 @@ describe('App auth gate', () => {
     expect(localStorage.getItem('access_token')).toBeNull()
   })
 
-  it('ChangePasswordPage reads fresh token from localStorage on success', async () => {
+  it('ChangePasswordPage uses token returned by change-password response on success', async () => {
     localStorage.setItem('access_token', 'old-token')
     localStorage.setItem('refresh_token', 'r')
     localStorage.setItem('auth_temp_password', 'true')
@@ -142,9 +142,12 @@ describe('App auth gate', () => {
     global.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : (input as Request).url ?? String(input)
       if (url.includes('/api/auth/change-password')) {
-        // Simulate interceptor refreshing the token before our response handler runs
-        localStorage.setItem('access_token', 'new-token')
-        return { ok: true, status: 200 } as Response
+        // Server returns a fresh token in the response body
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ message: 'Password updated', token: 'new-token', refreshToken: 'r' }),
+        } as unknown as Response
       }
       return { ok: true, status: 200, json: async () => ({}) } as unknown as Response
     })

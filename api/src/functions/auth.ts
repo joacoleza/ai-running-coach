@@ -133,10 +133,10 @@ export function getLogoutHandler() {
 export function getChangePasswordHandler() {
   return async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
     try {
-      const authError = await requireAuth(req);
-      if (authError) return authError;
-
-      const { newPassword } = (await req.json()) as { newPassword?: string };
+      const { newPassword, refreshToken } = (await req.json()) as {
+        newPassword?: string;
+        refreshToken?: string;
+      };
 
       if (!newPassword) {
         return { status: 400, jsonBody: { error: 'newPassword is required' } };
@@ -144,22 +144,36 @@ export function getChangePasswordHandler() {
       if (newPassword.length < 8) {
         return { status: 400, jsonBody: { error: 'Password must be at least 8 characters' } };
       }
-
-      // userId already verified and extracted by requireAuth — no need to re-verify JWT
-      const { userId } = getAuthContext(req);
+      if (!refreshToken) {
+        return { status: 401, jsonBody: { error: 'Refresh token required' } };
+      }
 
       const db = await getDb();
+
+      // Authenticate via refresh token — avoids JWT signature issues across Azure instances
+      const doc = await db
+        .collection<RefreshToken>('refresh_tokens')
+        .findOne({ tokenHash: sha256(refreshToken) });
+
+      if (!doc || doc.expiresAt < new Date()) {
+        return { status: 401, jsonBody: { error: 'Invalid or expired refresh token' } };
+      }
+
+      const user = await db.collection<User>('users').findOne({ _id: doc.userId });
+      if (!user) {
+        return { status: 401, jsonBody: { error: 'User not found' } };
+      }
+
       const passwordHash = await bcrypt.hash(newPassword, 10);
-      const result = await db.collection<User>('users').updateOne(
-        { _id: new ObjectId(userId) },
+      await db.collection<User>('users').updateOne(
+        { _id: user._id as ObjectId },
         { $set: { passwordHash, tempPassword: false, updatedAt: new Date() } },
       );
 
-      if (result.matchedCount === 0) {
-        return { status: 404, jsonBody: { error: 'User not found' } };
-      }
+      // Issue a fresh access token so the client can call login() immediately
+      const token = signAccessToken(user as User & { _id: ObjectId });
 
-      return { status: 200, jsonBody: { message: 'Password updated' } };
+      return { status: 200, jsonBody: { message: 'Password updated', token, refreshToken } };
     } catch (err) {
       return { status: 500, jsonBody: { error: 'Internal server error' } };
     }
