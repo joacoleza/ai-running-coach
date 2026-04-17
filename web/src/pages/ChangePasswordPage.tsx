@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function ChangePasswordPage() {
-  const { token, login, logout, email, isAdmin } = useAuth();
+  const { login, logout, email, isAdmin } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,42 +23,23 @@ export function ChangePasswordPage() {
     setError(null);
 
     try {
-      // Proactively refresh the access token before the change-password request.
-      // This guarantees a fresh token without relying on the 401 interceptor,
-      // which can fail to refresh during this specific flow in production.
-      let activeToken: string = localStorage.getItem('access_token') ?? token ?? '';
       const storedRefreshToken = localStorage.getItem('refresh_token');
-      if (storedRefreshToken) {
-        try {
-          const refreshRes = await fetch('/api/auth/refresh', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: storedRefreshToken }),
-          });
-          if (refreshRes.ok) {
-            const refreshData = await refreshRes.json() as { token: string };
-            activeToken = refreshData.token;
-            localStorage.setItem('access_token', activeToken);
-          }
-        } catch {
-          // Refresh failed — proceed with the existing token (may still be valid)
-        }
+      if (!storedRefreshToken) {
+        logout();
+        return;
       }
 
+      // Authenticate via refresh token — avoids JWT signature issues across Azure instances
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${activeToken}`,
-        },
-        body: JSON.stringify({ newPassword }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword, refreshToken: storedRefreshToken }),
       });
 
       if (response.ok) {
-        // Clear tempPassword flag so App.tsx gate renders AppShell
-        const freshRefreshToken = localStorage.getItem('refresh_token') ?? '';
-        const freshToken = localStorage.getItem('access_token') ?? activeToken;
-        login(freshToken, freshRefreshToken, email ?? '', isAdmin, false);
+        // Server returns a fresh access token — use it to clear the tempPassword flag
+        const data = await response.json() as { token: string; refreshToken: string };
+        login(data.token, data.refreshToken, email ?? '', isAdmin, false);
       } else if (response.status === 401) {
         logout();
       } else if (response.status === 400) {

@@ -7,6 +7,7 @@ import { ChangePasswordPage } from '../pages/ChangePasswordPage'
 
 // Mock AuthContext — ChangePasswordPage calls useAuth()
 const mockLogin = vi.fn()
+const mockLogout = vi.fn()
 vi.mock('../contexts/AuthContext', () => ({
   useAuth: () => ({
     token: 'fake-token',
@@ -14,7 +15,7 @@ vi.mock('../contexts/AuthContext', () => ({
     isAdmin: false,
     tempPassword: true,
     login: mockLogin,
-    logout: vi.fn(),
+    logout: mockLogout,
   }),
 }))
 
@@ -22,7 +23,6 @@ describe('ChangePasswordPage validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     global.fetch = vi.fn()
-    // Provide refresh_token in localStorage for the component's localStorage.getItem call
     localStorage.setItem('refresh_token', 'fake-refresh-token')
   })
 
@@ -38,7 +38,6 @@ describe('ChangePasswordPage validation', () => {
   it('does not show "Password must be at least 8 characters" when newPassword is empty', () => {
     render(<ChangePasswordPage />)
 
-    // No input yet — error should not be visible
     expect(screen.queryByText('Password must be at least 8 characters')).not.toBeInTheDocument()
   })
 
@@ -96,23 +95,12 @@ describe('ChangePasswordPage validation', () => {
     expect(button).not.toBeDisabled()
   })
 
-  it('calls POST /api/auth/change-password on submit with a fresh token after proactive refresh', async () => {
-    // The component proactively calls /api/auth/refresh first, then /api/auth/change-password
-    const mockFetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/api/auth/refresh') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: vi.fn().mockResolvedValue({ token: 'refreshed-token' }),
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
-      })
+  it('sends refresh token in body (no Authorization header) to POST /api/auth/change-password', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({ message: 'Password updated', token: 'new-token', refreshToken: 'fake-refresh-token' }),
     })
-    global.fetch = mockFetch
 
     render(<ChangePasswordPage />)
     fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'validpassword' } })
@@ -120,34 +108,26 @@ describe('ChangePasswordPage validation', () => {
     fireEvent.click(screen.getByRole('button', { name: /change password/i }))
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledOnce()
+      expect(global.fetch).toHaveBeenCalledWith(
         '/api/auth/change-password',
         expect.objectContaining({
           method: 'POST',
-          headers: expect.objectContaining({
-            Authorization: 'Bearer refreshed-token',
-          }),
-          body: JSON.stringify({ newPassword: 'validpassword' }),
+          body: JSON.stringify({ newPassword: 'validpassword', refreshToken: 'fake-refresh-token' }),
         }),
       )
     })
   })
 
-  it('calls login() with tempPassword: false after successful password change', async () => {
-    // The component uses the refreshed token when calling login()
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/api/auth/refresh') {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: vi.fn().mockResolvedValue({ token: 'refreshed-token' }),
-        })
-      }
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: vi.fn().mockResolvedValue({ message: 'Password updated' }),
-      })
+  it('calls login() with tempPassword: false and tokens from response on success', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: vi.fn().mockResolvedValue({
+        message: 'Password updated',
+        token: 'server-issued-token',
+        refreshToken: 'fake-refresh-token',
+      }),
     })
 
     render(<ChangePasswordPage />)
@@ -157,12 +137,43 @@ describe('ChangePasswordPage validation', () => {
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith(
-        'refreshed-token',
+        'server-issued-token',
         'fake-refresh-token',
         'test@example.com',
         false,
         false,
       )
+    })
+  })
+
+  it('calls logout() when change-password returns 401', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: vi.fn().mockResolvedValue({ error: 'Invalid or expired refresh token' }),
+    })
+
+    render(<ChangePasswordPage />)
+    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'validpassword' } })
+    fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'validpassword' } })
+    fireEvent.click(screen.getByRole('button', { name: /change password/i }))
+
+    await waitFor(() => {
+      expect(mockLogout).toHaveBeenCalled()
+    })
+  })
+
+  it('calls logout() immediately when refresh_token is missing from localStorage', async () => {
+    localStorage.removeItem('refresh_token')
+
+    render(<ChangePasswordPage />)
+    fireEvent.change(screen.getByLabelText('New Password'), { target: { value: 'validpassword' } })
+    fireEvent.change(screen.getByLabelText('Confirm Password'), { target: { value: 'validpassword' } })
+    fireEvent.click(screen.getByRole('button', { name: /change password/i }))
+
+    await waitFor(() => {
+      expect(mockLogout).toHaveBeenCalled()
+      expect(global.fetch).not.toHaveBeenCalled()
     })
   })
 })
