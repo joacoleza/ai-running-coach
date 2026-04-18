@@ -42,7 +42,7 @@ function AppInner() {
             // Retry with new token
             const [input, init = {}] = args
             const headers = new Headers((init as RequestInit).headers)
-            headers.set('Authorization', `Bearer ${newToken}`)
+            headers.set('X-Authorization', `Bearer ${newToken}`)
             resolve(originalFetch(input, { ...(init as RequestInit), headers }))
           })
         })
@@ -86,8 +86,16 @@ function AppInner() {
         // Retry the original request with the new token
         const [input, init = {}] = args
         const headers = new Headers((init as RequestInit).headers)
-        headers.set('Authorization', `Bearer ${newToken}`)
-        return originalFetch(input, { ...(init as RequestInit), headers })
+        headers.set('X-Authorization', `Bearer ${newToken}`)
+        const retryResponse = await originalFetch(input, { ...(init as RequestInit), headers })
+
+        // If the retry still returns 401 (e.g. JWT_SECRET mismatch across instances),
+        // log out to force re-login rather than leaving the user in a broken state.
+        if (retryResponse.status === 401) {
+          logout()
+        }
+
+        return retryResponse
       } catch {
         logout()
         refreshQueue.current.forEach((cb) => cb(null))

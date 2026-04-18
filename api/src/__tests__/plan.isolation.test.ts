@@ -38,7 +38,7 @@ function makeReq(method: string, body?: unknown): HttpRequest {
   const req = new HttpRequest({
     method,
     url: 'http://localhost/api/plan',
-    headers: { authorization: 'Bearer test-token' },
+    headers: { 'x-authorization': 'Bearer test-token' },
   });
   if (body !== undefined) {
     vi.spyOn(req, 'json').mockResolvedValue(body);

@@ -24,7 +24,7 @@ test.describe('Data isolation', () => {
 
     // User A logs a run
     const createRes = await request.post(`${API}/runs`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
+      headers: { 'X-Authorization': `Bearer ${tokenA}` },
       data: { date: '2026-01-01', distance: 10, duration: '55:00' },
     })
     expect(createRes.status()).toBe(201)
@@ -34,7 +34,7 @@ test.describe('Data isolation', () => {
     try {
       // User B lists runs — should not include User A's run
       const listRes = await request.get(`${API}/runs`, {
-        headers: { Authorization: `Bearer ${tokenB}` },
+        headers: { 'X-Authorization': `Bearer ${tokenB}` },
       })
       expect(listRes.ok()).toBeTruthy()
       const { runs } = await listRes.json()
@@ -43,13 +43,13 @@ test.describe('Data isolation', () => {
 
       // User B fetches the run by ID — must return 404, not 200
       const getRes = await request.get(`${API}/runs/${runId}`, {
-        headers: { Authorization: `Bearer ${tokenB}` },
+        headers: { 'X-Authorization': `Bearer ${tokenB}` },
       })
       expect(getRes.status()).toBe(404)
     } finally {
       // Clean up: User A deletes the run
       await request.delete(`${API}/runs/${runId}`, {
-        headers: { Authorization: `Bearer ${tokenA}` },
+        headers: { 'X-Authorization': `Bearer ${tokenA}` },
       })
     }
   })
@@ -60,7 +60,7 @@ test.describe('Data isolation', () => {
 
     // User A creates an onboarding plan
     const createRes = await request.post(`${API}/plan`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
+      headers: { 'X-Authorization': `Bearer ${tokenA}` },
       data: { mode: 'conversational' },
     })
     expect(createRes.status()).toBe(201)
@@ -70,7 +70,7 @@ test.describe('Data isolation', () => {
     try {
       // User B fetches their active plan — should be null (not User A's)
       const getRes = await request.get(`${API}/plan`, {
-        headers: { Authorization: `Bearer ${tokenB}` },
+        headers: { 'X-Authorization': `Bearer ${tokenB}` },
       })
       expect(getRes.ok()).toBeTruthy()
       const { plan: planB } = await getRes.json()
@@ -82,7 +82,7 @@ test.describe('Data isolation', () => {
       // Clean up: User A archives (then there's no active plan to leak)
       // Delete the onboarding plan by creating a new one which triggers deleteMany of stale onboarding
       await request.post(`${API}/plan`, {
-        headers: { Authorization: `Bearer ${tokenA}` },
+        headers: { 'X-Authorization': `Bearer ${tokenA}` },
         data: { mode: 'conversational' },
       })
       // Archive won't work on empty plan — just leave it; next test run's global-setup reseeds users
@@ -95,14 +95,14 @@ test.describe('Data isolation', () => {
 
     // User B fetches User A's archived plans list — must be empty (not User A's archives)
     const listRes = await request.get(`${API}/plans/archived`, {
-      headers: { Authorization: `Bearer ${tokenB}` },
+      headers: { 'X-Authorization': `Bearer ${tokenB}` },
     })
     expect(listRes.ok()).toBeTruthy()
     const { plans: plansA } = await listRes.json()
 
     // Fetch User A's archived plans to get an ID to probe with User B's token
     const listResA = await request.get(`${API}/plans/archived`, {
-      headers: { Authorization: `Bearer ${tokenA}` },
+      headers: { 'X-Authorization': `Bearer ${tokenA}` },
     })
     expect(listResA.ok()).toBeTruthy()
     const { plans: archivedA } = await listResA.json()
@@ -111,7 +111,7 @@ test.describe('Data isolation', () => {
       // Attempt to fetch User A's archived plan using User B's token
       const archiveId = archivedA[0]._id
       const crossRes = await request.get(`${API}/plans/archived/${archiveId}`, {
-        headers: { Authorization: `Bearer ${tokenB}` },
+        headers: { 'X-Authorization': `Bearer ${tokenB}` },
       })
       expect(crossRes.status()).toBe(404)
 

@@ -7,7 +7,7 @@ vi.mock('jsonwebtoken');
 function makeReq(token?: string): any {
   return {
     headers: {
-      get: (key: string) => (key === 'authorization' && token ? `Bearer ${token}` : null),
+      get: (key: string) => (key === 'x-authorization' && token ? `Bearer ${token}` : null),
     },
   };
 }

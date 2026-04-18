@@ -288,7 +288,7 @@ describe('POST /api/auth/logout', () => {
     const { getLogoutHandler } = await import('../functions/auth.js')
     const handler = getLogoutHandler()
     vi.mocked(requireAuth).mockResolvedValue(null)
-    const req = makePostRequest({ refreshToken: 'some-token' }, { authorization: 'Bearer valid.jwt.token' })
+    const req = makePostRequest({ refreshToken: 'some-token' }, { 'x-authorization': 'Bearer valid.jwt.token' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(204)
   })
@@ -297,7 +297,7 @@ describe('POST /api/auth/logout', () => {
     const { getLogoutHandler } = await import('../functions/auth.js')
     const handler = getLogoutHandler()
     vi.mocked(requireAuth).mockResolvedValue(null)
-    const req = makePostRequest({ refreshToken: 'some-raw-token' }, { authorization: 'Bearer valid.jwt.token' })
+    const req = makePostRequest({ refreshToken: 'some-raw-token' }, { 'x-authorization': 'Bearer valid.jwt.token' })
     await handler(req, {} as never)
     expect(mockRefreshTokensCollection.deleteOne).toHaveBeenCalledWith(
       expect.objectContaining({ tokenHash: expect.any(String) }),
@@ -308,7 +308,7 @@ describe('POST /api/auth/logout', () => {
     const { getLogoutHandler } = await import('../functions/auth.js')
     const handler = getLogoutHandler()
     vi.mocked(requireAuth).mockResolvedValue(null)
-    const req = makePostRequest({}, { authorization: 'Bearer valid.jwt.token' })
+    const req = makePostRequest({}, { 'x-authorization': 'Bearer valid.jwt.token' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(204)
   })

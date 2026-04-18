@@ -64,7 +64,7 @@ describe('createRun', () => {
     mockFetch.mockReturnValue(mockOk(baseRun));
     await createRun({ date: '2026-04-01', distance: 5, duration: '25:00' });
     const [, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect((opts.headers as Record<string, string>)['Authorization']).toBe('Bearer test-jwt-token');
+    expect((opts.headers as Record<string, string>)['X-Authorization']).toBe('Bearer test-jwt-token');
   });
 
   it('throws error message from response on failure', async () => {

@@ -28,7 +28,7 @@ export function ArchivePlan() {
         const res = await fetch(`/api/messages?planId=${planId}`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token ?? ''}`,
+            'X-Authorization': `Bearer ${token ?? ''}`,
           },
         });
         if (!res.ok) return;
@@ -46,7 +46,7 @@ export function ArchivePlan() {
         const res = await fetch(`/api/plans/archived/${id}`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token ?? ''}`,
+            'X-Authorization': `Bearer ${token ?? ''}`,
           },
         });
         if (!res.ok) throw new Error('Failed to fetch plan');
@@ -93,7 +93,7 @@ export function ArchivePlan() {
     void (async () => {
       try {
         const res = await fetch(`/api/runs/${selectedRunId}`, {
-          headers: { 'Authorization': `Bearer ${token ?? ''}` },
+          headers: { 'X-Authorization': `Bearer ${token ?? ''}` },
         });
         if (res.ok) setSelectedRun(await res.json() as Run);
       } catch { /* ignore */ }

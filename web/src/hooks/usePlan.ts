@@ -68,7 +68,7 @@ export function usePlan(): UsePlanReturn {
   function authHeaders(): Record<string, string> {
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token ?? ''}`,
+      'X-Authorization': `Bearer ${token ?? ''}`,
     };
   }
 
