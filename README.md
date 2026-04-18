@@ -7,9 +7,9 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-89.3%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89.4%25-brightgreen)
 ![API Tests](https://img.shields.io/badge/api_tests-275%2F275-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-452%2F452-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-453%2F453-brightgreen)
 ![E2E Tests](https://img.shields.io/badge/e2e_tests-69%2F69-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
