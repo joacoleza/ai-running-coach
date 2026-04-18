@@ -7,6 +7,7 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
   threadId: string;
+  userId?: ObjectId;
 }
 
 export interface PlanGoal {
@@ -66,6 +67,7 @@ export interface Plan {
   progressFeedback?: string;
   createdAt: Date;
   updatedAt: Date;
+  userId?: ObjectId;
 }
 
 export interface Run {
@@ -80,7 +82,7 @@ export interface Run {
   weekNumber?: number;     // linked week number (if linked)
   dayLabel?: string;       // linked day label A-G (if linked)
   insight?: string;        // coaching insight text (set after feedback)
-  userId?: string;         // reserved for future multi-user
+  userId?: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
