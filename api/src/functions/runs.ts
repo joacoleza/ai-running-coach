@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ObjectId } from 'mongodb';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan, Run } from '../shared/types.js';
 
@@ -30,6 +30,7 @@ app.http('createRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     let body: {
       date?: string;
@@ -65,6 +66,7 @@ app.http('createRun', {
         pace,
         createdAt: now,
         updatedAt: now,
+        userId: new ObjectId(userId),
       };
 
       if (body.avgHR !== undefined) newRun.avgHR = body.avgHR;
@@ -77,7 +79,7 @@ app.http('createRun', {
 
         const plan = await db
           .collection<Plan>('plans')
-          .findOne({ status: { $in: ['active', 'onboarding'] } });
+          .findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
 
         if (!plan) {
           return { status: 404, jsonBody: { error: 'No active plan found' } };
@@ -96,7 +98,7 @@ app.http('createRun', {
 
         // Mark the plan day as completed
         await db.collection<Plan>('plans').updateOne(
-          { status: { $in: ['active', 'onboarding'] } },
+          { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
           {
             $set: {
               'phases.$[].weeks.$[week].days.$[day].completed': true,
@@ -130,13 +132,16 @@ app.http('listRuns', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     try {
       const params = req.query;
       const limit = Math.min(parseInt(params.get('limit') ?? '20', 10), 100);
       const offset = parseInt(params.get('offset') ?? '0', 10);
 
-      const filter: Record<string, unknown> = {};
+      const filter: Record<string, unknown> = {
+        userId: new ObjectId(userId),
+      };
 
       const dateFrom = params.get('dateFrom');
       const dateTo = params.get('dateTo');
@@ -171,7 +176,7 @@ app.http('listRuns', {
       const [runs, total, totalAll] = await Promise.all([
         col.find(filter).sort({ date: -1 }).skip(offset).limit(limit).toArray(),
         col.countDocuments(filter),
-        col.countDocuments({}),
+        col.countDocuments({ userId: new ObjectId(userId) }),
       ]);
 
       return { status: 200, jsonBody: { runs, total, totalAll } };
@@ -190,6 +195,7 @@ app.http('getRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const id = req.params['id'];
     let objectId: ObjectId;
@@ -201,7 +207,7 @@ app.http('getRun', {
 
     try {
       const db = await getDb();
-      const run = await db.collection<Run>('runs').findOne({ _id: objectId });
+      const run = await db.collection<Run>('runs').findOne({ _id: objectId, userId: new ObjectId(userId) });
       if (!run) return { status: 404, jsonBody: { error: 'Run not found' } };
       return { status: 200, jsonBody: run };
     } catch (err) {
@@ -219,6 +225,7 @@ app.http('updateRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const id = req.params['id'];
     let objectId: ObjectId;
@@ -245,7 +252,7 @@ app.http('updateRun', {
 
     try {
       const db = await getDb();
-      const existing = await db.collection<Run>('runs').findOne({ _id: objectId });
+      const existing = await db.collection<Run>('runs').findOne({ _id: objectId, userId: new ObjectId(userId) });
       if (!existing) return { status: 404, jsonBody: { error: 'Run not found' } };
 
       const $set: Record<string, unknown> = { updatedAt: new Date() };
@@ -266,7 +273,7 @@ app.http('updateRun', {
 
       const updated = await db
         .collection<Run>('runs')
-        .findOneAndUpdate({ _id: objectId }, { $set }, { returnDocument: 'after' });
+        .findOneAndUpdate({ _id: objectId, userId: new ObjectId(userId) }, { $set }, { returnDocument: 'after' });
 
       if (!updated) return { status: 404, jsonBody: { error: 'Run not found' } };
       return { status: 200, jsonBody: updated };
@@ -285,6 +292,7 @@ app.http('deleteRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const id = req.params['id'];
     let objectId: ObjectId;
@@ -296,7 +304,7 @@ app.http('deleteRun', {
 
     try {
       const db = await getDb();
-      const run = await db.collection<Run>('runs').findOne({ _id: objectId });
+      const run = await db.collection<Run>('runs').findOne({ _id: objectId, userId: new ObjectId(userId) });
       if (!run) return { status: 404, jsonBody: { error: 'Run not found' } };
 
       if (run.planId) {
@@ -308,7 +316,7 @@ app.http('deleteRun', {
         };
       }
 
-      await db.collection<Run>('runs').deleteOne({ _id: objectId });
+      await db.collection<Run>('runs').deleteOne({ _id: objectId, userId: new ObjectId(userId) });
       return { status: 204 };
     } catch (err) {
       context.log('Error deleting run:', err);
@@ -325,6 +333,7 @@ app.http('unlinkRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const { id } = req.params;
     if (!id || !ObjectId.isValid(id)) {
@@ -335,7 +344,7 @@ app.http('unlinkRun', {
       const db = await getDb();
 
       // Find the run to get plan link info
-      const run = await db.collection<Run>('runs').findOne({ _id: new ObjectId(id) });
+      const run = await db.collection<Run>('runs').findOne({ _id: new ObjectId(id), userId: new ObjectId(userId) });
       if (!run) return { status: 404, jsonBody: { error: 'Run not found' } };
       if (!run.planId) return { status: 400, jsonBody: { error: 'Run is not linked to a plan day' } };
 
@@ -346,6 +355,7 @@ app.http('unlinkRun', {
         await db.collection<Plan>('plans').updateOne(
           {
             _id: run.planId,
+            userId: new ObjectId(userId),
             'phases.weeks.weekNumber': weekNumber,
           },
           {
@@ -359,7 +369,7 @@ app.http('unlinkRun', {
 
       // Clear planId, weekNumber, dayLabel from the run
       const updatedRun = await db.collection<Run>('runs').findOneAndUpdate(
-        { _id: new ObjectId(id) },
+        { _id: new ObjectId(id), userId: new ObjectId(userId) },
         {
           $unset: { planId: '', weekNumber: '', dayLabel: '' },
           $set: { updatedAt: new Date() },
@@ -386,6 +396,7 @@ app.http('linkRun', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const id = req.params['id'];
     let objectId: ObjectId;
@@ -410,12 +421,12 @@ app.http('linkRun', {
     try {
       const db = await getDb();
 
-      const run = await db.collection<Run>('runs').findOne({ _id: objectId });
+      const run = await db.collection<Run>('runs').findOne({ _id: objectId, userId: new ObjectId(userId) });
       if (!run) return { status: 404, jsonBody: { error: 'Run not found' } };
 
       const plan = await db
         .collection<Plan>('plans')
-        .findOne({ status: { $in: ['active', 'onboarding'] } });
+        .findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
 
       const targetDay = plan.phases
@@ -431,6 +442,7 @@ app.http('linkRun', {
           planId: plan._id,
           weekNumber,
           dayLabel,
+          userId: new ObjectId(userId),
         });
         if (existingLinkedRun) {
           return { status: 409, jsonBody: { error: 'Day already has a linked run' } };
@@ -439,7 +451,7 @@ app.http('linkRun', {
       } else {
         // Mark the plan day as completed (only if not already completed)
         await db.collection<Plan>('plans').updateOne(
-          { status: { $in: ['active', 'onboarding'] } },
+          { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
           {
             $set: {
               'phases.$[].weeks.$[week].days.$[day].completed': true,
@@ -452,7 +464,7 @@ app.http('linkRun', {
 
       // Update the run with link info
       const updated = await db.collection<Run>('runs').findOneAndUpdate(
-        { _id: objectId },
+        { _id: objectId, userId: new ObjectId(userId) },
         {
           $set: {
             planId: plan._id,

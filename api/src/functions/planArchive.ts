@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { ObjectId } from 'mongodb';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan } from '../shared/types.js';
 
@@ -12,12 +12,13 @@ app.http('archivePlan', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     try {
       const db = await getDb();
 
       const planToArchive = await db.collection<Plan>('plans').findOne(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { sort: { createdAt: -1 } },
       );
 
@@ -41,7 +42,7 @@ app.http('archivePlan', {
       }
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { _id: planToArchive._id },
+        { _id: planToArchive._id, userId: new ObjectId(userId) },
         { $set: { status: 'archived', updatedAt: new Date() } },
         { returnDocument: 'after' },
       );
@@ -72,13 +73,14 @@ app.http('listArchivedPlans', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     try {
       const db = await getDb();
 
       const results = await db
         .collection<Plan>('plans')
-        .find({ status: 'archived' })
+        .find({ status: 'archived', userId: new ObjectId(userId) })
         .project({ _id: 1, objective: 1, goal: 1, createdAt: 1, targetDate: 1 })
         .toArray();
 
@@ -103,6 +105,7 @@ app.http('getArchivedPlan', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const id = req.params['id'];
 
@@ -119,13 +122,14 @@ app.http('getArchivedPlan', {
       const result = await db.collection<Plan>('plans').findOne({
         _id: objectId,
         status: 'archived',
+        userId: new ObjectId(userId),
       });
 
       if (!result) {
         return { status: 404, jsonBody: { error: 'Archived plan not found' } };
       }
 
-      const runs = await db.collection('runs').find({ planId: result._id }).toArray();
+      const runs = await db.collection('runs').find({ planId: result._id, userId: new ObjectId(userId) }).toArray();
       const linkedRuns: Record<string, unknown> = {};
       for (const run of runs) {
         if (run.weekNumber != null && run.dayLabel) {
