@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requireAuth } from '../middleware/auth.js';
+import { ObjectId } from 'mongodb';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan, PlanPhase } from '../shared/types.js';
 import { assignPlanStructure } from '../shared/planUtils.js';
@@ -11,6 +12,7 @@ app.http('patchPhase', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const phaseIndexParam = req.params['phaseIndex'];
     const phaseIndex = Number(phaseIndexParam);
@@ -32,7 +34,7 @@ app.http('patchPhase', {
     const db = await getDb();
 
     try {
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
       if (phaseIndex >= plan.phases.length) {
         return { status: 404, jsonBody: { error: `Phase index ${phaseIndex} does not exist` } };
@@ -47,7 +49,7 @@ app.http('patchPhase', {
       }
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $set, $currentDate: { updatedAt: true } },
         { returnDocument: 'after' },
       );
@@ -67,13 +69,14 @@ app.http('addPhase', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     let body: { name?: string; description?: string } = {};
     try { body = (await req.json()) as typeof body; } catch { /* body is optional */ }
 
     const db = await getDb();
     try {
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
 
       const newPhase: PlanPhase = {
@@ -86,7 +89,7 @@ app.http('addPhase', {
       // Do NOT use $push alone — week numbers must be recomputed globally
       const updatedPhases = assignPlanStructure([...plan.phases, newPhase]);
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $set: { phases: updatedPhases, updatedAt: new Date() } },
         { returnDocument: 'after' },
       );
@@ -106,6 +109,7 @@ app.http('addWeekToPhase', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const phaseIndexParam = req.params['phaseIndex'];
     const phaseIndex = Number(phaseIndexParam);
@@ -115,7 +119,7 @@ app.http('addWeekToPhase', {
 
     const db = await getDb();
     try {
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
       if (phaseIndex >= plan.phases.length) {
         return { status: 404, jsonBody: { error: `Phase index ${phaseIndex} does not exist` } };
@@ -129,7 +133,7 @@ app.http('addWeekToPhase', {
       const recomputed = assignPlanStructure(updatedPhases);
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $set: { phases: recomputed, updatedAt: new Date() } },
         { returnDocument: 'after' },
       );
@@ -149,11 +153,12 @@ app.http('deleteLastPhase', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const db = await getDb();
 
     try {
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
 
       if (plan.phases.length <= 1) {
@@ -167,7 +172,7 @@ app.http('deleteLastPhase', {
       }
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $pop: { phases: 1 }, $currentDate: { updatedAt: true } } as any,
         { returnDocument: 'after' },
       );
