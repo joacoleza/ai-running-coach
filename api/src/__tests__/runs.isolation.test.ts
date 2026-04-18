@@ -35,22 +35,22 @@ import { getAuthContext } from '../middleware/auth.js';
 const ctx = { log: vi.fn(), error: vi.fn() } as any;
 
 function makePostReq(url: string, body: unknown): HttpRequest {
-  const req = new HttpRequest({ method: 'POST', url, headers: { authorization: 'Bearer test-token' } });
+  const req = new HttpRequest({ method: 'POST', url, headers: { 'x-authorization': 'Bearer test-token' } });
   vi.spyOn(req, 'json').mockResolvedValue(body);
   return req;
 }
 
 function makeGetReq(url: string): HttpRequest {
-  return new HttpRequest({ method: 'GET', url, headers: { authorization: 'Bearer test-token' } });
+  return new HttpRequest({ method: 'GET', url, headers: { 'x-authorization': 'Bearer test-token' } });
 }
 
 function makeGetReqWithQuery(url: string, params: Record<string, string>): HttpRequest {
   const qs = new URLSearchParams(params).toString();
-  return new HttpRequest({ method: 'GET', url: `${url}?${qs}`, headers: { authorization: 'Bearer test-token' } });
+  return new HttpRequest({ method: 'GET', url: `${url}?${qs}`, headers: { 'x-authorization': 'Bearer test-token' } });
 }
 
 function makeDeleteReq(url: string, params: Record<string, string>): HttpRequest {
-  return new HttpRequest({ method: 'DELETE', url, headers: { authorization: 'Bearer test-token' }, params });
+  return new HttpRequest({ method: 'DELETE', url, headers: { 'x-authorization': 'Bearer test-token' }, params });
 }
 
 let mongod: MongoMemoryServer;

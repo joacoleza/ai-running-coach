@@ -9,7 +9,7 @@ function makeRequest(authHeader?: string): HttpRequest {
   return new HttpRequest({
     method: 'GET',
     url: 'http://localhost/api/test',
-    headers: authHeader ? { authorization: authHeader } : {},
+    headers: authHeader ? { 'x-authorization': authHeader } : {},
   })
 }
 

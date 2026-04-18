@@ -95,6 +95,44 @@ describe('App auth gate', () => {
     expect(localStorage.getItem('access_token')).toBeNull()
   })
 
+  it('logs out when retry after successful refresh also returns 401 (JWT_SECRET mismatch)', async () => {
+    localStorage.setItem('access_token', 'fake-jwt-token')
+    localStorage.setItem('refresh_token', 'valid-refresh-token')
+    localStorage.setItem('auth_temp_password', 'false')
+    localStorage.setItem('auth_email', 'test@example.com')
+
+    const mockFetchFn = vi.fn().mockImplementation(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : (input as Request).url ?? String(input)
+      if (url.includes('/api/auth/refresh')) {
+        // Refresh "succeeds" — returns a new token (but that token will also fail on data endpoints)
+        return { ok: true, status: 200, json: async () => ({ token: 'new-but-invalid-token' }) } as unknown as Response
+      }
+      // All API calls return 401 (simulates JWT_SECRET mismatch where even refreshed tokens fail)
+      if (url.includes('/api/') && !url.includes('/api/auth/')) {
+        return { ok: false, status: 401 } as Response
+      }
+      return { ok: true, status: 200, json: async () => ({ plan: null, linkedRuns: {}, messages: [], runs: [], total: 0 }) } as unknown as Response
+    })
+    global.fetch = mockFetchFn
+
+    await act(async () => {
+      render(<App />)
+    })
+
+    // Manually trigger a fetch through the interceptor
+    // (AppShell's internal API calls may not go through window.fetch override in the test environment)
+    await act(async () => {
+      await window.fetch('/api/plan')
+    })
+
+    // After retry with refreshed token still returns 401, logout() should be called → LoginPage shown
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
+    }, { timeout: 3000 })
+
+    expect(localStorage.getItem('access_token')).toBeNull()
+  })
+
   it('ChangePasswordPage calls logout on 401 response', async () => {
     localStorage.setItem('access_token', 'fake-jwt')
     localStorage.setItem('auth_temp_password', 'true')

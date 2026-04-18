@@ -12,7 +12,11 @@ export interface AuthContext {
 const authContextMap = new WeakMap<HttpRequest, AuthContext>();
 
 export async function requireAuth(req: HttpRequest): Promise<HttpResponseInit | null> {
-  const authHeader = req.headers.get('authorization');
+  // Read from X-Authorization to avoid Azure SWA overwriting the standard Authorization header.
+  // Azure Static Web Apps injects its own Easy Auth token into the Authorization header before
+  // forwarding to managed Functions, causing "invalid signature" on our custom JWTs.
+  // X-Authorization is a custom header that SWA passes through untouched.
+  const authHeader = req.headers.get('x-authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return {

@@ -63,7 +63,7 @@ export function TrainingPlan() {
     void (async () => {
       try {
         const res = await fetch(`/api/runs/${selectedRunId}`, {
-          headers: { 'Authorization': `Bearer ${token ?? ''}` }
+          headers: { 'X-Authorization': `Bearer ${token ?? ''}` }
         });
         if (res.ok) setSelectedRun(await res.json() as Run);
       } catch { /* ignore */ }

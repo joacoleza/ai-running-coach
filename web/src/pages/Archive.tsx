@@ -32,7 +32,7 @@ export function Archive() {
         const res = await fetch('/api/plans/archived', {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token ?? ''}`,
+            'X-Authorization': `Bearer ${token ?? ''}`,
           },
         });
         if (!res.ok) throw new Error('Failed to fetch archived plans');
