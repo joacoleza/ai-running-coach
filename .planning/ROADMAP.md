@@ -69,7 +69,11 @@ Plans:
   2. API queries for plans/runs/messages automatically filter by the authenticated user's ID — no cross-user leakage possible
   3. After running the migration on a fresh v2.0 deployment, all pre-existing v1.1 documents are accessible under the seed admin account and no data is lost
   4. The seed admin account has `isAdmin: true` and can reach admin-only routes; a regular user cannot
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 08-01-PLAN.md — Types (userId: ObjectId on Plan/Run/ChatMessage), DB indexes, requireAdmin middleware
+- [ ] 08-02-PLAN.md — userId query scoping across all 7 handler files (DATA-01)
+- [ ] 08-03-PLAN.md — Startup migration script + index.ts wiring + full test suite (DATA-02)
 
 ### Phase 9: Admin Panel
 **Goal**: An admin can manage all user accounts from a dedicated page in the app
@@ -90,7 +94,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
-| 8. Data Isolation & Migration | 0/? | Not started | - |
+| 8. Data Isolation & Migration | 0/3 | Not started | - |
 | 9. Admin Panel | 0/? | Not started | - |
 | 10. Login Rate Limiting | 0/? | Not started | - |
 
