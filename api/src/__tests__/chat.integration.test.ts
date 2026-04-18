@@ -1,11 +1,13 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
 
 // Shared mock for the Anthropic stream — configured per test
 const mockStream = vi.hoisted(() => vi.fn());
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+// Fixed test user ID — hoisted so it's available in vi.mock factory
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@anthropic-ai/sdk', () => ({
   default: vi.fn().mockImplementation(() => ({
@@ -31,6 +33,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect import registers chat handler
@@ -128,6 +131,8 @@ beforeEach(async () => {
   await mongoClient.db('running-coach').collection('messages').deleteMany({});
 });
 
+const TEST_USER_OID = new ObjectId('000000000000000000000001');
+
 async function insertOnboardingPlan() {
   const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
     status: 'onboarding',
@@ -135,6 +140,7 @@ async function insertOnboardingPlan() {
     onboardingMode: 'conversational',
     goal: {},
     sessions: [],
+    userId: TEST_USER_OID,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -207,6 +213,7 @@ describe('Chat - synthetic plan-state context injection', () => {
       onboardingStep: 6,
       onboardingMode: 'conversational',
       goal: { eventType: '5k', targetDate: '2026-06-01', weeklyMileage: 20, availableDays: 3, units: 'km' },
+      userId: TEST_USER_OID,
       phases: [
         {
           name: 'Base',
@@ -278,6 +285,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       onboardingStep: 6,
       onboardingMode: 'conversational',
       goal: { eventType: '5k', targetDate: '2026-06-01', weeklyMileage: 20, availableDays: 3, units: 'km' },
+      userId: TEST_USER_OID,
       phases: [
         {
           name: 'Base',
@@ -312,6 +320,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       distance: 5.2,
       pace: 5.5,
       duration: '28:36',
+      userId: TEST_USER_OID,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -345,6 +354,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       pace: 5.5,
       duration: '28:36',
       notes: 'Felt strong today',
+      userId: TEST_USER_OID,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -374,6 +384,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       pace: 5.5,
       duration: '28:36',
       notes: longNotes,
+      userId: TEST_USER_OID,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -396,6 +407,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       onboardingMode: 'conversational',
       goal: { eventType: '5k', targetDate: '2026-06-01', weeklyMileage: 20, availableDays: 3, units: 'km' },
       progressFeedback: 'Great week overall',
+      userId: TEST_USER_OID,
       phases: [
         {
           name: 'Base',
@@ -464,6 +476,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       pace: 5.0,
       duration: '40:00',
       insight: longInsight,
+      userId: TEST_USER_OID,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -496,6 +509,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
       distance: 10,
       pace: 0, // pace=0 means no pace data
       duration: '60:00',
+      userId: TEST_USER_OID,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

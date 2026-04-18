@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
 
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -18,6 +19,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 import '../functions/messages.js';
@@ -59,6 +61,8 @@ beforeEach(async () => {
   vi.mocked(requireAuth).mockResolvedValue(null);
 });
 
+const TEST_USER_OID = new ObjectId('000000000000000000000001');
+
 describe('getMessages handler', () => {
   it('returns 401 when auth fails', async () => {
     vi.mocked(requireAuth).mockResolvedValueOnce({ status: 401, jsonBody: { error: 'Unauthorized' } });
@@ -81,9 +85,9 @@ describe('getMessages handler', () => {
   it('returns messages sorted by timestamp for matching planId', async () => {
     const db = mongoClient.db('running-coach');
     await db.collection('messages').insertMany([
-      { planId: 'p1', role: 'user', content: 'first', timestamp: new Date('2026-04-07T10:00:00Z') },
-      { planId: 'p1', role: 'assistant', content: 'second', timestamp: new Date('2026-04-07T10:01:00Z') },
-      { planId: 'other', role: 'user', content: 'other plan', timestamp: new Date('2026-04-07T09:00:00Z') },
+      { planId: 'p1', role: 'user', content: 'first', timestamp: new Date('2026-04-07T10:00:00Z'), userId: TEST_USER_OID },
+      { planId: 'p1', role: 'assistant', content: 'second', timestamp: new Date('2026-04-07T10:01:00Z'), userId: TEST_USER_OID },
+      { planId: 'other', role: 'user', content: 'other plan', timestamp: new Date('2026-04-07T09:00:00Z'), userId: TEST_USER_OID },
     ]);
 
     const res = await handlers.get('getMessages')!(makeReq('p1'), ctx);

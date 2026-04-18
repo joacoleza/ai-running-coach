@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
 
 // Capture Azure Functions HTTP handlers before planPhases.ts is imported
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -19,6 +20,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect import registers patchPhase and deleteLastPhase handlers
@@ -91,11 +93,14 @@ const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
   { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
 ];
 
+const TEST_USER_OID = new ObjectId('000000000000000000000001');
+
 const validActivePlan = {
   status: 'active',
   onboardingMode: 'conversational',
   onboardingStep: 6,
   goal: { eventType: '10K', targetDate: '2026-06-01', weeklyMileage: 30, availableDays: 4, units: 'km' },
+  userId: TEST_USER_OID,
   phases: [
     {
       name: 'Base Building',
