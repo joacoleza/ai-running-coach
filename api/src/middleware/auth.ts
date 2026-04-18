@@ -58,3 +58,24 @@ export function getAuthContext(req: HttpRequest): AuthContext {
   }
   return ctx;
 }
+
+/**
+ * Middleware guard for admin-only routes.
+ * Call requireAuth FIRST in the handler, then call requireAdmin.
+ * requireAdmin assumes requireAuth has already been called (authContext exists on req).
+ * Returns null if authorized, or 403 HttpResponseInit if not admin.
+ */
+export async function requireAdmin(req: HttpRequest): Promise<HttpResponseInit | null> {
+  const denied = await requireAuth(req);
+  if (denied) return denied;
+
+  const ctx = getAuthContext(req);
+  if (!ctx.isAdmin) {
+    return {
+      status: 403,
+      jsonBody: { error: 'Admin access required' },
+    };
+  }
+
+  return null;
+}
