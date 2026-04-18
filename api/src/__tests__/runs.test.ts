@@ -5,6 +5,8 @@ import { _resetDbForTest } from '../shared/db.js';
 
 // Capture Azure Functions HTTP handlers before modules are imported
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+// Fixed test user ID — hoisted so it's available in vi.mock factory
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -19,6 +21,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect imports register all handlers
@@ -103,6 +106,9 @@ const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
   { label: '', type: 'rest', guidelines: 'Rest day', completed: false, skipped: false },
 ];
 
+// Fixed test user ObjectId — matches getAuthContext mock
+const TEST_USER_OID = new ObjectId(TEST_USER_ID);
+
 const validActivePlan = {
   status: 'active',
   onboardingMode: 'conversational',
@@ -117,7 +123,20 @@ const validActivePlan = {
   ],
   createdAt: new Date(),
   updatedAt: new Date(),
+  userId: TEST_USER_OID,
 };
+
+// Base run fixture with userId
+const makeRun = (overrides: Record<string, unknown> = {}) => ({
+  date: '2026-04-01',
+  distance: 5,
+  duration: '25:00',
+  pace: 5,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  userId: TEST_USER_OID,
+  ...overrides,
+});
 
 // ── POST /api/runs - createRun ─────────────────────────────────────────────
 
@@ -212,9 +231,9 @@ describe('GET /api/runs - listRuns', () => {
   beforeEach(async () => {
     // Insert three runs: different dates to test ordering
     await mongoClient.db('running-coach').collection('runs').insertMany([
-      { date: '2026-04-01', distance: 5, duration: '25:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
-      { date: '2026-04-03', distance: 8, duration: '40:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
-      { date: '2026-04-02', distance: 6, duration: '30:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
+      makeRun({ date: '2026-04-01', distance: 5, duration: '25:00', pace: 5 }),
+      makeRun({ date: '2026-04-03', distance: 8, duration: '40:00', pace: 5 }),
+      makeRun({ date: '2026-04-02', distance: 6, duration: '30:00', pace: 5 }),
     ]);
   });
 
@@ -233,17 +252,9 @@ describe('GET /api/runs - listRuns', () => {
     const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
     const planId = planInsert.insertedId;
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-05',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-05', distance: 5, duration: '25:00', pace: 5, planId, weekNumber: 1, dayLabel: 'A' })
+    );
 
     const req = makeGetReqWithQuery('http://localhost/api/runs', { planId: planId.toHexString() });
     const result = await handlers.get('listRuns')!(req, ctx);
@@ -267,9 +278,9 @@ describe('GET /api/runs - listRuns', () => {
 describe('GET /api/runs - date and distance filters', () => {
   beforeEach(async () => {
     await mongoClient.db('running-coach').collection('runs').insertMany([
-      { date: '2026-03-01', distance: 3, duration: '18:00', pace: 6, createdAt: new Date(), updatedAt: new Date() },
-      { date: '2026-04-01', distance: 7, duration: '35:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
-      { date: '2026-05-01', distance: 12, duration: '60:00', pace: 5, createdAt: new Date(), updatedAt: new Date() },
+      makeRun({ date: '2026-03-01', distance: 3, duration: '18:00', pace: 6 }),
+      makeRun({ date: '2026-04-01', distance: 7, duration: '35:00', pace: 5 }),
+      makeRun({ date: '2026-05-01', distance: 12, duration: '60:00', pace: 5 }),
     ]);
   });
 
@@ -340,14 +351,7 @@ describe('GET /api/runs - date and distance filters', () => {
 
 describe('GET /api/runs/:id - getRun', () => {
   it('returns a run by id', async () => {
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = runInsert.insertedId.toHexString();
     const req = new HttpRequest({ method: 'GET', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
     const result = await handlers.get('getRun')!(req, ctx);
@@ -371,14 +375,7 @@ describe('GET /api/runs/:id - getRun', () => {
 
 describe('PATCH /api/runs/:id - updateRun', () => {
   it('updates run fields and recomputes pace when distance changes', async () => {
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01', distance: 5, duration: '25:00', pace: 5 }));
     const runId = runInsert.insertedId.toHexString();
     const req = new HttpRequest({ method: 'PATCH', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
     vi.spyOn(req, 'json').mockResolvedValue({ distance: 10, duration: '50:00' });
@@ -389,14 +386,7 @@ describe('PATCH /api/runs/:id - updateRun', () => {
   });
 
   it('saves insight field when provided', async () => {
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01', distance: 5, duration: '25:00', pace: 5 }));
     const runId = runInsert.insertedId.toHexString();
     const req = new HttpRequest({ method: 'PATCH', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
     vi.spyOn(req, 'json').mockResolvedValue({ insight: 'Great tempo effort today' });
@@ -429,25 +419,8 @@ describe('GET /api/runs?unlinked=true - listRuns unlinked filter', () => {
     const planId = planInsert.insertedId;
 
     await mongoClient.db('running-coach').collection('runs').insertMany([
-      {
-        date: '2026-04-01',
-        distance: 5,
-        duration: '25:00',
-        pace: 5,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        date: '2026-04-02',
-        distance: 8,
-        duration: '40:00',
-        pace: 5,
-        planId,
-        weekNumber: 1,
-        dayLabel: 'A',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+      makeRun({ date: '2026-04-01', distance: 5 }),
+      makeRun({ date: '2026-04-02', distance: 8, planId, weekNumber: 1, dayLabel: 'A' }),
     ]);
 
     const req = makeGetReq('http://localhost/api/runs?unlinked=true');
@@ -462,17 +435,9 @@ describe('GET /api/runs?unlinked=true - listRuns unlinked filter', () => {
     const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
     const planId = planInsert.insertedId;
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-02',
-      distance: 8,
-      duration: '40:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-02', distance: 8, planId, weekNumber: 1, dayLabel: 'A' })
+    );
 
     const req = makeGetReq('http://localhost/api/runs?unlinked=true');
     const result = await handlers.get('listRuns')!(req, ctx);
@@ -485,14 +450,7 @@ describe('GET /api/runs?unlinked=true - listRuns unlinked filter', () => {
 
 describe('DELETE /api/runs/:id - deleteRun', () => {
   it('deletes unlinked run, returns 204', async () => {
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = runInsert.insertedId.toHexString();
 
     const req = makeDeleteReq(`http://localhost/api/runs/${runId}`, { id: runId });
@@ -507,17 +465,9 @@ describe('DELETE /api/runs/:id - deleteRun', () => {
     const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
     const planId = planInsert.insertedId;
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-01', planId, weekNumber: 1, dayLabel: 'A' })
+    );
     const runId = runInsert.insertedId.toHexString();
 
     const req = makeDeleteReq(`http://localhost/api/runs/${runId}`, { id: runId });
@@ -533,14 +483,7 @@ describe('POST /api/runs/:id/link - linkRun', () => {
   it('links run to plan day and marks day completed', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = runInsert.insertedId.toHexString();
 
     // Use a fake req object that provides the params and json body
@@ -574,14 +517,7 @@ describe('POST /api/runs/:id/link - linkRun', () => {
       ],
     });
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = runInsert.insertedId.toHexString();
 
     const fakeReq = {
@@ -608,26 +544,11 @@ describe('POST /api/runs/:id/link - linkRun', () => {
     const planId = planInsert.insertedId;
 
     // Insert existing linked run for the same day
-    await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-03-31',
-      distance: 6,
-      duration: '30:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-03-31', distance: 6, planId, weekNumber: 1, dayLabel: 'A' })
+    );
 
-    const newRunInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const newRunInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = newRunInsert.insertedId.toHexString();
 
     const fakeReq = {
@@ -657,17 +578,9 @@ describe('PATCH /api/plan/days/:week/:day - undo unlinks run', () => {
     });
     const planId = planInsert.insertedId;
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-01', planId, weekNumber: 1, dayLabel: 'A' })
+    );
 
     // Undo the completion via PATCH
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { completed: 'false', skipped: 'false' });
@@ -693,17 +606,9 @@ describe('PATCH /api/plan/days/:week/:day - undo unlinks run', () => {
     });
     const planId = planInsert.insertedId;
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-01', planId, weekNumber: 1, dayLabel: 'A' })
+    );
 
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { completed: 'false' });
     await handlers.get('patchDay')!(req, ctx);
@@ -730,17 +635,9 @@ describe('POST /api/runs/:id/unlink - unlinkRun', () => {
     });
     const planId = planInsert.insertedId;
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-01', planId, weekNumber: 1, dayLabel: 'A' })
+    );
     const runId = runInsert.insertedId.toHexString();
 
     const req = new HttpRequest({
@@ -777,14 +674,7 @@ describe('POST /api/runs/:id/unlink - unlinkRun', () => {
   });
 
   it('returns 400 when run is not linked to a plan', async () => {
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
     const runId = runInsert.insertedId.toHexString();
 
     const req = new HttpRequest({
@@ -823,17 +713,9 @@ describe('POST /api/runs/:id/unlink - unlinkRun', () => {
     });
     const planId = planInsert.insertedId;
 
-    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne({
-      date: '2026-04-01',
-      distance: 5,
-      duration: '25:00',
-      pace: 5,
-      planId,
-      weekNumber: 1,
-      dayLabel: 'A',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-04-01', planId, weekNumber: 1, dayLabel: 'A' })
+    );
     const runId = runInsert.insertedId.toHexString();
 
     const req = new HttpRequest({

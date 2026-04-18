@@ -5,6 +5,8 @@ import { _resetDbForTest } from '../shared/db.js';
 
 // Capture Azure Functions HTTP handlers before plan.ts is imported
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+// Fixed test user ID — hoisted so it's available in vi.mock factory
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -19,6 +21,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect import registers getPlan, createPlan, patchPlan handlers
@@ -61,6 +64,8 @@ beforeEach(async () => {
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
   await mongoClient.db('running-coach').collection('runs').deleteMany({});
 });
+
+const TEST_USER_OID = new ObjectId(TEST_USER_ID);
 
 const validGoal = {
   eventType: '10K',
@@ -124,6 +129,7 @@ describe('createPlan - no completed-day guard', () => {
       phases: [{ ...validPhases[0], weeks: [{ ...validPhases[0].weeks[0], days: [{ ...validPhases[0].weeks[0].days[0], completed: true }] }] }],
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
 
     const req = makeReq('POST', { mode: 'conversational' });
@@ -141,6 +147,7 @@ describe('createPlan - no completed-day guard', () => {
       phases: validPhases, // no completed days
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
 
     const req = makeReq('POST', { mode: 'conversational' });
@@ -191,6 +198,7 @@ describe('Plan CRUD', () => {
       phases: [],
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
 
     const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
@@ -218,6 +226,7 @@ describe('Plan CRUD', () => {
       duration: '27:30',
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
 
     const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
@@ -245,6 +254,7 @@ describe('Plan CRUD', () => {
       sessions: [{ id: 'abc', date: '2026-01-01', distance: 5, notes: 'Easy run', completed: false }],
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
 
     const result = await handlers.get('getPlan')!(makeReq('GET'), ctx);
@@ -272,6 +282,7 @@ describe('PATCH /api/plan - patchPlan', () => {
       phases: validPhases,
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
   }
 
@@ -311,6 +322,7 @@ describe('PATCH /api/plan - patchPlan', () => {
       targetDate: '2026-06-01',
       createdAt: new Date(),
       updatedAt: new Date(),
+      userId: TEST_USER_OID,
     });
     const req = makeReq('PATCH', { targetDate: '' });
     const result = await handlers.get('patchPlan')!(req, ctx);
