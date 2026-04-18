@@ -51,14 +51,19 @@ Source: Existing usage in `web/src/pages/Runs.tsx`, `web/src/pages/Dashboard.tsx
 
 ## Typography
 
+Two weights maximum: 400 (regular) and 700 (bold). `font-medium` (500) is not used in this phase.
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
-| Body | 14px (`text-sm`) | 400 (regular) | 1.5 |
-| Label | 12px (`text-xs`) | 500 (`font-medium`) | 1.4 |
+| Body | 14px (`text-sm`) | 400 (`font-normal`) | 1.5 |
+| Label / sub-heading | 12px (`text-xs`) | 400 (`font-normal`) | 1.4 |
+| Table header | 12px (`text-xs`) | 700 (`font-bold`, uppercase via Tailwind) | 1.4 |
 | Heading (page title) | 24px (`text-2xl`) | 700 (`font-bold`) | 1.2 |
-| Sub-heading (table header, section label) | 12px (`text-xs`) | 500 (`font-medium`, uppercase via Tailwind) | 1.4 |
+| Email cell / action buttons | 14px (`text-sm`) | 700 (`font-bold`) | 1.5 |
 
-Source: Pre-populated from `Runs.tsx` (`text-2xl font-bold text-gray-900` for page heading; `text-sm` body; `text-xs font-medium` for labels) and `Dashboard.tsx`. No new sizes introduced.
+Note: Table headers use `font-bold` (700) not `font-medium`. Action button labels (Reset Password, Deactivate, Activate) use `font-bold` (700). Label/sub-heading rows that carried `font-medium` shift to `font-normal` (400).
+
+Source: Pre-populated from `Runs.tsx` (`text-2xl font-bold text-gray-900` for page heading; `text-sm` body; `text-xs` for labels) and `Dashboard.tsx`. No new sizes introduced. Weight reduced from 3 to 2 per design contract requirement.
 
 ---
 
@@ -71,7 +76,7 @@ Source: Pre-populated from `Runs.tsx` (`text-2xl font-bold text-gray-900` for pa
 | Accent (10%) | `#2563eb` (blue-600) | Primary CTA button only ("Create User") |
 | Destructive | `#dc2626` (red-600) | Deactivate confirmation dialog trigger; error banners |
 
-Accent reserved for: The "Create User" button in the page header only. All other interactive elements (Reset Password, Activate/Deactivate) use gray or semantic color variants, not blue.
+Accent reserved for: The "Create User" button in the page header only. No other interactive element uses blue-600 fill or blue text.
 
 Status badge colors (from CONTEXT.md D-08, D-05):
 - Active: `bg-green-100 text-green-700` — matches existing badge pattern in `Runs.tsx`
@@ -80,9 +85,11 @@ Status badge colors (from CONTEXT.md D-08, D-05):
 
 Deactivate button: `text-red-600 hover:text-red-800` (text-only, no fill, to avoid visual weight parity with primary CTA)
 Activate button: `text-green-600 hover:text-green-800` (text-only)
-Reset Password button: `text-blue-600 hover:text-blue-800` (text-only)
+Reset Password button: `text-gray-700 hover:text-gray-900` (text-only, gray — not blue, to keep blue reserved for the accent CTA only)
 
-Source: Pre-populated from `CONTEXT.md` D-08 (color-coded badges), D-09 (Actions column); existing Tailwind patterns in `Runs.tsx` (green badge, red error banner).
+Note on link affordance: Reset Password is a text-button action, not a hyperlink. It does not use blue because blue-600 is reserved exclusively for the "Create User" accent button. Gray text with hover darkening provides sufficient affordance in the Actions column context.
+
+Source: Pre-populated from `CONTEXT.md` D-08 (color-coded badges), D-09 (Actions column); existing Tailwind patterns in `Runs.tsx` (green badge, red error banner). Reset Password color revised from blue to gray per checker flag (D3).
 
 ---
 
@@ -102,13 +109,13 @@ Sections:
 Columns: Email | Status | Last Login | Actions
 
 Table structure:
-- Table header row: `bg-gray-50 border-b border-gray-200`, cells: `px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide text-left`
+- Table header row: `bg-gray-50 border-b border-gray-200`, cells: `px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left`
 - Table body rows: `border-b border-gray-100 hover:bg-gray-50 transition-colors`
 - Cell padding: `px-4 py-3`
-- Email cell: `text-sm font-medium text-gray-900`
+- Email cell: `text-sm font-bold text-gray-900`
 - Status badge: `text-xs px-2 py-1 rounded-full` with role-specific color (see Color section)
 - Last Login cell: `text-sm text-gray-500` — formatted date string or "Never" in `text-gray-400`
-- Actions cell: inline buttons — `text-sm font-medium` with role-specific text color; separated by `mx-2` gap; self-row admin has Deactivate button replaced with `text-gray-300 cursor-not-allowed` disabled state (no action available)
+- Actions cell: inline buttons — `text-sm font-bold` with role-specific text color; separated by `mx-2` gap; self-row admin has Deactivate button replaced with `text-gray-300 cursor-not-allowed` disabled state (no action available)
 
 Loading state: `<div className="p-8 text-center text-gray-400 text-sm">Loading users...</div>` inside table container
 
@@ -122,15 +129,15 @@ Structure (mirrors `Runs.tsx` modal pattern):
 ```
 fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto
   └── bg-white rounded-xl shadow-xl w-full max-w-md p-6 my-auto
-        ├── Header: "New Password" / "Password Reset" (font-semibold text-gray-900)
+        ├── Header: "New Password" / "Password Reset" (font-bold text-gray-900)
         ├── Warning banner: bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800
         │     "Save this password — it won't be shown again."
         ├── Password display: bg-gray-100 rounded-lg p-4 font-mono text-lg text-gray-900 text-center select-all
         ├── "Copy to clipboard" button: full-width, blue-600 on idle / green-600 on copied state ("Copied!")
-        └── "Done" button: full-width, gray-100 text-gray-700 — dismisses modal
+        └── "I've saved the password" button: full-width, gray-100 text-gray-700 — dismisses modal
 ```
 
-Modal is NOT dismissible via backdrop click or Escape key. Admin must click "Done" explicitly (CONTEXT.md D-06).
+Modal is NOT dismissible via backdrop click or Escape key. Admin must click "I've saved the password" explicitly (CONTEXT.md D-06).
 
 ### Create User Form (inline in modal)
 
@@ -140,13 +147,13 @@ Structure:
 ```
 fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto
   └── bg-white rounded-xl shadow-xl w-full max-w-md p-6 my-auto
-        ├── Header: "Create User" + × close button
+        ├── Header: "Create User" + × close button (aria-label="Close")
         ├── Email input: full-width, border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500
         ├── Error inline: text-sm text-red-600 mt-1
-        └── Footer: "Cancel" (gray-100) + "Create" (blue-600) buttons
+        └── Footer: "Discard" (gray-100 text-gray-700) + "Create" (blue-600 text-white) buttons
 ```
 
-Closing Create User form via × or "Cancel" is allowed (no data loss risk — no user has been created yet).
+Closing Create User form via × or "Discard" is allowed (no data loss risk — no user has been created yet). "Cancel" is not used — replaced with "Discard" throughout.
 
 ### Sidebar Admin Link
 
@@ -180,7 +187,8 @@ Source: `CONTEXT.md` canonical refs → `Sidebar.tsx`; existing pattern confirme
 | Temp password modal — heading (reset) | "Password Reset" |
 | Temp password modal — copy button (idle) | "Copy to clipboard" |
 | Temp password modal — copy button (copied) | "Copied!" |
-| Temp password modal — dismiss button | "Done" |
+| Temp password modal — dismiss button | "I've saved the password" |
+| Create User modal — abandon button | "Discard" |
 | Last login — never logged in | "Never" |
 | Status badge — active | "Active" |
 | Status badge — pending | "Pending" |
@@ -190,12 +198,14 @@ Source: `CONTEXT.md` canonical refs → `Sidebar.tsx`; existing pattern confirme
 | Action — reset password | "Reset Password" |
 | Action — deactivate (self, disabled) | "Deactivate" (visually disabled — `text-gray-300 cursor-not-allowed`) |
 
+Prohibited labels: "Cancel", "OK", "Submit", "Yes", "No", "Click here" — none of these appear in this phase.
+
 Destructive actions and confirmation approach:
 - **Deactivate user**: `window.confirm("Deactivate {email}? They will no longer be able to log in.")` — matches CLAUDE.md pattern for all destructive actions
 - **Activate user**: No confirmation required (non-destructive, reversible)
 - **Reset Password**: `window.confirm("Reset password for {email}? A new temporary password will be generated.")` — treat as semi-destructive since it invalidates the current password
 
-Source: CONTEXT.md D-06 (temp password warning), D-09 (Actions column), D-10 (self-deactivate error); CLAUDE.md (window.confirm pattern).
+Source: CONTEXT.md D-06 (temp password warning), D-09 (Actions column), D-10 (self-deactivate error); CLAUDE.md (window.confirm pattern). "Done" replaced with "I've saved the password" (checker flag D1). "Cancel" replaced with "Discard" (checker block D1).
 
 ---
 
@@ -255,6 +265,7 @@ No third-party registries used. All components are hand-rolled Tailwind followin
 - Action buttons: must have `aria-label` when text is insufficient — e.g. `aria-label="Reset password for user@example.com"`
 - Disabled self-deactivate button: `disabled` attribute + `aria-disabled="true"` + `title="Cannot deactivate your own account"`
 - Modal: `role="dialog"` + `aria-modal="true"` + `aria-labelledby` pointing to modal heading
+- × close button on Create User modal: `aria-label="Close"` required
 - Temp password field: `aria-label="Temporary password"` + `role="textbox"` (if rendered as div, not input)
 
 ---
