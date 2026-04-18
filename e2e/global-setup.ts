@@ -36,7 +36,7 @@ export default async function globalSetup() {
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com'] } })
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -57,6 +57,16 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Second normal user — for cross-user data isolation tests
+    await users.insertOne({
+      email: 'userb@example.com',
+      passwordHash,
+      isAdmin: false,
+      tempPassword: false,
       createdAt: now,
       updatedAt: now,
     })
