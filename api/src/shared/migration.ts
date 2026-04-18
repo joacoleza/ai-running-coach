@@ -7,6 +7,8 @@ import { getDb } from './db.js';
  *
  * Per D-01/D-02: Check for orphaned docs → find admin user → updateMany all 3 collections.
  * Per D-04: If no admin user exists, log warning and skip (no crash).
+ * Conflict guard: if admin already has an active plan, orphaned active plans are archived
+ * instead of assigned as active — prevents non-deterministic getPlan results.
  */
 export async function runStartupMigration(): Promise<void> {
   const db = await getDb();
@@ -45,12 +47,33 @@ export async function runStartupMigration(): Promise<void> {
 
   const adminId = adminUser._id as ObjectId;
   const filter = { userId: { $exists: false } };
-  const update = { $set: { userId: adminId } };
 
+  // Check if admin already has an active plan — if so, orphaned active plans must be
+  // archived to avoid multiple active plans for the same user (non-deterministic getPlan).
+  const adminHasActivePlan = !!(await db
+    .collection('plans')
+    .findOne({ userId: adminId, status: 'active' }));
+
+  if (adminHasActivePlan) {
+    const conflictResult = await db
+      .collection('plans')
+      .updateMany(
+        { userId: { $exists: false }, status: 'active' },
+        { $set: { userId: adminId, status: 'archived' } }
+      );
+    if (conflictResult.modifiedCount > 0) {
+      console.log(
+        `[migration] Conflict guard: archived ${conflictResult.modifiedCount} orphaned active plan(s) ` +
+          '— admin already has an active plan.'
+      );
+    }
+  }
+
+  // Assign all remaining orphaned documents (non-active plans, runs, messages) to admin
   const [plansResult, runsResult, messagesResult] = await Promise.all([
-    db.collection('plans').updateMany(filter, update),
-    db.collection('runs').updateMany(filter, update),
-    db.collection('messages').updateMany(filter, update),
+    db.collection('plans').updateMany(filter, { $set: { userId: adminId } }),
+    db.collection('runs').updateMany(filter, { $set: { userId: adminId } }),
+    db.collection('messages').updateMany(filter, { $set: { userId: adminId } }),
   ]);
 
   console.log(

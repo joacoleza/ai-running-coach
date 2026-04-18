@@ -55,7 +55,7 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 
 ## Access model
 
-This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own independent coaching session, training plan, and run history.
+This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own fully isolated coaching session, training plan, and run history — no data is shared or visible across accounts. The API enforces per-user scoping at the database query level on every endpoint.
 
 ## Cost
 

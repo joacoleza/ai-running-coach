@@ -9,6 +9,7 @@ function makeMockDb(overrides: {
   orphanedRuns?: number;
   orphanedMessages?: number;
   adminUser?: object | null;
+  adminHasActivePlan?: boolean;
 } = {}) {
   const counts = {
     plans: overrides.orphanedPlans ?? 0,
@@ -16,10 +17,19 @@ function makeMockDb(overrides: {
     messages: overrides.orphanedMessages ?? 0,
   };
 
+  const adminId = (overrides.adminUser as any)?._id ?? 'admin-id';
+
   const collections: Record<string, any> = {
     plans: {
       countDocuments: vi.fn().mockResolvedValue(counts.plans),
       updateMany: vi.fn().mockResolvedValue({ modifiedCount: counts.plans }),
+      findOne: vi.fn().mockImplementation((filter: any) => {
+        // Conflict guard check: findOne({ userId: adminId, status: 'active' })
+        if (filter.userId && filter.status === 'active') {
+          return Promise.resolve(overrides.adminHasActivePlan ? { _id: 'existing-plan' } : null);
+        }
+        return Promise.resolve(null);
+      }),
     },
     runs: {
       countDocuments: vi.fn().mockResolvedValue(counts.runs),
@@ -33,7 +43,7 @@ function makeMockDb(overrides: {
       findOne: vi.fn().mockResolvedValue(
         overrides.adminUser !== undefined
           ? overrides.adminUser
-          : { _id: 'admin-id', isAdmin: true }
+          : { _id: adminId, isAdmin: true }
       ),
     },
   };
@@ -65,6 +75,7 @@ describe('runStartupMigration', () => {
       orphanedRuns: 5,
       orphanedMessages: 10,
       adminUser: { _id: adminId, isAdmin: true },
+      adminHasActivePlan: false,
     });
     await runStartupMigration();
     expect(cols.plans.updateMany).toHaveBeenCalledWith(
@@ -92,5 +103,30 @@ describe('runStartupMigration', () => {
     await runStartupMigration();
     await runStartupMigration();
     expect(cols.plans.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('archives orphaned active plans when admin already has an active plan', async () => {
+    const adminId = 'admin-object-id';
+    const cols = makeMockDb({
+      orphanedPlans: 2,
+      orphanedRuns: 1,
+      orphanedMessages: 0,
+      adminUser: { _id: adminId, isAdmin: true },
+      adminHasActivePlan: true,
+    });
+    cols.plans.updateMany.mockResolvedValue({ modifiedCount: 1 });
+
+    await runStartupMigration();
+
+    // Conflict guard: orphaned active plans must be archived first
+    expect(cols.plans.updateMany).toHaveBeenCalledWith(
+      { userId: { $exists: false }, status: 'active' },
+      { $set: { userId: adminId, status: 'archived' } }
+    );
+    // Remaining orphans assigned normally
+    expect(cols.plans.updateMany).toHaveBeenCalledWith(
+      { userId: { $exists: false } },
+      { $set: { userId: adminId } }
+    );
   });
 });
