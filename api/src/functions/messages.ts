@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requireAuth } from '../middleware/auth.js';
+import { ObjectId } from 'mongodb';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { ChatMessage } from '../shared/types.js';
 
@@ -10,6 +11,7 @@ app.http('getMessages', {
   handler: async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const planId = req.query.get('planId');
     if (!planId) {
@@ -17,7 +19,11 @@ app.http('getMessages', {
     }
 
     const db = await getDb();
-    const results = await db.collection<ChatMessage>('messages').find({ planId }).sort({ timestamp: 1 }).toArray();
+    const results = await db
+      .collection<ChatMessage>('messages')
+      .find({ planId, userId: new ObjectId(userId) })
+      .sort({ timestamp: 1 })
+      .toArray();
 
     return { status: 200, jsonBody: { messages: results } };
   },

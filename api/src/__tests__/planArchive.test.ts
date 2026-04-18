@@ -17,8 +17,11 @@ vi.mock('@azure/functions', async (importOriginal) => {
   };
 });
 
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
+
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect import registers archivePlan, listArchivedPlans, getArchivedPlan handlers
@@ -70,12 +73,15 @@ beforeEach(async () => {
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
 });
 
+const TEST_USER_OID = new ObjectId('000000000000000000000001');
+
 const basePlan = {
   onboardingMode: 'conversational',
   onboardingStep: 6,
   goal: { eventType: '10K', targetDate: '2026-06-01', weeklyMileage: 30, availableDays: 4, units: 'km' },
   phases: [],
   objective: '10km',
+  userId: TEST_USER_OID,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -237,6 +243,7 @@ describe('GET /api/plans/archived/:id', () => {
       distance: 10,
       duration: '50:00',
       pace: 5.0,
+      userId: TEST_USER_OID,
     });
 
     const id = planId.toString();

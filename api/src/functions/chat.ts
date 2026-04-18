@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import Anthropic from '@anthropic-ai/sdk';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
@@ -58,6 +58,7 @@ app.http('chat', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     if (!process.env.ANTHROPIC_API_KEY) {
       context.error('ANTHROPIC_API_KEY is not configured');
@@ -74,6 +75,7 @@ app.http('chat', {
     }
 
     const db = await getDb();
+    const { ObjectId } = await import('mongodb');
 
     // Save user message — content is stored as-is, newlines preserved
     const userMsg: ChatMessage = {
@@ -82,13 +84,13 @@ app.http('chat', {
       content: message,
       timestamp: new Date(),
       threadId: planId,
+      userId: new ObjectId(userId),
     };
     await db.collection<ChatMessage>('messages').insertOne(userMsg);
 
-    // Get plan for summary and onboarding state
-    const { ObjectId } = await import('mongodb');
+    // Get plan for summary and onboarding state — scoped to this user
     const plan = ObjectId.isValid(planId)
-      ? await db.collection<Plan>('plans').findOne({ _id: new ObjectId(planId) as any })
+      ? await db.collection<Plan>('plans').findOne({ _id: new ObjectId(planId) as any, userId: new ObjectId(userId) })
       : null;
     const summary = plan?.summary;
     const onboardingStep = plan?.status === 'onboarding' ? plan.onboardingStep : undefined;
@@ -114,12 +116,13 @@ app.http('chat', {
         });
 
       if (trainingDays.length > 0) {
-        // Fetch linked runs for completed days to enrich context
+        // Fetch linked runs for completed days to enrich context — scoped to this user
         let runsByKey = new Map<string, Run>();
         if (plan?._id && ObjectId.isValid(planId)) {
           try {
             const linkedRuns = await db.collection<Run>('runs').find({
               planId: plan._id,
+              userId: new ObjectId(userId),
             }).toArray();
             for (const run of linkedRuns) {
               if (run.weekNumber != null && run.dayLabel) {
@@ -220,13 +223,14 @@ app.http('chat', {
             return;
           }
 
-          // Save assistant message
+          // Save assistant message — scoped to this user
           const assistantMsg: ChatMessage = {
             planId,
             role: 'assistant',
             content: fullText,
             timestamp: new Date(),
             threadId: planId,
+            userId: new ObjectId(userId),
           };
           await db.collection<ChatMessage>('messages').insertOne(assistantMsg);
 
@@ -261,7 +265,7 @@ app.http('chat', {
                   // Assign globally sequential week numbers and A-G labels
                   const normalizedPhases = assignPlanStructure(parsed.phases);
                   await db.collection<Plan>('plans').findOneAndUpdate(
-                    { _id: new ObjectId(planId) as any },
+                    { _id: new ObjectId(planId) as any, userId: new ObjectId(userId) },
                     {
                       $set: {
                         status: 'active',

@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: executing
-last_updated: "2026-04-16T08:30:00.000Z"
-last_activity: 2026-04-16
+status: Phase 08 shipped — PR #73
+last_updated: "2026-04-18T11:00:00.000Z"
+last_activity: 2026-04-18
 progress:
-  total_phases: 4
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 10
   percent: 100
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 07 — frontend-auth
+**Current focus:** Phase 08 — data-isolation-migration
 
 ## Current Position
 
-Phase: 8
+Phase: 10
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-04-16
+Last activity: 2026-04-18
 
 Progress: [██████████] 100% (4/4 plans complete)
 
@@ -46,6 +46,7 @@ Progress: [██████████] 100% (4/4 plans complete)
 ## Accumulated Context
 
 ### Roadmap Evolution
+
 - Phase 10 added: Login rate limiting (brute-force protection — failedLoginAttempts + lockedUntil on User doc, 5 attempts → 15 min lockout, 429 response). Replaces lockout system deleted in Phase 6.
 
 - Existing v1.1 data in MongoDB (plans, runs, messages) must be associated with a first/seed user record during migration

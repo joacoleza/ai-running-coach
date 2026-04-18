@@ -7,10 +7,10 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-89.1%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-232%2F232-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89.3%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-275%2F275-brightgreen)
 ![Web Tests](https://img.shields.io/badge/web_tests-452%2F452-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-66%2F66-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-69%2F69-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -55,7 +55,7 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 
 ## Access model
 
-This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own independent coaching session, training plan, and run history.
+This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own fully isolated coaching session, training plan, and run history — no data is shared or visible across accounts. The API enforces per-user scoping at the database query level on every endpoint.
 
 ## Cost
 

@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
 
 // Capture Azure Functions HTTP handlers before planDays.ts is imported
 const handlers = vi.hoisted(() => new Map<string, (req: any, ctx: any) => Promise<any>>());
+// Fixed test user ID — hoisted so it's available in vi.mock factory
+const TEST_USER_ID = vi.hoisted(() => '000000000000000000000001');
 
 vi.mock('@azure/functions', async (importOriginal) => {
   const actual = await importOriginal() as any;
@@ -19,6 +21,7 @@ vi.mock('@azure/functions', async (importOriginal) => {
 
 vi.mock('../middleware/auth.js', () => ({
   requireAuth: vi.fn().mockResolvedValue(null),
+  getAuthContext: vi.fn().mockReturnValue({ userId: TEST_USER_ID, email: 'test@example.com', isAdmin: false }),
 }));
 
 // Side-effect import registers patchDay, deleteDay, addDay handlers
@@ -75,6 +78,9 @@ beforeEach(async () => {
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
 });
 
+// Fixed test user ObjectId — matches getAuthContext mock
+const TEST_USER_OID = new ObjectId(TEST_USER_ID);
+
 // Week 1 with days using label-based addressing. Day label 'A' is the run day.
 const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
   { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false, ...runOverrides },
@@ -100,6 +106,7 @@ const validActivePlan = {
   ],
   createdAt: new Date(),
   updatedAt: new Date(),
+  userId: TEST_USER_OID,
 };
 
 describe('PATCH /api/plan/days/:week/:day', () => {

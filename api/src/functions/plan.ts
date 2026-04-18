@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requireAuth } from '../middleware/auth.js';
+import { ObjectId } from 'mongodb';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import { Plan, PlanGoal, Run } from '../shared/types.js';
 
@@ -10,13 +11,14 @@ app.http('getPlan', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     try {
       const db = await getDb();
       const plan = await db
         .collection<Plan>('plans')
         .findOne(
-          { status: { $in: ['onboarding', 'active'] } },
+          { status: { $in: ['onboarding', 'active'] }, userId: new ObjectId(userId) },
           { sort: { createdAt: -1 } },
         );
 
@@ -29,7 +31,7 @@ app.http('getPlan', {
       let linkedRunsRecord: Record<string, Run> = {};
       if (plan?._id) {
         try {
-          const runs = await db.collection<Run>('runs').find({ planId: plan._id }).toArray();
+          const runs = await db.collection<Run>('runs').find({ planId: plan._id, userId: new ObjectId(userId) }).toArray();
           for (const run of runs) {
             if (run.weekNumber != null && run.dayLabel) {
               linkedRunsRecord[`${run.weekNumber}-${run.dayLabel}`] = run;
@@ -61,6 +63,7 @@ app.http('createPlan', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     try {
       const body = (await req.json()) as { mode?: 'conversational' | 'paste' };
@@ -73,6 +76,7 @@ app.http('createPlan', {
       // - 'discarded': legacy status from an old schema, no longer used
       // - plans with a 'sessions' array but no 'phases': old schema format, fully superseded
       await db.collection<Plan>('plans').deleteMany({
+        userId: new ObjectId(userId),
         $or: [
           { status: 'onboarding' },
           { status: 'discarded' },
@@ -89,6 +93,7 @@ app.http('createPlan', {
         phases: [],
         createdAt: now,
         updatedAt: now,
+        userId: new ObjectId(userId),
       };
 
       const result = await db.collection<Plan>('plans').insertOne(newPlan as Plan);
@@ -116,6 +121,7 @@ app.http('patchPlan', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     let body: { progressFeedback?: string; targetDate?: string };
     try {
@@ -145,7 +151,7 @@ app.http('patchPlan', {
       if (Object.keys($unset).length > 0) updateDoc['$unset'] = $unset;
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         updateDoc,
         { returnDocument: 'after' },
       );

@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { requireAuth } from '../middleware/auth.js';
+import { ObjectId } from 'mongodb';
+import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
 import type { Plan } from '../shared/types.js';
 
@@ -10,6 +11,7 @@ app.http('patchDay', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const weekParam = req.params['week'];
     const dayParam = req.params['day'];
@@ -77,7 +79,7 @@ app.http('patchDay', {
 
     try {
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $set, $currentDate: { updatedAt: true } },
         {
           arrayFilters: [{ 'week.weekNumber': week }, { 'day.label': dayParam }],
@@ -110,6 +112,7 @@ app.http('deleteDay', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     const weekParam = req.params['week'];
     const dayParam = req.params['day'];
@@ -126,7 +129,7 @@ app.http('deleteDay', {
       const db = await getDb();
 
       // Refuse to delete a completed day
-      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] } });
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
       const targetDay = plan?.phases
         .flatMap(p => p.weeks.flatMap(w => w.weekNumber === week ? w.days : []))
         .find(d => d.label === dayParam);
@@ -136,7 +139,7 @@ app.http('deleteDay', {
 
       // Convert to rest day rather than removing — weeks always have rest day slots
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: { $in: ['active', 'onboarding'] } },
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         {
           $set: {
             'phases.$[].weeks.$[week].days.$[day].type': 'rest',
@@ -170,6 +173,7 @@ app.http('addDay', {
   handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
     const denied = await requireAuth(req);
     if (denied) return denied;
+    const { userId } = getAuthContext(req);
 
     let body: {
       weekNumber?: number;
@@ -228,7 +232,7 @@ app.http('addDay', {
       const db = await getDb();
 
       // Verify the week exists and the label isn't already taken
-      const plan = await db.collection<Plan>('plans').findOne({ status: 'active' });
+      const plan = await db.collection<Plan>('plans').findOne({ status: 'active', userId: new ObjectId(userId) });
       if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
 
       const targetWeek = plan.phases.flatMap(p => p.weeks).find(w => w.weekNumber === weekNumber);
@@ -238,7 +242,7 @@ app.http('addDay', {
       }
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
-        { status: 'active', 'phases.weeks.weekNumber': weekNumber },
+        { status: 'active', userId: new ObjectId(userId), 'phases.weeks.weekNumber': weekNumber },
         {
           $push: { 'phases.$[].weeks.$[week].days': newDay } as any,
           $currentDate: { updatedAt: true },

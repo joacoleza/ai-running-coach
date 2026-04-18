@@ -61,7 +61,8 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full auth stack complete (Phase 6+7); `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate (unauthenticated→LoginPage, tempPassword→ChangePasswordPage, else AppShell); global 401 interceptor with refresh+retry; all hooks (`useChat`, `usePlan`, `useRuns`) use `Authorization: Bearer` headers; Sidebar logout calls `POST /api/auth/logout`. Validated in Phase 7.
-- **Test coverage:** 223 API tests, 427 web tests, 66 E2E tests — all green as of Phase 7
+- **Test coverage:** 249 API tests, 427 web tests, 66 E2E tests — all green as of Phase 8
+- **Data isolation:** Per-user data isolation enforced (Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
 - **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Users:** Admin-provisioned accounts only; no signup flows; small closed user base keeps Claude API costs low
 
@@ -91,7 +92,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-04-15 — v2.0 milestone started.
+Last updated: 2026-04-18 — Phase 8 (Data Isolation Migration) complete.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason

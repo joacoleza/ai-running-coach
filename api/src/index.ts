@@ -1,6 +1,11 @@
 import { app } from '@azure/functions';
+import { runStartupMigration } from './shared/migration.js';
 
 app.setup({ enableHttpStream: true });
+
+runStartupMigration().catch((err) =>
+  console.error('[migration] Startup migration failed:', err)
+);
 
 import './functions/health.js';
 import './functions/auth.js';
