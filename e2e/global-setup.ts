@@ -36,7 +36,7 @@ export default async function globalSetup() {
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com'] } })
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -47,6 +47,7 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: false,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })
@@ -57,6 +58,7 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: true,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })
@@ -67,6 +69,18 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: false,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Admin user — for E2E admin panel tests
+    await users.insertOne({
+      email: 'admin@example.com',
+      passwordHash,
+      isAdmin: true,
+      tempPassword: false,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })
