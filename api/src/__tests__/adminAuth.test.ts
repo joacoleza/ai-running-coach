@@ -68,7 +68,7 @@ function makeAuthRequest(token: string): HttpRequest {
   return new HttpRequest({
     method: 'GET',
     url: 'http://localhost/api/test',
-    headers: { authorization: `Bearer ${token}` },
+    headers: { 'x-authorization': `Bearer ${token}` },
   })
 }
 
