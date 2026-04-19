@@ -61,6 +61,7 @@ This app is designed for a small, known user base. There is no public registrati
 ## Cost
 
 - Azure infrastructure: **$0/month** (all free tier)
+- MongoDB Atlas: **$0/month** (free tier M0)
 - Claude API: **~$1–3/month** for typical personal usage
 
 ## Getting started
