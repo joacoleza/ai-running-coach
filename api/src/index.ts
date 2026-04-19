@@ -18,3 +18,4 @@ import './functions/planPhases.js';
 import './functions/planArchive.js';
 import './functions/runs.js';
 import './functions/keepAlive.js';
+import './functions/admin.js';
