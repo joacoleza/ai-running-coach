@@ -36,7 +36,7 @@ export default async function globalSetup() {
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -79,6 +79,18 @@ export default async function globalSetup() {
       email: 'admin@example.com',
       passwordHash,
       isAdmin: true,
+      tempPassword: false,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Deactivation target — used in admin deactivate/deactivated-login E2E tests only
+    // (kept separate from userb@example.com to avoid breaking data isolation tests)
+    await users.insertOne({
+      email: 'deactivate@example.com',
+      passwordHash,
+      isAdmin: false,
       tempPassword: false,
       active: true,
       createdAt: now,

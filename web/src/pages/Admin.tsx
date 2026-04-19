@@ -48,7 +48,7 @@ export function Admin() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/users', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to load users. Please refresh the page.');
       const data = await res.json() as { users: AdminUser[] };
       setUsers(data.users);
@@ -66,7 +66,7 @@ export function Admin() {
     setCreateLoading(true);
     setCreateError(null);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ email: createEmail.trim() }),
@@ -86,7 +86,7 @@ export function Admin() {
   const handleResetPassword = async (user: AdminUser) => {
     if (!window.confirm(`Reset password for ${user.email}? A new temporary password will be generated.`)) return;
     try {
-      const res = await fetch(`/api/admin/users/${user._id}/reset-password`, {
+      const res = await fetch(`/api/users/${user._id}/reset-password`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -103,7 +103,7 @@ export function Admin() {
       if (!window.confirm(`Deactivate ${user.email}? They will no longer be able to log in.`)) return;
     }
     try {
-      const res = await fetch(`/api/admin/users/${user._id}`, {
+      const res = await fetch(`/api/users/${user._id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ active: newActive }),

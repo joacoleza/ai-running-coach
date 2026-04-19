@@ -110,30 +110,33 @@ export function getToggleActiveHandler() {
 }
 
 // Register Azure Functions handlers
+// NOTE: Azure Functions Core Tools reserves the '/admin' route prefix for the host management API.
+// To avoid conflicts, these routes use 'users' as their prefix (accessed at /api/users).
+// All handlers are protected by requireAdmin() so non-admin requests are rejected with 401.
 app.http('adminListUsers', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'admin/users',
+  route: 'users',
   handler: getListUsersHandler(),
 });
 
 app.http('adminCreateUser', {
   methods: ['POST'],
   authLevel: 'anonymous',
-  route: 'admin/users',
+  route: 'users',
   handler: getCreateUserHandler(),
 });
 
 app.http('adminResetPassword', {
   methods: ['POST'],
   authLevel: 'anonymous',
-  route: 'admin/users/{id}/reset-password',
+  route: 'users/{id}/reset-password',
   handler: getResetPasswordHandler(),
 });
 
 app.http('adminToggleActive', {
   methods: ['PATCH'],
   authLevel: 'anonymous',
-  route: 'admin/users/{id}',
+  route: 'users/{id}',
   handler: getToggleActiveHandler(),
 });
