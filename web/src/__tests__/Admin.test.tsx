@@ -1,8 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { Admin } from '../pages/Admin';
 import { Sidebar } from '../components/layout/Sidebar';
-import { App } from '../App';
 import { MemoryRouter } from 'react-router-dom';
 
 const mockUseAuth = vi.fn(() => ({
@@ -135,7 +134,6 @@ describe('Admin page', () => {
   });
 
   it('Create User success shows temp password modal with "New Account Created" heading', async () => {
-    let isCreateCall = false;
     mockFetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
       // First GET to load users
