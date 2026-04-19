@@ -1,5 +1,8 @@
 import { HttpRequest, HttpResponseInit } from '@azure/functions';
 import jwt from 'jsonwebtoken';
+import { ObjectId } from 'mongodb';
+import { getDb } from '../shared/db.js';
+import { User } from '../shared/types.js';
 
 export interface AuthContext {
   userId: string;
@@ -38,6 +41,13 @@ export async function requireAuth(req: HttpRequest): Promise<HttpResponseInit | 
       email: string;
       isAdmin: boolean;
     };
+
+    // Check that the user exists and is not deactivated
+    const db = await getDb();
+    const user = await db.collection<User>('users').findOne({ _id: new ObjectId(payload.sub) });
+    if (!user || user.active === false) {
+      return { status: 401, jsonBody: { error: 'Account is deactivated' } };
+    }
 
     authContextMap.set(req, {
       userId: payload.sub,

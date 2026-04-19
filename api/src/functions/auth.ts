@@ -45,6 +45,10 @@ export function getLoginHandler() {
         return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
+      if (user.active === false) {
+        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
+      }
+
       const rawRefreshToken = crypto.randomBytes(64).toString('hex');
 
       await db.collection<RefreshToken>('refresh_tokens').insertOne({

@@ -1,4 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ObjectId } from 'mongodb';
+
+const VALID_USER_ID = new ObjectId();
+
+// Hoist mock before vi.mock
+const { mockUsersCollection } = vi.hoisted(() => {
+  const mockUsersCollection = { findOne: vi.fn() };
+  return { mockUsersCollection };
+});
+
+// Mock getDb so requireAdmin does not attempt a real MongoDB connection
+vi.mock('../shared/db.js', () => ({
+  getDb: vi.fn().mockResolvedValue({
+    collection: vi.fn(() => mockUsersCollection),
+  }),
+}));
+
 import { requireAdmin } from './auth.js';
 import jwt from 'jsonwebtoken';
 
@@ -15,17 +32,24 @@ function makeReq(token?: string): any {
 describe('requireAdmin', () => {
   beforeEach(() => {
     process.env.JWT_SECRET = 'test-secret';
-    vi.resetAllMocks();
+    vi.clearAllMocks();
+    // Default: active admin user
+    mockUsersCollection.findOne.mockResolvedValue({
+      _id: VALID_USER_ID,
+      email: 'a@b.com',
+      isAdmin: true,
+      active: true,
+    });
   });
 
   it('returns null for a valid admin token', async () => {
-    vi.mocked(jwt.verify).mockReturnValue({ sub: 'uid1', email: 'a@b.com', isAdmin: true } as any);
+    vi.mocked(jwt.verify).mockReturnValue({ sub: VALID_USER_ID.toString(), email: 'a@b.com', isAdmin: true } as any);
     const result = await requireAdmin(makeReq('valid-token'));
     expect(result).toBeNull();
   });
 
   it('returns 403 for a valid non-admin token', async () => {
-    vi.mocked(jwt.verify).mockReturnValue({ sub: 'uid1', email: 'a@b.com', isAdmin: false } as any);
+    vi.mocked(jwt.verify).mockReturnValue({ sub: VALID_USER_ID.toString(), email: 'a@b.com', isAdmin: false } as any);
     const result = await requireAdmin(makeReq('valid-token'));
     expect(result).toMatchObject({ status: 403 });
   });
