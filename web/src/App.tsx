@@ -10,10 +10,11 @@ import { TrainingPlan } from './pages/TrainingPlan'
 import { Runs } from './pages/Runs'
 import { Archive } from './pages/Archive'
 import { ArchivePlan } from './pages/ArchivePlan'
+import { Admin } from './pages/Admin'
 
 // Inner component — uses useAuth(), must be inside AuthProvider
 function AppInner() {
-  const { token, tempPassword, login, logout } = useAuth()
+  const { token, tempPassword, login, logout, isAdmin } = useAuth()
   const isRefreshing = useRef(false)
   const refreshQueue = useRef<Array<(newToken: string | null) => void>>([])
 
@@ -130,6 +131,7 @@ function AppInner() {
             <Route path="/runs" element={<Runs />} />
             <Route path="/archive" element={<Archive />} />
             <Route path="/archive/:id" element={<ArchivePlan />} />
+            <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </AppShell>
