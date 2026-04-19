@@ -66,7 +66,7 @@ result: pass
 
 total: 12
 passed: 11
-issues: 1
+issues: 3
 pending: 0
 skipped: 0
 blocked: 0
@@ -80,3 +80,19 @@ blocked: 0
   test: 5
   artifacts: []
   missing: []
+
+- truth: "Last Login column shows full datetime (date + hours, minutes, seconds) so admins can see precise activity timestamps"
+  status: failed
+  reason: "User reported: last login cell should show full date with hour, minutes and seconds — truncated date alone is not useful"
+  severity: minor
+  test: 5
+  artifacts: []
+  missing: []
+
+- truth: "lastLoginAt is updated on every token refresh so it reflects when the user was last active, not just when they entered their password — a user active for 30 days via silent refresh should not show a 30-day-old last login"
+  status: failed
+  reason: "User identified: lastLoginAt only updated on password login (auth.ts:62), not on token refresh — an active user silently refreshing tokens for 30 days would show a stale login date"
+  severity: major
+  test: 5
+  artifacts: [api/src/functions/auth.ts]
+  missing: ["lastLoginAt update in getRefreshHandler"]

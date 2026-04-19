@@ -27,9 +27,14 @@ function StatusBadge({ user }: { user: AdminUser }) {
   return <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Deactivated</span>;
 }
 
-function formatLastLogin(lastLoginAt?: string): string {
-  if (!lastLoginAt) return 'Never';
-  return new Date(lastLoginAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function formatLastLogin(date?: Date | string): string {
+  if (!date) return 'Never';
+  const d = new Date(date);
+  return d.toLocaleString('sv-SE', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  }).replace('T', ' ');
 }
 
 export function Admin() {
@@ -146,32 +151,24 @@ export function Admin() {
             <p className="text-gray-500 text-sm">No users yet. Create the first account using the button above.</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Email</th>
-                <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
-                <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Last Login</th>
-                <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile: card list */}
+            <ul className="md:hidden divide-y divide-gray-100">
               {users.map(user => {
                 const isSelf = user.email === adminEmail;
                 const isDeactivated = user.active === false;
-                const lastLogin = formatLastLogin(user.lastLoginAt);
                 return (
-                  <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-bold text-gray-900">{user.email}</td>
-                    <td className="px-4 py-3"><StatusBadge user={user} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {lastLogin === 'Never' ? <span className="text-gray-400">Never</span> : lastLogin}
-                    </td>
-                    <td className="px-4 py-3">
+                  <li key={user._id} className="px-4 py-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-gray-900 break-all">{user.email}</span>
+                      <StatusBadge user={user} />
+                    </div>
+                    <p className="text-xs text-gray-400 mb-3">Last login: {formatLastLogin(user.lastLoginAt)}</p>
+                    <div className="flex gap-3 flex-wrap">
                       <button
                         onClick={() => handleResetPassword(user)}
                         aria-label={`Reset password for ${user.email}`}
-                        className="text-sm font-bold text-gray-700 hover:text-gray-900 cursor-pointer mr-4"
+                        className="text-sm font-bold text-gray-700 hover:text-gray-900 cursor-pointer"
                       >
                         Reset Password
                       </button>
@@ -201,12 +198,76 @@ export function Admin() {
                           Deactivate
                         </button>
                       )}
-                    </td>
-                  </tr>
+                    </div>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
+            </ul>
+            {/* Desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Email</th>
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Last Login</th>
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => {
+                    const isSelf = user.email === adminEmail;
+                    const isDeactivated = user.active === false;
+                    const lastLogin = formatLastLogin(user.lastLoginAt);
+                    return (
+                      <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-bold text-gray-900">{user.email}</td>
+                        <td className="px-4 py-3"><StatusBadge user={user} /></td>
+                        <td className="px-4 py-3 text-sm text-gray-500">
+                          {lastLogin === 'Never' ? <span className="text-gray-400">Never</span> : lastLogin}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleResetPassword(user)}
+                            aria-label={`Reset password for ${user.email}`}
+                            className="text-sm font-bold text-gray-700 hover:text-gray-900 cursor-pointer mr-4"
+                          >
+                            Reset Password
+                          </button>
+                          {isDeactivated ? (
+                            <button
+                              onClick={() => handleToggleActive(user, true)}
+                              aria-label={`Activate ${user.email}`}
+                              className="text-sm font-bold text-green-600 hover:text-green-800 cursor-pointer"
+                            >
+                              Activate
+                            </button>
+                          ) : isSelf ? (
+                            <button
+                              disabled
+                              aria-disabled="true"
+                              title="Cannot deactivate your own account"
+                              className="text-sm font-bold text-gray-300 cursor-not-allowed"
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleActive(user, false)}
+                              aria-label={`Deactivate ${user.email}`}
+                              className="text-sm font-bold text-red-600 hover:text-red-800 cursor-pointer"
+                            >
+                              Deactivate
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

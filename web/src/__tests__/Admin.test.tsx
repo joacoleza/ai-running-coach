@@ -74,8 +74,11 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('a@b.com')).toBeInTheDocument();
-      expect(screen.getByText('Active')).toBeInTheDocument();
+      // Both mobile card and desktop table render the user — use getAllBy
+      const emailEls = screen.getAllByText('a@b.com');
+      expect(emailEls.length).toBeGreaterThan(0);
+      const activeBadges = screen.getAllByText('Active');
+      expect(activeBadges.length).toBeGreaterThan(0);
     });
   });
 
@@ -92,7 +95,9 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('Pending')).toBeInTheDocument();
+      // Both mobile card and desktop table render the badge
+      const pendingBadges = screen.getAllByText('Pending');
+      expect(pendingBadges.length).toBeGreaterThan(0);
     });
   });
 
@@ -109,7 +114,9 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('Deactivated')).toBeInTheDocument();
+      // Both mobile card and desktop table render the badge
+      const deactivatedBadges = screen.getAllByText('Deactivated');
+      expect(deactivatedBadges.length).toBeGreaterThan(0);
     });
   });
 
@@ -187,7 +194,8 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('test@example.com')).toBeInTheDocument();
+      const emailEls = screen.getAllByText('test@example.com');
+      expect(emailEls.length).toBeGreaterThan(0);
     });
     // Spy on window.confirm
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -196,7 +204,9 @@ describe('Admin page', () => {
       ok: true,
       json: async () => ({ tempPassword: 'resetpass123' }),
     });
-    fireEvent.click(screen.getByRole('button', { name: /Reset Password/i }));
+    // Both mobile and desktop render the button — click the first one
+    const resetBtns = screen.getAllByRole('button', { name: /Reset password for test@example.com/i });
+    fireEvent.click(resetBtns[0]);
     // Assert confirm was called
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('test@example.com'));
     // Assert temp password modal with "Password Reset" heading appears
@@ -219,7 +229,8 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('deactivate-me@example.com')).toBeInTheDocument();
+      const emailEls = screen.getAllByText('deactivate-me@example.com');
+      expect(emailEls.length).toBeGreaterThan(0);
     });
     // Spy on window.confirm
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
@@ -228,8 +239,9 @@ describe('Admin page', () => {
       ok: true,
       json: async () => ({ user: { ...testUser, active: false } }),
     });
-    // Use aria-label to find the specific Deactivate button
-    fireEvent.click(screen.getByRole('button', { name: /Deactivate deactivate-me@example.com/i }));
+    // Both mobile and desktop render the button — click the first one
+    const deactivateBtns = screen.getAllByRole('button', { name: /Deactivate deactivate-me@example.com/i });
+    fireEvent.click(deactivateBtns[0]);
     // Assert confirm was called
     expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('deactivate-me@example.com'));
     // Assert row status changes to Deactivated
@@ -269,12 +281,14 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('activate-me@example.com')).toBeInTheDocument();
+      const emailEls = screen.getAllByText('activate-me@example.com');
+      expect(emailEls.length).toBeGreaterThan(0);
     });
     // Spy on window.confirm
     const confirmSpy = vi.spyOn(window, 'confirm');
-    // Find Activate button using aria-label
-    const activateBtn = screen.getByRole('button', { name: /Activate activate-me@example.com/i });
+    // Both mobile and desktop render the button — use the first one
+    const activateBtns = screen.getAllByRole('button', { name: /Activate activate-me@example.com/i });
+    const activateBtn = activateBtns[0];
     fireEvent.click(activateBtn);
     // Assert confirm was NOT called
     expect(confirmSpy).not.toHaveBeenCalled();
@@ -298,9 +312,10 @@ describe('Admin page', () => {
       </MemoryRouter>
     );
     await waitFor(() => {
-      expect(screen.getByText('admin@example.com')).toBeInTheDocument();
+      const emailEls = screen.getAllByText('admin@example.com');
+      expect(emailEls.length).toBeGreaterThan(0);
     });
-    // Find the Deactivate button for the self row
+    // Both mobile and desktop render disabled Deactivate buttons — find any disabled one
     const deactivateButtons = screen.getAllByRole('button', { name: /Deactivate/i });
     const selfDeactivateBtn = deactivateButtons.find(btn => btn.hasAttribute('disabled'));
     expect(selfDeactivateBtn).toBeDefined();
