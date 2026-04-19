@@ -163,4 +163,13 @@ describe('requireAuth (JWT-based middleware)', () => {
     const result = await requireAuth(req)
     expect(result).toBeNull()
   })
+
+  it('Test 13: returns 401 when user does not exist in DB (deleted after token issued)', async () => {
+    mockUsersCollection.findOne.mockResolvedValue(null)
+    const token = makeValidToken()
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Account is deactivated')
+  })
 })

@@ -172,6 +172,17 @@ describe('POST /api/auth/login', () => {
     )
   })
 
+  it('Test 6b: returns 401 when user.active === false (deactivated account)', async () => {
+    const { getLoginHandler } = await import('../functions/auth.js')
+    const handler = getLoginHandler()
+    mockUsersCollection.findOne.mockResolvedValue({ ...validUser, active: false })
+    mockBcryptCompare.mockResolvedValue(true)
+    const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
+    const result = await handler(req, {} as never)
+    expect(result.status).toBe(401)
+    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+  })
+
   it('Test 7: stores SHA-256 hash of refresh token (not raw) in refresh_tokens', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
