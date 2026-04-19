@@ -1,5 +1,5 @@
 ---
-status: complete
+status: resolved
 phase: 09-admin-panel
 source: [09-01-SUMMARY.md, 09-02-SUMMARY.md, 09-03-SUMMARY.md]
 started: 2026-04-19T15:00:00Z
@@ -74,25 +74,25 @@ blocked: 0
 ## Gaps
 
 - truth: "Admin user table is fully usable on mobile — all columns and action buttons accessible"
-  status: failed
+  status: resolved
   reason: "User reported: table overflows horizontally on mobile, action buttons cut off / not visible"
   severity: major
   test: 5
-  artifacts: []
-  missing: []
+  resolved_by: "09-04"
+  artifacts: [web/src/pages/Admin.tsx]
 
 - truth: "Last Login column shows full datetime (date + hours, minutes, seconds) so admins can see precise activity timestamps"
-  status: failed
+  status: resolved
   reason: "User reported: last login cell should show full date with hour, minutes and seconds — truncated date alone is not useful"
   severity: minor
   test: 5
-  artifacts: []
-  missing: []
+  resolved_by: "09-04"
+  artifacts: [web/src/pages/Admin.tsx]
 
 - truth: "lastLoginAt is updated on every token refresh so it reflects when the user was last active, not just when they entered their password — a user active for 30 days via silent refresh should not show a 30-day-old last login"
-  status: failed
+  status: resolved
   reason: "User identified: lastLoginAt only updated on password login (auth.ts:62), not on token refresh — an active user silently refreshing tokens for 30 days would show a stale login date"
   severity: major
   test: 5
+  resolved_by: "09-04"
   artifacts: [api/src/functions/auth.ts]
-  missing: ["lastLoginAt update in getRefreshHandler"]
