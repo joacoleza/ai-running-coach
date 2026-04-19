@@ -29,7 +29,7 @@
 - [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
 - [x] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button (completed 2026-04-16)
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
-- [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/deactivate users, isAdmin guard
+- [x] **Phase 9: Admin Panel** — Admin page, list/create/reset/deactivate users, isAdmin guard (completed 2026-04-19)
 
 ## Phase Details
 
@@ -90,7 +90,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
 - [x] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
-- [ ] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
+- [x] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
 
 ## Progress
 
@@ -99,7 +99,7 @@ Plans:
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
-| 9. Admin Panel | 2/3 | In Progress|  |
+| 9. Admin Panel | 3/3 | Complete   | 2026-04-19 |
 | 10. Login Rate Limiting | 0/? | Not started | - |
 
 ### Phase 10: Login Rate Limiting
@@ -107,7 +107,7 @@ Plans:
 **Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures for 15 minutes, return 429 with a clear message, reset counter on successful login. API only, no UI needed. Replaces the lockout system removed in Phase 6.
 **Requirements**: AUTH-07 (to be added)
 **Depends on:** Phase 7
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 10 to break down)

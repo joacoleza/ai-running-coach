@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: executing
-last_updated: "2026-04-19T10:28:23.497Z"
+status: verifying
+last_updated: "2026-04-19T11:21:57.609Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 13
   percent: 100
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 Phase: 09 (admin-panel) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-19
 
 Progress: [██████████] 100% (4/4 plans complete)
@@ -86,6 +86,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 09-01]: requireAuth performs DB lookup on every request to enforce active flag immediately without waiting for token expiry
 - [Phase 09-01]: Deactivated login returns uniform 401 'Invalid credentials' to prevent user enumeration
 - [Phase 09-01]: Legacy User documents without active field treated as active (user.active !== false pattern)
+- [Phase 09]: Azure Functions reserves /admin route prefix; admin API routes use /api/users prefix instead, protected by requireAdmin()
+- [Phase 09]: LoginPage decodes JWT payload to extract isAdmin flag
 
 ### Quick Tasks Completed
 
