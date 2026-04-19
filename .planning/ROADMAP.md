@@ -88,7 +88,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
+- [x] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
 - [ ] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
 - [ ] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
 
@@ -99,7 +99,7 @@ Plans:
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
-| 9. Admin Panel | 0/3 | Not started | - |
+| 9. Admin Panel | 1/3 | In Progress|  |
 | 10. Login Rate Limiting | 0/? | Not started | - |
 
 ### Phase 10: Login Rate Limiting
@@ -107,7 +107,7 @@ Plans:
 **Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures for 15 minutes, return 429 with a clear message, reset counter on successful login. API only, no UI needed. Replaces the lockout system removed in Phase 6.
 **Requirements**: AUTH-07 (to be added)
 **Depends on:** Phase 7
-**Plans:** 0 plans
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 10 to break down)

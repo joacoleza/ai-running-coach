@@ -16,16 +16,16 @@
 
 ### USER — User Management (Admin)
 
-- [ ] **USER-01**: Admin can view a list of all user accounts (email, status, last login date)
-- [ ] **USER-02**: Admin can create a new user account; system auto-generates a temp password shown once to the admin (bcrypt-hashed before storage)
-- [ ] **USER-03**: Admin can reset any user's password; new temp password generated and shown once; user must change on next login
-- [ ] **USER-04**: Admin can delete or deactivate a user account
+- [x] **USER-01**: Admin can view a list of all user accounts (email, status, last login date)
+- [x] **USER-02**: Admin can create a new user account; system auto-generates a temp password shown once to the admin (bcrypt-hashed before storage)
+- [x] **USER-03**: Admin can reset any user's password; new temp password generated and shown once; user must change on next login
+- [x] **USER-04**: Admin can delete or deactivate a user account
 
 ### DATA — Data Isolation & Migration
 
 - [ ] **DATA-01**: Each user's plans, runs, and chat history are isolated — only visible and accessible to that user
 - [ ] **DATA-02**: Existing v1.1 data (plans, runs, messages) is migrated to a seed admin user on first v2.0 deployment (no data lost)
-- [ ] **DATA-03**: Admin users have an `isAdmin` flag enabling access to the admin panel
+- [x] **DATA-03**: Admin users have an `isAdmin` flag enabling access to the admin panel
 
 ## Future Requirements
 
@@ -61,11 +61,11 @@
 | AUTH-04 | Phase 7 | Complete |
 | DATA-01 | Phase 8 | Pending |
 | DATA-02 | Phase 8 | Pending |
-| DATA-03 | Phase 8 | Pending |
-| USER-01 | Phase 9 | Pending |
-| USER-02 | Phase 9 | Pending |
-| USER-03 | Phase 9 | Pending |
-| USER-04 | Phase 9 | Pending |
+| DATA-03 | Phase 8 | Complete |
+| USER-01 | Phase 9 | Complete |
+| USER-02 | Phase 9 | Complete |
+| USER-03 | Phase 9 | Complete |
+| USER-04 | Phase 9 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 13 total

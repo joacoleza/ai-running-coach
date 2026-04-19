@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: Phase 08 shipped — PR #73
-last_updated: "2026-04-18T11:00:00.000Z"
-last_activity: 2026-04-18
+status: executing
+last_updated: "2026-04-19T10:28:23.497Z"
+last_activity: 2026-04-19
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 11
   percent: 100
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 08 — data-isolation-migration
+**Current focus:** Phase 09 — admin-panel
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 09 (admin-panel) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-18
+Last activity: 2026-04-19
 
 Progress: [██████████] 100% (4/4 plans complete)
 
@@ -83,6 +83,9 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 07-03]: vi.mock AuthContext per test file (not global) for explicit isolation
 - [Phase 07-03]: client.db('running-coach') in global-setup to match API database name
 - [Phase 07-03]: api/runs mock required in E2E helpers - fake JWT triggers 401 interceptor without it
+- [Phase 09-01]: requireAuth performs DB lookup on every request to enforce active flag immediately without waiting for token expiry
+- [Phase 09-01]: Deactivated login returns uniform 401 'Invalid credentials' to prevent user enumeration
+- [Phase 09-01]: Legacy User documents without active field treated as active (user.active !== false pattern)
 
 ### Quick Tasks Completed
 
