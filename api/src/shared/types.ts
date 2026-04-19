@@ -93,6 +93,7 @@ export interface User {
   passwordHash: string;    // bcrypt hash
   isAdmin: boolean;
   tempPassword: boolean;   // true = must change password on next login (Phase 7 enforces)
+  active: boolean;         // false = deactivated, cannot login or use API
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;

@@ -36,7 +36,15 @@ export function LoginPage({ onTempPassword }: LoginPageProps) {
           expiresIn: number;
           tempPassword: boolean;
         };
-        login(data.token, data.refreshToken, email, false, data.tempPassword);
+        // Decode JWT payload to extract isAdmin flag (no signature verification needed — UI only)
+        let isAdmin = false;
+        try {
+          const payload = JSON.parse(atob(data.token.split('.')[1])) as { isAdmin?: boolean };
+          isAdmin = payload.isAdmin === true;
+        } catch {
+          // Malformed token — treat as non-admin; the API will reject it anyway
+        }
+        login(data.token, data.refreshToken, email, isAdmin, data.tempPassword);
         if (data.tempPassword) {
           onTempPassword();
         }

@@ -172,6 +172,17 @@ describe('POST /api/auth/login', () => {
     )
   })
 
+  it('Test 6b: returns 401 when user.active === false (deactivated account)', async () => {
+    const { getLoginHandler } = await import('../functions/auth.js')
+    const handler = getLoginHandler()
+    mockUsersCollection.findOne.mockResolvedValue({ ...validUser, active: false })
+    mockBcryptCompare.mockResolvedValue(true)
+    const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
+    const result = await handler(req, {} as never)
+    expect(result.status).toBe(401)
+    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+  })
+
   it('Test 7: stores SHA-256 hash of refresh token (not raw) in refresh_tokens', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
@@ -251,6 +262,7 @@ describe('POST /api/auth/refresh', () => {
   it('Test 11: returns 200 with new token on valid refresh token', async () => {
     const { getRefreshHandler } = await import('../functions/auth.js')
     const handler = getRefreshHandler()
+    mockUsersCollection.updateOne.mockResolvedValue({})
     mockRefreshTokensCollection.findOne.mockResolvedValue({
       _id: new ObjectId(),
       userId: validUserId,
@@ -263,6 +275,26 @@ describe('POST /api/auth/refresh', () => {
     const body = result.jsonBody as { token: string; expiresIn: number }
     expect(body.token).toBe('new.jwt.token')
     expect(body.expiresIn).toBe(900)
+  })
+
+  it('Test 11b: updates lastLoginAt on successful token refresh', async () => {
+    const { getRefreshHandler } = await import('../functions/auth.js')
+    const handler = getRefreshHandler()
+    mockUsersCollection.updateOne.mockResolvedValue({})
+    mockRefreshTokensCollection.findOne.mockResolvedValue({
+      _id: new ObjectId(),
+      userId: validUserId,
+      tokenHash: 'somehash',
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60), // valid for 1 hour
+    })
+    const req = makePostRequest({ refreshToken: 'valid-refresh-token' })
+    await handler(req, {} as never)
+    // Allow microtask queue to flush (fire-and-forget updateOne)
+    await Promise.resolve()
+    expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
+      { _id: validUserId },
+      { $set: { lastLoginAt: expect.any(Date) } },
+    )
   })
 })
 

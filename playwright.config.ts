@@ -1,5 +1,14 @@
 import { defineConfig } from '@playwright/test'
 
+// Set E2E database before globalSetup runs. CI provides MONGODB_CONNECTION_STRING explicitly
+// (mongodb://localhost:27017, no db name → falls back to 'running-coach' in db.ts).
+// Locally, default to an isolated 'running-coach-e2e' database so E2E never touches dev data.
+// NOTE: requires the dev API server to be stopped first — if it's already running on port 7071,
+// Playwright reuses it (with its own 'running-coach' connection) and E2E logins will fail.
+if (!process.env.MONGODB_CONNECTION_STRING) {
+  process.env.MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017/running-coach-e2e'
+}
+
 export default defineConfig({
   testDir: './e2e',
   globalSetup: './e2e/global-setup.ts',
@@ -20,7 +29,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
-        MONGODB_CONNECTION_STRING: process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017',
+        MONGODB_CONNECTION_STRING: process.env.MONGODB_CONNECTION_STRING,
         FUNCTIONS_WORKER_RUNTIME: 'node',
         AzureWebJobsStorage: 'UseDevelopmentStorage=false',
         JWT_SECRET: process.env.JWT_SECRET || 'e2e-test-secret-key-minimum-32-chars',

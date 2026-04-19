@@ -2,7 +2,7 @@ import { execSync } from 'child_process'
 import { MongoClient } from 'mongodb'
 import bcrypt from 'bcrypt'
 
-const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017'
+const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/running-coach-e2e'
 
 export default async function globalSetup() {
   // In CI, MongoDB is started by the github-action before this runs — skip Docker.
@@ -32,11 +32,15 @@ export default async function globalSetup() {
 
   // Seed test users for E2E auth tests
   try {
-    const db = client.db('running-coach')  // must match db name used by the API
+    // DB name is embedded in the connection string path segment.
+    // e.g. mongodb://localhost:27017/running-coach-e2e → running-coach-e2e
+    //      mongodb://localhost:27017 (no path, CI default)  → running-coach
+    const dbName = MONGO_URI.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach'
+    const db = client.db(dbName)
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -47,6 +51,7 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: false,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })
@@ -57,6 +62,7 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: true,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })
@@ -67,6 +73,30 @@ export default async function globalSetup() {
       passwordHash,
       isAdmin: false,
       tempPassword: false,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Admin user — for E2E admin panel tests
+    await users.insertOne({
+      email: 'admin@example.com',
+      passwordHash,
+      isAdmin: true,
+      tempPassword: false,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Deactivation target — used in admin deactivate/deactivated-login E2E tests only
+    // (kept separate from userb@example.com to avoid breaking data isolation tests)
+    await users.insertOne({
+      email: 'deactivate@example.com',
+      passwordHash,
+      isAdmin: false,
+      tempPassword: false,
+      active: true,
       createdAt: now,
       updatedAt: now,
     })

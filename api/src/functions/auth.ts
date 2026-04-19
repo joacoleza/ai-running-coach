@@ -45,6 +45,10 @@ export function getLoginHandler() {
         return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
+      if (user.active === false) {
+        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
+      }
+
       const rawRefreshToken = crypto.randomBytes(64).toString('hex');
 
       await db.collection<RefreshToken>('refresh_tokens').insertOne({
@@ -93,6 +97,12 @@ export function getRefreshHandler() {
       if (!user) {
         return { status: 401, jsonBody: { error: 'User not found' } };
       }
+
+      // Update lastLoginAt to reflect active session (fire-and-forget)
+      db.collection('users').updateOne(
+        { _id: doc.userId },
+        { $set: { lastLoginAt: new Date() } },
+      ).catch(() => {/* non-fatal */});
 
       const token = signAccessToken(user as User & { _id: ObjectId });
 

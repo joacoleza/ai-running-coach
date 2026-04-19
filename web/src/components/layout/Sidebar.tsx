@@ -9,7 +9,7 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const { token, logout } = useAuth();
+  const { token, logout, isAdmin } = useAuth();
   return (
     <aside
       className="flex flex-col bg-gray-900 text-white w-16 md:w-56 h-full sticky top-0 overflow-y-auto transition-all duration-200"
@@ -53,6 +53,22 @@ export function Sidebar() {
             <span className="ml-3 hidden md:inline">{item.label}</span>
           </NavLink>
         ))}
+        {isAdmin && (
+          <NavLink
+            to="/admin"
+            end={true}
+            className={({ isActive }) =>
+              `flex items-center px-4 py-3 text-sm transition-colors ${
+                isActive
+                  ? "bg-gray-800 text-white border-l-4 border-blue-500"
+                  : "text-gray-300 hover:bg-gray-800 hover:text-white border-l-4 border-transparent"
+              }`
+            }
+          >
+            <span className="text-lg" role="img" aria-label="Admin">⚙️</span>
+            <span className="ml-3 hidden md:inline">Admin</span>
+          </NavLink>
+        )}
       </nav>
       <div className="p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <button

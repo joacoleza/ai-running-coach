@@ -29,7 +29,7 @@
 - [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
 - [x] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button (completed 2026-04-16)
 - [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
-- [ ] **Phase 9: Admin Panel** — Admin page, list/create/reset/delete users, isAdmin guard
+- [x] **Phase 9: Admin Panel** — Admin page, list/create/reset/deactivate users, isAdmin guard (completed 2026-04-19)
 
 ## Phase Details
 
@@ -84,9 +84,13 @@ Plans:
   2. The admin page lists all user accounts with email, status, and last login date
   3. An admin can create a new user and see the auto-generated temp password exactly once (it cannot be retrieved again)
   4. An admin can trigger a password reset for any user; a new temp password is shown once and the user must change it on next login
-  5. An admin can delete or deactivate a user account; that user's subsequent requests are rejected
-**Plans**: TBD
-**UI hint**: yes
+  5. An admin can deactivate a user account; that user's subsequent requests are rejected; admin can reactivate
+**Plans**: 3 plans
+
+Plans:
+- [x] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
+- [x] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
+- [x] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
 
 ## Progress
 
@@ -95,7 +99,7 @@ Plans:
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
-| 9. Admin Panel | 0/? | Not started | - |
+| 9. Admin Panel | 4/4 | Complete   | 2026-04-19 |
 | 10. Login Rate Limiting | 0/? | Not started | - |
 
 ### Phase 10: Login Rate Limiting
@@ -103,7 +107,7 @@ Plans:
 **Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures for 15 minutes, return 429 with a clear message, reset counter on successful login. API only, no UI needed. Replaces the lockout system removed in Phase 6.
 **Requirements**: AUTH-07 (to be added)
 **Depends on:** Phase 7
-**Plans:** 0 plans
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 10 to break down)

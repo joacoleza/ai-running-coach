@@ -7,10 +7,10 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-89.4%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-275%2F275-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-453%2F453-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-69%2F69-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89.6%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-299%2F299-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-467%2F467-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-77%2F77-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -37,6 +37,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
 - **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence), weekly volume bar chart, and pace trend line chart; archived plan pages show readonly coaching chat history
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
+- **Admin panel** — Admins can create user accounts (generates a temp password), reset passwords, and deactivate/reactivate users from a dedicated `/admin` page; deactivated users are immediately rejected on login and on every API call
 
 ## Built with
 
@@ -55,11 +56,12 @@ Planned and built using [<img src="https://avatars.githubusercontent.com/u/26049
 
 ## Access model
 
-This app is designed for a small, known user base. There is no public registration — all accounts are provisioned by an admin directly in MongoDB. Each user has their own fully isolated coaching session, training plan, and run history — no data is shared or visible across accounts. The API enforces per-user scoping at the database query level on every endpoint.
+This app is designed for a small, known user base. There is no public registration — accounts are provisioned by an admin via the built-in Admin panel (or directly in MongoDB). Each user has their own fully isolated coaching session, training plan, and run history — no data is shared or visible across accounts. The API enforces per-user scoping at the database query level on every endpoint.
 
 ## Cost
 
 - Azure infrastructure: **$0/month** (all free tier)
+- MongoDB Atlas: **$0/month** (free tier M0)
 - Claude API: **~$1–3/month** for typical personal usage
 
 ## Getting started
@@ -89,7 +91,7 @@ cd api && npm install && cd ..
 }
 ```
 
-**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh):
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `running-coach-e2e` database so they never touch your dev data.
 
 ```js
 {
@@ -123,6 +125,8 @@ cd api && npx vitest run
 cd web && npx vitest run
 
 # E2E tests — Playwright starts the stack automatically
+# Stop the dev API server first (port 7071) — if it's already running, Playwright
+# reuses it (running-coach DB) while global-setup seeds into running-coach-e2e, causing login failures.
 npx playwright test
 ```
 
