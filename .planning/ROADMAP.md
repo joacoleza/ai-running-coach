@@ -89,7 +89,7 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
-- [ ] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
+- [x] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
 - [ ] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
 
 ## Progress
@@ -99,7 +99,7 @@ Plans:
 | 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
-| 9. Admin Panel | 1/3 | In Progress|  |
+| 9. Admin Panel | 2/3 | In Progress|  |
 | 10. Login Rate Limiting | 0/? | Not started | - |
 
 ### Phase 10: Login Rate Limiting
