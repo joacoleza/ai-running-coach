@@ -11,7 +11,8 @@ export async function getDb(): Promise<Db> {
   }
   client = new MongoClient(connectionString);
   await client.connect();
-  db = client.db('running-coach');
+  const dbName = connectionString.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach';
+  db = client.db(dbName);
   await db.collection('messages').createIndex({ planId: 1, timestamp: 1 });
   await db.collection('plans').createIndex({ status: 1, createdAt: -1 });
   await db.collection('runs').createIndex({ date: -1 });

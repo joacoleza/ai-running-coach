@@ -133,3 +133,18 @@ created: 2026-04-19
 - [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** approved 2026-04-19
+
+---
+
+## Validation Audit 2026-04-19 (re-audit)
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+| API tests | 296 passed |
+| Web tests | 466 passed |
+| E2E spec | admin.spec.ts present |
+
+All phase 9 behaviors remain fully covered. No regressions detected.

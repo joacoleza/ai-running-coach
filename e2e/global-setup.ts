@@ -2,7 +2,7 @@ import { execSync } from 'child_process'
 import { MongoClient } from 'mongodb'
 import bcrypt from 'bcrypt'
 
-const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017'
+const MONGO_URI = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/running-coach-e2e'
 
 export default async function globalSetup() {
   // In CI, MongoDB is started by the github-action before this runs — skip Docker.
@@ -32,7 +32,11 @@ export default async function globalSetup() {
 
   // Seed test users for E2E auth tests
   try {
-    const db = client.db('running-coach')  // must match db name used by the API
+    // DB name is embedded in the connection string path segment.
+    // e.g. mongodb://localhost:27017/running-coach-e2e → running-coach-e2e
+    //      mongodb://localhost:27017 (no path, CI default)  → running-coach
+    const dbName = MONGO_URI.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach'
+    const db = client.db(dbName)
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)

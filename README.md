@@ -89,7 +89,7 @@ cd api && npm install && cd ..
 }
 ```
 
-**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh):
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `running-coach-e2e` database so they never touch your dev data.
 
 ```js
 {
@@ -123,6 +123,8 @@ cd api && npx vitest run
 cd web && npx vitest run
 
 # E2E tests — Playwright starts the stack automatically
+# Stop the dev API server first (port 7071) — if it's already running, Playwright
+# reuses it (running-coach DB) while global-setup seeds into running-coach-e2e, causing login failures.
 npx playwright test
 ```
 
