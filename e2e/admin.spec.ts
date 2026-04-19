@@ -198,7 +198,7 @@ test.describe('Admin panel', () => {
 
     // List users to find deactivate@example.com's ID
     const usersRes = await request.get('http://localhost:7071/api/users', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: { 'X-Authorization': `Bearer ${adminToken}` },
     })
     expect(usersRes.ok()).toBeTruthy()
     const { users } = await usersRes.json() as { users: { _id: string; email: string }[] }
@@ -207,7 +207,7 @@ test.describe('Admin panel', () => {
 
     // Deactivate the target user
     const patchRes = await request.patch(`http://localhost:7071/api/users/${targetUser!._id}`, {
-      headers: { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+      headers: { 'X-Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
       data: { active: false },
     })
     expect(patchRes.ok()).toBeTruthy()

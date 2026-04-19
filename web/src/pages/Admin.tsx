@@ -53,7 +53,7 @@ export function Admin() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch('/api/users', { headers: { 'X-Authorization': `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to load users. Please refresh the page.');
       const data = await res.json() as { users: AdminUser[] };
       setUsers(data.users);
@@ -73,7 +73,7 @@ export function Admin() {
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'X-Authorization': `Bearer ${token}` },
         body: JSON.stringify({ email: createEmail.trim() }),
       });
       const data = await res.json() as { tempPassword?: string; error?: string };
@@ -93,7 +93,7 @@ export function Admin() {
     try {
       const res = await fetch(`/api/users/${user._id}/reset-password`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { 'X-Authorization': `Bearer ${token}` },
       });
       const data = await res.json() as { tempPassword?: string; error?: string };
       if (!res.ok) { setError(`Failed to reset password. ${data.error ?? ''}`); return; }
@@ -110,7 +110,7 @@ export function Admin() {
     try {
       const res = await fetch(`/api/users/${user._id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', 'X-Authorization': `Bearer ${token}` },
         body: JSON.stringify({ active: newActive }),
       });
       const data = await res.json() as { user?: AdminUser; error?: string };
