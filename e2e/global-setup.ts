@@ -40,7 +40,7 @@ export default async function globalSetup() {
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com', 'lockout@example.com'] } })
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -97,6 +97,19 @@ export default async function globalSetup() {
       isAdmin: false,
       tempPassword: false,
       active: true,
+      createdAt: now,
+      updatedAt: now,
+    })
+
+    // Lockout test user — for rate limiting E2E smoke test
+    await users.insertOne({
+      email: 'lockout@example.com',
+      passwordHash,
+      isAdmin: false,
+      tempPassword: false,
+      active: true,
+      failedLoginAttempts: 0,
+      lockoutCount: 0,
       createdAt: now,
       updatedAt: now,
     })

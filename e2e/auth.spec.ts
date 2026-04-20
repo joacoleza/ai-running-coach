@@ -145,3 +145,34 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
   })
 })
+
+test.describe('Login rate limiting', () => {
+  test('returns 429 after 5 consecutive failed login attempts', async ({ page }) => {
+    // Test via direct API calls — no UI interaction needed, just HTTP requests
+    const loginUrl = 'http://localhost:7071/api/auth/login'
+    const body = { email: 'lockout@example.com', password: 'wrongpassword' }
+
+    // Fire 4 requests — all should return 401 (not locked yet)
+    for (let i = 0; i < 4; i++) {
+      const resp = await page.request.post(loginUrl, {
+        data: body,
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(resp.status()).toBe(401)
+    }
+
+    // 5th attempt — should trigger lockout and return 429
+    const finalResp = await page.request.post(loginUrl, {
+      data: body,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    expect(finalResp.status()).toBe(429)
+    const json = await finalResp.json()
+    expect(json.error).toContain('Account locked')
+
+    // Retry-After header must be present and be a positive integer string
+    const retryAfter = finalResp.headers()['retry-after']
+    expect(retryAfter).toMatch(/^\d+$/)
+    expect(parseInt(retryAfter)).toBeGreaterThan(0)
+  })
+})
