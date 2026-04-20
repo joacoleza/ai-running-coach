@@ -133,7 +133,7 @@ describe('POST /api/auth/login', () => {
     expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
   })
 
-  it('Test 4: returns 401 when password is wrong', async () => {
+  it('Test 4: returns 401 when password is wrong (with rate limiting warning)', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
     mockUsersCollection.findOne.mockResolvedValue(validUser)
@@ -141,7 +141,9 @@ describe('POST /api/auth/login', () => {
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
-    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    // Rate limiting: wrong password now includes remaining attempts warning
+    expect((result.jsonBody as { error: string }).error).toContain('Invalid credentials')
+    expect((result.jsonBody as { error: string }).error).toContain('remaining before account lockout')
   })
 
   it('Test 5: returns 200 with token, refreshToken, expiresIn on valid credentials', async () => {

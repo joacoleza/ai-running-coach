@@ -11,6 +11,9 @@ function sha256(input: string): string {
   return crypto.createHash('sha256').update(input).digest('hex');
 }
 
+// Pre-computed bcrypt hash of 'dummy' (10 rounds) for timing-safe email-not-found path
+const DUMMY_HASH = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
+
 function signAccessToken(user: User & { _id: ObjectId }): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET environment variable is not set');
@@ -32,23 +35,67 @@ export function getLoginHandler() {
       }
 
       const db = await getDb();
-      const user = await db
-        .collection<User>('users')
-        .findOne({ email: email.toLowerCase().trim() });
+      const user = await db.collection<User>('users').findOne({ email: email.toLowerCase().trim() });
 
       if (!user) {
+        // Timing mitigation: run bcrypt against dummy hash so "email not found" takes same
+        // time as "wrong password", preventing email enumeration via response timing.
+        await bcrypt.compare(password, DUMMY_HASH);
         return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
+      // Lockout check — reject immediately without touching counters
+      if (user.lockedUntil && user.lockedUntil > new Date()) {
+        const secondsRemaining = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+        const minutesRemaining = Math.ceil(secondsRemaining / 60);
+        return {
+          status: 429,
+          headers: { 'Retry-After': String(secondsRemaining) },
+          jsonBody: { error: `Account locked. Try again in ${minutesRemaining} minutes.` },
+        };
+      }
+
       const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+
       if (!passwordMatch) {
-        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
+        // Increment failed attempt counter
+        const newCount = (user.failedLoginAttempts ?? 0) + 1;
+
+        if (newCount >= 5) {
+          // Trigger lockout
+          const newLockoutCount = (user.lockoutCount ?? 0) + 1;
+          const durationMinutes = Math.min(15 * Math.pow(2, newLockoutCount - 1), 1440);
+          const lockedUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
+          await db.collection<User>('users').updateOne(
+            { _id: user._id },
+            { $set: { lockedUntil, lockoutCount: newLockoutCount, failedLoginAttempts: 0, updatedAt: new Date() } },
+          );
+          const secondsRemaining = Math.ceil(durationMinutes * 60);
+          return {
+            status: 429,
+            headers: { 'Retry-After': String(secondsRemaining) },
+            jsonBody: { error: `Account locked. Try again in ${durationMinutes} minutes.` },
+          };
+        }
+
+        // Pre-lockout warning
+        await db.collection<User>('users').updateOne(
+          { _id: user._id },
+          { $set: { failedLoginAttempts: newCount, updatedAt: new Date() } },
+        );
+        const remaining = 5 - newCount;
+        const attemptWord = remaining === 1 ? 'attempt' : 'attempts';
+        return {
+          status: 401,
+          jsonBody: { error: `Invalid credentials. ${remaining} ${attemptWord} remaining before account lockout.` },
+        };
       }
 
       if (user.active === false) {
         return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
+      // Successful login — reset all rate limiting counters
       const rawRefreshToken = crypto.randomBytes(64).toString('hex');
 
       await db.collection<RefreshToken>('refresh_tokens').insertOne({
@@ -59,7 +106,7 @@ export function getLoginHandler() {
 
       await db.collection('users').updateOne(
         { _id: user._id },
-        { $set: { lastLoginAt: new Date(), updatedAt: new Date() } },
+        { $set: { failedLoginAttempts: 0, lockoutCount: 0, lastLoginAt: new Date(), updatedAt: new Date() } },
       );
 
       const token = signAccessToken(user as User & { _id: ObjectId });
