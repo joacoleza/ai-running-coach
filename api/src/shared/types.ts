@@ -94,6 +94,9 @@ export interface User {
   isAdmin: boolean;
   tempPassword: boolean;   // true = must change password on next login (Phase 7 enforces)
   active: boolean;         // false = deactivated, cannot login or use API
+  failedLoginAttempts?: number;  // consecutive failed login attempts; missing treated as 0
+  lockedUntil?: Date;            // lockout expiry; absent = not locked
+  lockoutCount?: number;         // how many times this user has been locked out (drives progressive duration)
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
