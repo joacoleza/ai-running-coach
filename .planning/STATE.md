@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: Phase 09 shipped — PR #76
-last_updated: "2026-04-19T21:34:26.323Z"
-last_activity: 2026-04-19
+status: executing
+last_updated: "2026-04-20T10:24:30.585Z"
+last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 16
+  completed_plans: 15
   percent: 100
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 09 — admin-panel
+**Current focus:** Phase 10 — login-rate-limiting
 
 ## Current Position
 
-Phase: 10
-Plan: Not started
+Phase: 10 (login-rate-limiting) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-04-19
+Last activity: 2026-04-20
 
 Progress: [██████████] 100% (4/4 plans complete)
 
@@ -90,6 +90,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 09]: LoginPage decodes JWT payload to extract isAdmin flag
 - [Phase 09]: sv-SE locale for ISO-like datetime in formatLastLogin without manual string building
 - [Phase 09]: Fire-and-forget updateOne in getRefreshHandler keeps response latency unchanged while tracking active sessions
+- [Phase 10-01]: DUMMY_HASH hardcoded as literal string to avoid bcrypt cost on module load; failedLoginAttempts uses local compute + $set (not $inc) for consistent atomic lockout updates
 
 ### Quick Tasks Completed
 
