@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: executing
-last_updated: "2026-04-20T10:24:30.585Z"
+status: verifying
+last_updated: "2026-04-20T10:33:07.071Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 16
-  completed_plans: 15
+  completed_plans: 16
   percent: 100
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 Phase: 10 (login-rate-limiting) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-20
 
 Progress: [██████████] 100% (4/4 plans complete)
@@ -91,6 +91,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 09]: sv-SE locale for ISO-like datetime in formatLastLogin without manual string building
 - [Phase 09]: Fire-and-forget updateOne in getRefreshHandler keeps response latency unchanged while tracking active sessions
 - [Phase 10-01]: DUMMY_HASH hardcoded as literal string to avoid bcrypt cost on module load; failedLoginAttempts uses local compute + $set (not $inc) for consistent atomic lockout updates
+- [Phase 10-02]: loginRateLimit.test.ts created as the canonical 12-test file per plan spec alongside Wave 1's loginRateLimiting.test.ts (13 tests); both coexist and pass
 
 ### Quick Tasks Completed
 
