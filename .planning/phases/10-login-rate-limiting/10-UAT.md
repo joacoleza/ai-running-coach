@@ -54,7 +54,12 @@ blocked: 0
   reason: "User reported: The UI said: Network error — please try again"
   severity: major
   test: 3
-  root_cause: ""
-  artifacts: []
-  missing: []
+  root_cause: "LoginPage.tsx:52-59 only handles status 401 and 503 explicitly. 429 falls into the else branch which hardcodes 'Network error — please try again' without reading the response JSON body."
+  artifacts:
+    - path: "web/src/pages/LoginPage.tsx"
+      issue: "else branch at line 57-59 catches all non-401/503 statuses including 429 and shows a generic message"
+  missing:
+    - "Add status 429 handler: read response.json().error and display it (e.g. 'Account locked. Try again in 15 minutes.'). Clear password field."
+    - "Fix status 401 handler: read response.json().error instead of hardcoding 'Invalid email or password' — so attempt-count warnings ('4 attempts remaining...') are shown in the UI"
+    - "Add/update LoginPage unit tests for 429 response and dynamic 401 error body"
   debug_session: ""
