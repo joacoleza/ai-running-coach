@@ -13,6 +13,7 @@
 - [x] **AUTH-04**: User can set a new password (enforced on first login; available anytime thereafter)
 - [x] **AUTH-05**: User can log out (JWT cleared client-side; redirected to login page)
 - [x] **AUTH-06**: All API routes reject unauthenticated or expired JWTs with 401; client auto-redirects to login
+- [x] **AUTH-07**: Login endpoint enforces IP-based brute-force protection — 5 consecutive failures from the same IP trigger a 429 lockout with progressive duration; all 401 responses are identical (no email enumeration); UI displays the lockout message
 
 ### USER — User Management (Admin)
 
@@ -66,10 +67,11 @@
 | USER-02 | Phase 9 | Complete |
 | USER-03 | Phase 9 | Complete |
 | USER-04 | Phase 9 | Complete |
+| AUTH-07 | Phase 10 | Complete |
 
 **Coverage:**
-- v2.0 requirements: 13 total
-- Mapped to phases: 13
+- v2.0 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0 ✓
 
 ---

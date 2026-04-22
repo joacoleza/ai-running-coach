@@ -100,7 +100,7 @@ Plans:
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
 | 9. Admin Panel | 4/4 | Complete   | 2026-04-19 |
-| 10. Login Rate Limiting | 2/2 | Complete    | 2026-04-22 |
+| 10. Login Rate Limiting | 3/3 | Complete    | 2026-04-22 |
 
 ### Phase 10: Login Rate Limiting
 
@@ -112,3 +112,4 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — Extend User type + implement rate limiting in getLoginHandler() (lockout check, timing mitigation, attempt tracking, warnings, counter reset)
 - [x] 10-02-PLAN.md — Unit tests (12 scenarios) + E2E lockout smoke test + global-setup lockout user seed
+- [x] 10-03-PLAN.md — IP-based rewrite: login_attempts collection, getClientIp(), enumeration fix, LoginPage 429 handler
