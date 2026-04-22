@@ -100,14 +100,14 @@ Plans:
 | 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
 | 8. Data Isolation & Migration | 0/3 | Not started | - |
 | 9. Admin Panel | 4/4 | Complete   | 2026-04-19 |
-| 10. Login Rate Limiting | 2/2 | Complete    | 2026-04-20 |
+| 10. Login Rate Limiting | 2/2 | Complete    | 2026-04-22 |
 
 ### Phase 10: Login Rate Limiting
 
 **Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures with progressive duration (15 min doubling to 24h cap), return 429 with Retry-After header and a clear message, warn users of remaining attempts before lockout, mitigate timing attacks on email enumeration. API only, no UI needed.
 **Requirements**: AUTH-07
 **Depends on:** Phase 7
-**Plans:** 2/2 plans complete
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md — Extend User type + implement rate limiting in getLoginHandler() (lockout check, timing mitigation, attempt tracking, warnings, counter reset)
