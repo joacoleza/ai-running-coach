@@ -40,7 +40,9 @@ export default async function globalSetup() {
     const users = db.collection('users')
 
     // Remove existing test users (idempotent re-runs)
-    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com', 'lockout@example.com'] } })
+    await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
+    // Clear IP lockout records to prevent E2E auth tests being blocked by a previous run
+    await db.collection('login_attempts').deleteMany({})
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -101,18 +103,6 @@ export default async function globalSetup() {
       updatedAt: now,
     })
 
-    // Lockout test user — for rate limiting E2E smoke test
-    await users.insertOne({
-      email: 'lockout@example.com',
-      passwordHash,
-      isAdmin: false,
-      tempPassword: false,
-      active: true,
-      failedLoginAttempts: 0,
-      lockoutCount: 0,
-      createdAt: now,
-      updatedAt: now,
-    })
   } finally {
     await client.close()
   }

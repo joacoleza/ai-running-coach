@@ -52,6 +52,10 @@ export function LoginPage({ onTempPassword }: LoginPageProps) {
       } else if (response.status === 401) {
         setError('Invalid email or password');
         setPassword('');
+      } else if (response.status === 429) {
+        const data = await response.json() as { error?: string };
+        setError(data.error || 'Account locked. Try again later.');
+        setPassword('');
       } else if (response.status === 503) {
         setError('Service locked. Contact administrator.');
       } else {

@@ -147,12 +147,12 @@ test.describe('Auth flows', () => {
 })
 
 test.describe('Login rate limiting', () => {
-  test('returns 429 after 5 consecutive failed login attempts', async ({ page }) => {
-    // Test via direct API calls — no UI interaction needed, just HTTP requests
+  test('returns 429 after 5 consecutive failed attempts — works for non-existent email', async ({ page }) => {
     const loginUrl = 'http://localhost:7071/api/auth/login'
-    const body = { email: 'lockout@example.com', password: 'wrongpassword' }
+    // Use a non-existent email — proves lockout fires regardless of whether the email is registered
+    const body = { email: 'doesnotexist@example.com', password: 'wrongpassword' }
 
-    // Fire 4 requests — all should return 401 (not locked yet)
+    // Fire 4 requests — all should return 401
     for (let i = 0; i < 4; i++) {
       const resp = await page.request.post(loginUrl, {
         data: body,
@@ -161,16 +161,15 @@ test.describe('Login rate limiting', () => {
       expect(resp.status()).toBe(401)
     }
 
-    // 5th attempt — should trigger lockout and return 429
+    // 5th attempt — should trigger IP lockout and return 429
     const finalResp = await page.request.post(loginUrl, {
       data: body,
       headers: { 'Content-Type': 'application/json' },
     })
     expect(finalResp.status()).toBe(429)
     const json = await finalResp.json()
-    expect(json.error).toContain('Account locked')
+    expect(json.error).toContain('Too many failed attempts')
 
-    // Retry-After header must be present and be a positive integer string
     const retryAfter = finalResp.headers()['retry-after']
     expect(retryAfter).toMatch(/^\d+$/)
     expect(parseInt(retryAfter)).toBeGreaterThan(0)

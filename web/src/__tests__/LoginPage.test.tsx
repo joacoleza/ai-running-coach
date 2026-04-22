@@ -139,6 +139,37 @@ describe('LoginPage form behavior and error states', () => {
     expect(mockOnTempPassword).not.toHaveBeenCalled()
   })
 
+  it('shows lockout message from API body on 429 response', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: vi.fn().mockResolvedValue({ error: 'Too many failed attempts. Try again in 15 minutes.' }),
+    })
+    render(<LoginPage onTempPassword={mockOnTempPassword} />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrongpassword' } })
+    fireEvent.click(screen.getByRole('button', { name: /log in/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Too many failed attempts. Try again in 15 minutes.')).toBeInTheDocument()
+    })
+    expect(screen.getByLabelText('Password')).toHaveValue('')
+  })
+
+  it('shows fallback lockout message on 429 with no error body', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: vi.fn().mockResolvedValue({}),
+    })
+    render(<LoginPage onTempPassword={mockOnTempPassword} />)
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'user@example.com' } })
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrongpassword' } })
+    fireEvent.click(screen.getByRole('button', { name: /log in/i }))
+    await waitFor(() => {
+      expect(screen.getByText('Account locked. Try again later.')).toBeInTheDocument()
+    })
+  })
+
   it('calls onTempPassword() after login when response includes tempPassword: true', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
