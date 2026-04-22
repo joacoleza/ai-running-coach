@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'node:crypto';
 import { ObjectId } from 'mongodb';
 import { getDb } from '../shared/db.js';
-import { User, RefreshToken } from '../shared/types.js';
+import { User, RefreshToken, LoginAttempt } from '../shared/types.js';
 import { requireAuth, getAuthContext } from '../middleware/auth.js';
 
 function sha256(input: string): string {
@@ -24,6 +24,12 @@ function signAccessToken(user: User & { _id: ObjectId }): string {
   );
 }
 
+function getClientIp(req: HttpRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.headers.get('client-ip') ?? '127.0.0.1';
+}
+
 // Exported for unit testing
 export function getLoginHandler() {
   return async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
@@ -34,83 +40,104 @@ export function getLoginHandler() {
         return { status: 400, jsonBody: { error: 'email and password are required' } };
       }
 
+      const ip = getClientIp(req);
       const db = await getDb();
-      const user = await db.collection<User>('users').findOne({ email: email.toLowerCase().trim() });
+      const attemptsCol = db.collection<LoginAttempt>('login_attempts');
 
-      if (!user) {
-        // Timing mitigation: run bcrypt against dummy hash so "email not found" takes same
-        // time as "wrong password", preventing email enumeration via response timing.
-        await bcrypt.compare(password, DUMMY_HASH);
-        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
-      }
-
-      // Lockout check — reject immediately without touching counters
-      if (user.lockedUntil && user.lockedUntil > new Date()) {
-        const secondsRemaining = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+      // Check IP lockout before touching the user collection
+      const ipRecord = await attemptsCol.findOne({ ip });
+      if (ipRecord?.lockedUntil && ipRecord.lockedUntil > new Date()) {
+        const secondsRemaining = Math.ceil((ipRecord.lockedUntil.getTime() - Date.now()) / 1000);
         const minutesRemaining = Math.ceil(secondsRemaining / 60);
         return {
           status: 429,
           headers: { 'Retry-After': String(secondsRemaining) },
-          jsonBody: { error: `Account locked. Try again in ${minutesRemaining} minutes.` },
+          jsonBody: { error: `Too many failed attempts. Try again in ${minutesRemaining} minutes.` },
         };
       }
 
-      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+      const user = await db.collection<User>('users').findOne({ email: email.toLowerCase().trim() });
 
-      if (!passwordMatch) {
-        // Increment failed attempt counter
-        const newCount = (user.failedLoginAttempts ?? 0) + 1;
-
-        if (newCount >= 5) {
-          // Trigger lockout
-          const newLockoutCount = (user.lockoutCount ?? 0) + 1;
+      if (!user) {
+        // Timing mitigation: run bcrypt against dummy hash so response time matches wrong-password path
+        await bcrypt.compare(password, DUMMY_HASH);
+        // Increment IP attempt counter — same as wrong-password path, no email existence signal
+        const newAttempts = (ipRecord?.attempts ?? 0) + 1;
+        if (newAttempts >= 5) {
+          const newLockoutCount = (ipRecord?.lockoutCount ?? 0) + 1;
           const durationMinutes = Math.min(15 * Math.pow(2, newLockoutCount - 1), 1440);
           const lockedUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
-          await db.collection<User>('users').updateOne(
-            { _id: user._id },
-            { $set: { lockedUntil, lockoutCount: newLockoutCount, failedLoginAttempts: 0, updatedAt: new Date() } },
+          await attemptsCol.updateOne(
+            { ip },
+            { $set: { attempts: 0, lockoutCount: newLockoutCount, lockedUntil, updatedAt: new Date() } },
+            { upsert: true },
           );
           const secondsRemaining = Math.ceil(durationMinutes * 60);
           return {
             status: 429,
             headers: { 'Retry-After': String(secondsRemaining) },
-            jsonBody: { error: `Account locked. Try again in ${durationMinutes} minutes.` },
+            jsonBody: { error: `Too many failed attempts. Try again in ${durationMinutes} minutes.` },
           };
         }
-
-        // Pre-lockout warning
-        await db.collection<User>('users').updateOne(
-          { _id: user._id },
-          { $set: { failedLoginAttempts: newCount, updatedAt: new Date() } },
+        await attemptsCol.updateOne(
+          { ip },
+          { $set: { attempts: newAttempts, updatedAt: new Date() } },
+          { upsert: true },
         );
-        const remaining = 5 - newCount;
-        const attemptWord = remaining === 1 ? 'attempt' : 'attempts';
-        return {
-          status: 401,
-          jsonBody: { error: `Invalid credentials. ${remaining} ${attemptWord} remaining before account lockout.` },
-        };
+        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
+      }
+
+      const passwordMatch = await bcrypt.compare(password, user.passwordHash);
+
+      if (!passwordMatch) {
+        const newAttempts = (ipRecord?.attempts ?? 0) + 1;
+        if (newAttempts >= 5) {
+          const newLockoutCount = (ipRecord?.lockoutCount ?? 0) + 1;
+          const durationMinutes = Math.min(15 * Math.pow(2, newLockoutCount - 1), 1440);
+          const lockedUntil = new Date(Date.now() + durationMinutes * 60 * 1000);
+          await attemptsCol.updateOne(
+            { ip },
+            { $set: { attempts: 0, lockoutCount: newLockoutCount, lockedUntil, updatedAt: new Date() } },
+            { upsert: true },
+          );
+          const secondsRemaining = Math.ceil(durationMinutes * 60);
+          return {
+            status: 429,
+            headers: { 'Retry-After': String(secondsRemaining) },
+            jsonBody: { error: `Too many failed attempts. Try again in ${durationMinutes} minutes.` },
+          };
+        }
+        await attemptsCol.updateOne(
+          { ip },
+          { $set: { attempts: newAttempts, updatedAt: new Date() } },
+          { upsert: true },
+        );
+        return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
       if (user.active === false) {
         return { status: 401, jsonBody: { error: 'Invalid credentials' } };
       }
 
-      // Successful login — reset all rate limiting counters
-      const rawRefreshToken = crypto.randomBytes(64).toString('hex');
+      // Successful login — reset IP attempt counter
+      await attemptsCol.updateOne(
+        { ip },
+        { $set: { attempts: 0, lockoutCount: 0, updatedAt: new Date() } },
+        { upsert: true },
+      );
 
+      const rawRefreshToken = crypto.randomBytes(64).toString('hex');
       await db.collection<RefreshToken>('refresh_tokens').insertOne({
         userId: user._id as ObjectId,
         tokenHash: sha256(rawRefreshToken),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       });
-
       await db.collection('users').updateOne(
         { _id: user._id },
-        { $set: { failedLoginAttempts: 0, lockoutCount: 0, lastLoginAt: new Date(), updatedAt: new Date() } },
+        { $set: { lastLoginAt: new Date(), updatedAt: new Date() } },
       );
 
       const token = signAccessToken(user as User & { _id: ObjectId });
-
       return {
         status: 200,
         jsonBody: { token, refreshToken: rawRefreshToken, expiresIn: 900, tempPassword: user.tempPassword },

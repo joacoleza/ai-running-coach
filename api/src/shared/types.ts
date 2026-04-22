@@ -94,9 +94,6 @@ export interface User {
   isAdmin: boolean;
   tempPassword: boolean;   // true = must change password on next login (Phase 7 enforces)
   active: boolean;         // false = deactivated, cannot login or use API
-  failedLoginAttempts?: number;  // consecutive failed login attempts; missing treated as 0
-  lockedUntil?: Date;            // lockout expiry; absent = not locked
-  lockoutCount?: number;         // how many times this user has been locked out (drives progressive duration)
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -107,4 +104,13 @@ export interface RefreshToken {
   userId: ObjectId;
   tokenHash: string;       // SHA-256 hex of raw refresh token
   expiresAt: Date;         // TTL index auto-purges after this date
+}
+
+export interface LoginAttempt {
+  _id?: ObjectId;
+  ip: string;
+  attempts: number;       // consecutive failures since last reset
+  lockoutCount: number;   // total lockout cycles (drives progressive duration)
+  lockedUntil?: Date;     // absent = not locked
+  updatedAt: Date;        // TTL index key — records expire after 7 days of inactivity
 }
