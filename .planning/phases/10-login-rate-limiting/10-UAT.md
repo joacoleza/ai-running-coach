@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: resolved
 phase: 10-login-rate-limiting
 source: 10-01-SUMMARY.md, 10-02-SUMMARY.md
 started: 2026-04-22T00:00:00Z
-updated: 2026-04-22T00:00:00Z
+updated: 2026-04-22T21:10:00Z
 ---
 
 ## Current Test
@@ -56,7 +56,7 @@ blocked: 0
 ## Gaps
 
 - truth: "After 5 wrong passwords, UI shows the lockout message (e.g. 'Account locked. Try again in 15 minutes.')"
-  status: failed
+  status: resolved
   reason: "User reported: The UI said: Network error — please try again"
   severity: major
   test: 3
@@ -70,7 +70,7 @@ blocked: 0
   debug_session: ""
 
 - truth: "401 responses for unknown email and wrong password are identical — no attempt count or enumeration signal in the response body"
-  status: failed
+  status: resolved
   reason: "User reported: attempt-count warning in 401 body leaks whether the email is registered — real email gets '4 attempts remaining', unknown email gets plain 'Invalid credentials'"
   severity: major
   test: 6
