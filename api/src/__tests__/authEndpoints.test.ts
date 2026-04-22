@@ -34,6 +34,7 @@ vi.mock('../shared/db.js', () => ({
     collection: vi.fn((name: string) => {
       if (name === 'users') return mockUsersCollection
       if (name === 'refresh_tokens') return mockRefreshTokensCollection
+      if (name === 'login_attempts') return { findOne: vi.fn().mockResolvedValue(null), updateOne: vi.fn().mockResolvedValue({ upsertedCount: 1 }) }
       return {}
     }),
   }),
@@ -141,9 +142,7 @@ describe('POST /api/auth/login', () => {
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
-    // Rate limiting: wrong password now includes remaining attempts warning
     expect((result.jsonBody as { error: string }).error).toContain('Invalid credentials')
-    expect((result.jsonBody as { error: string }).error).toContain('remaining before account lockout')
   })
 
   it('Test 5: returns 200 with token, refreshToken, expiresIn on valid credentials', async () => {

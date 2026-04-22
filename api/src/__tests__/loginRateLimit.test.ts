@@ -4,12 +4,14 @@ import { ObjectId } from 'mongodb'
 
 const {
   mockUsersCollection,
+  mockLoginAttemptsCollection,
   mockRefreshTokensCollection,
   mockBcryptCompare,
   mockJwtSign,
 } = vi.hoisted(() => {
   return {
     mockUsersCollection: { findOne: vi.fn(), updateOne: vi.fn() },
+    mockLoginAttemptsCollection: { findOne: vi.fn(), updateOne: vi.fn() },
     mockRefreshTokensCollection: { findOne: vi.fn(), insertOne: vi.fn() },
     mockBcryptCompare: vi.fn(),
     mockJwtSign: vi.fn(),
@@ -20,6 +22,7 @@ vi.mock('../shared/db.js', () => ({
   getDb: vi.fn().mockResolvedValue({
     collection: vi.fn((name: string) => {
       if (name === 'users') return mockUsersCollection
+      if (name === 'login_attempts') return mockLoginAttemptsCollection
       if (name === 'refresh_tokens') return mockRefreshTokensCollection
       return {}
     }),
@@ -38,16 +41,16 @@ vi.mock('jsonwebtoken', () => ({
   },
 }))
 
-function makePostRequest(body: unknown): HttpRequest {
+function makePostRequest(body: unknown, headers: Record<string, string> = {}): HttpRequest {
   return new HttpRequest({
     method: 'POST',
     url: 'http://localhost/api/auth/login',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.2.3.4', ...headers },
     body: { string: JSON.stringify(body) },
   })
 }
 
-describe('Login rate limiting', () => {
+describe('Login rate limiting — IP-based', () => {
   const validUserId = new ObjectId()
   const baseUser = {
     _id: validUserId,
@@ -58,13 +61,16 @@ describe('Login rate limiting', () => {
     active: true,
     createdAt: new Date(),
     updatedAt: new Date(),
-    // failedLoginAttempts, lockedUntil, lockoutCount absent = 0 / unlocked / 0
   }
 
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.JWT_SECRET = 'test-secret'
     process.env.MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017'
+    // Default: no prior IP record
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(null)
+    mockLoginAttemptsCollection.updateOne.mockResolvedValue({ upsertedCount: 1 })
+    // Default: user not found
     mockUsersCollection.findOne.mockResolvedValue(null)
     mockUsersCollection.updateOne.mockResolvedValue({ modifiedCount: 1 })
     mockRefreshTokensCollection.insertOne.mockResolvedValue({ insertedId: new ObjectId() })
@@ -72,178 +78,202 @@ describe('Login rate limiting', () => {
     mockJwtSign.mockReturnValue('mock.jwt.token')
   })
 
-  it('Test 1: email not found — returns 401, bcrypt.compare called once against DUMMY_HASH (timing mitigation)', async () => {
+  it('Test 1: email not found, no prior IP record — bcrypt called against DUMMY_HASH, 401, updateOne sets attempts: 1', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
     mockUsersCollection.findOne.mockResolvedValue(null)
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(null)
     const req = makePostRequest({ email: 'nosuchuser@example.com', password: 'anypassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
     expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    // bcrypt.compare should have been called once against the DUMMY_HASH (timing mitigation)
     expect(mockBcryptCompare).toHaveBeenCalledTimes(1)
     const [, hashArg] = mockBcryptCompare.mock.calls[0]
-    // Second argument must be DUMMY_HASH (starts with $2b$10$)
     expect(hashArg).toMatch(/^\$2b\$10\$/)
-  })
-
-  it('Test 2: first wrong password — returns 401 with "4 attempts remaining", updateOne sets failedLoginAttempts: 1', async () => {
-    const { getLoginHandler } = await import('../functions/auth.js')
-    const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
-    mockBcryptCompare.mockResolvedValue(false)
-    const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
-    const result = await handler(req, {} as never)
-    expect(result.status).toBe(401)
-    const error = (result.jsonBody as { error: string }).error
-    expect(error).toContain('4 attempts remaining before account lockout')
-    expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
-      { _id: validUserId },
-      expect.objectContaining({ $set: expect.objectContaining({ failedLoginAttempts: 1 }) }),
+    // IP record updated to attempts: 1
+    expect(mockLoginAttemptsCollection.updateOne).toHaveBeenCalledWith(
+      { ip: '1.2.3.4' },
+      { $set: { attempts: 1, updatedAt: expect.any(Date) } },
+      { upsert: true },
     )
   })
 
-  it('Test 3: fourth wrong password (failedLoginAttempts: 3) — returns 401 with "1 attempt remaining" (singular)', async () => {
+  it('Test 2: email not found vs wrong password — both return identical 401 (enumeration prevention)', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, failedLoginAttempts: 3 })
+    const priorRecord = { ip: '1.2.3.4', attempts: 3, lockoutCount: 0, updatedAt: new Date() }
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(priorRecord)
+
+    // Non-existent email path
+    mockUsersCollection.findOne.mockResolvedValue(null)
+    mockBcryptCompare.mockResolvedValue(false)
+    const req1 = makePostRequest({ email: 'fake@example.com', password: 'wrongpassword' })
+    const result1 = await handler(req1, {} as never)
+
+    vi.clearAllMocks()
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(priorRecord)
+    mockLoginAttemptsCollection.updateOne.mockResolvedValue({ upsertedCount: 1 })
+    mockUsersCollection.updateOne.mockResolvedValue({ modifiedCount: 1 })
+    mockRefreshTokensCollection.insertOne.mockResolvedValue({ insertedId: new ObjectId() })
+    mockJwtSign.mockReturnValue('mock.jwt.token')
+
+    // Wrong password path
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
+    mockBcryptCompare.mockResolvedValue(false)
+    const req2 = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
+    const result2 = await handler(req2, {} as never)
+
+    // Both responses must be byte-identical
+    expect(result1.status).toBe(401)
+    expect(result2.status).toBe(401)
+    expect((result1.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    expect((result2.jsonBody as { error: string }).error).toBe('Invalid credentials')
+  })
+
+  it('Test 3: wrong password, first attempt — 401, updateOne sets attempts: 1', async () => {
+    const { getLoginHandler } = await import('../functions/auth.js')
+    const handler = getLoginHandler()
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(null)
     mockBcryptCompare.mockResolvedValue(false)
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
-    const error = (result.jsonBody as { error: string }).error
-    expect(error).toContain('1 attempt remaining before account lockout')
-    expect(error).not.toContain('1 attempts')
+    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    expect(mockLoginAttemptsCollection.updateOne).toHaveBeenCalledWith(
+      { ip: '1.2.3.4' },
+      { $set: { attempts: 1, updatedAt: expect.any(Date) } },
+      { upsert: true },
+    )
   })
 
-  it('Test 4: fifth wrong password (failedLoginAttempts: 4) triggers lockout — returns 429 with Retry-After, updateOne sets lockedUntil + lockoutCount: 1 + failedLoginAttempts: 0', async () => {
+  it('Test 4: wrong password, 4th attempt (attempts: 3 in DB) — 401, updateOne sets attempts: 4', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, failedLoginAttempts: 4 })
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({ ip: '1.2.3.4', attempts: 3, lockoutCount: 0, updatedAt: new Date() })
+    mockBcryptCompare.mockResolvedValue(false)
+    const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
+    const result = await handler(req, {} as never)
+    expect(result.status).toBe(401)
+    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    expect(mockLoginAttemptsCollection.updateOne).toHaveBeenCalledWith(
+      { ip: '1.2.3.4' },
+      { $set: { attempts: 4, updatedAt: expect.any(Date) } },
+      { upsert: true },
+    )
+  })
+
+  it('Test 5: wrong password, 5th attempt triggers lockout — 429 with Retry-After, updateOne sets lockedUntil + lockoutCount: 1 + attempts: 0', async () => {
+    const { getLoginHandler } = await import('../functions/auth.js')
+    const handler = getLoginHandler()
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({ ip: '1.2.3.4', attempts: 4, lockoutCount: 0, updatedAt: new Date() })
     mockBcryptCompare.mockResolvedValue(false)
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(429)
-    expect(result.headers?.['Retry-After']).toBeDefined()
-    expect((result.jsonBody as { error: string }).error).toContain('Account locked')
-    expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
-      { _id: validUserId },
-      expect.objectContaining({
+    const headers = result.headers as Record<string, string>
+    expect(headers['Retry-After']).toMatch(/^\d+$/)
+    expect(parseInt(headers['Retry-After'])).toBeGreaterThan(0)
+    expect((result.jsonBody as { error: string }).error).toContain('Too many failed attempts')
+    expect(mockLoginAttemptsCollection.updateOne).toHaveBeenCalledWith(
+      { ip: '1.2.3.4' },
+      {
         $set: expect.objectContaining({
-          lockedUntil: expect.any(Date),
+          attempts: 0,
           lockoutCount: 1,
-          failedLoginAttempts: 0,
+          lockedUntil: expect.any(Date),
         }),
-      }),
+      },
+      { upsert: true },
     )
   })
 
-  it('Test 5: progressive escalation — lockoutCount: 1 triggers second lockout → lockoutCount becomes 2, duration ~30 min', async () => {
+  it('Test 6: progressive lockout (lockoutCount: 1 in record) — second lockout → lockoutCount: 2, duration ~30 min', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, failedLoginAttempts: 4, lockoutCount: 1 })
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({ ip: '1.2.3.4', attempts: 4, lockoutCount: 1, updatedAt: new Date() })
     mockBcryptCompare.mockResolvedValue(false)
     const before = Date.now()
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     await handler(req, {} as never)
     const after = Date.now()
-    const call = mockUsersCollection.updateOne.mock.calls[0]
+    const call = mockLoginAttemptsCollection.updateOne.mock.calls[0]
     const setPayload = call[1].$set
     const lockedUntilMs = setPayload.lockedUntil.getTime()
-    // 30 minutes
+    // Second lockout = 15 * 2^(2-1) = 30 minutes
     expect(lockedUntilMs).toBeGreaterThanOrEqual(before + 30 * 60 * 1000 - 1000)
     expect(lockedUntilMs).toBeLessThanOrEqual(after + 30 * 60 * 1000 + 1000)
     expect(setPayload.lockoutCount).toBe(2)
   })
 
-  it('Test 6: account already locked (lockedUntil in future) — returns 429 immediately, updateOne NOT called, bcrypt.compare NOT called', async () => {
+  it('Test 7: already locked (lockedUntil in future) — 429 immediately, NO updateOne called, bcrypt NOT called', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    const futureDate = new Date(Date.now() + 10 * 60 * 1000)
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, lockedUntil: futureDate, lockoutCount: 1 })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({
+      ip: '1.2.3.4',
+      attempts: 0,
+      lockoutCount: 1,
+      lockedUntil: new Date(Date.now() + 900_000),
+      updatedAt: new Date(),
+    })
     const req = makePostRequest({ email: 'user@example.com', password: 'anypassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(429)
-    expect(mockUsersCollection.updateOne).not.toHaveBeenCalled()
+    expect(mockLoginAttemptsCollection.updateOne).not.toHaveBeenCalled()
     expect(mockBcryptCompare).not.toHaveBeenCalled()
+    // User collection should never be touched
+    expect(mockUsersCollection.findOne).not.toHaveBeenCalled()
   })
 
-  it('Test 7: lockout window expired (lockedUntil in past) — treated as unlocked, proceeds to credential check normally', async () => {
+  it('Test 8: lockout expired (lockedUntil in past) — treated as unlocked, proceeds to credential check → 200', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    const pastDate = new Date(Date.now() - 1000)
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, lockedUntil: pastDate, lockoutCount: 1 })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({
+      ip: '1.2.3.4',
+      attempts: 0,
+      lockoutCount: 1,
+      lockedUntil: new Date(Date.now() - 1000),
+      updatedAt: new Date(),
+    })
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
     mockBcryptCompare.mockResolvedValue(true)
+    mockRefreshTokensCollection.insertOne.mockResolvedValue({ insertedId: new ObjectId() })
     const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(200)
   })
 
-  it('Test 8: successful login resets failedLoginAttempts: 0 and lockoutCount: 0', async () => {
+  it('Test 9: successful login resets IP counter — updateOne sets attempts: 0, lockoutCount: 0', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, failedLoginAttempts: 3, lockoutCount: 1 })
+    mockLoginAttemptsCollection.findOne.mockResolvedValue({ ip: '1.2.3.4', attempts: 2, lockoutCount: 0, updatedAt: new Date() })
+    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser })
     mockBcryptCompare.mockResolvedValue(true)
+    mockRefreshTokensCollection.insertOne.mockResolvedValue({ insertedId: new ObjectId() })
     const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
     await handler(req, {} as never)
-    expect(mockUsersCollection.updateOne).toHaveBeenCalledWith(
-      { _id: validUserId },
-      expect.objectContaining({
-        $set: expect.objectContaining({
-          failedLoginAttempts: 0,
-          lockoutCount: 0,
-          lastLoginAt: expect.any(Date),
-        }),
-      }),
+    expect(mockLoginAttemptsCollection.updateOne).toHaveBeenCalledWith(
+      { ip: '1.2.3.4' },
+      { $set: { attempts: 0, lockoutCount: 0, updatedAt: expect.any(Date) } },
+      { upsert: true },
     )
   })
 
-  it('Test 9: successful login on user with prior failed attempts — returns 200', async () => {
+  it('Test 10: deactivated account (active: false) — 401 even after correct password, no lockout triggered', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, failedLoginAttempts: 2 })
-    mockBcryptCompare.mockResolvedValue(true)
-    const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
-    const result = await handler(req, {} as never)
-    expect(result.status).toBe(200)
-  })
-
-  it('Test 10: locked account 429 body contains "Account locked. Try again in" and minutes value', async () => {
-    const { getLoginHandler } = await import('../functions/auth.js')
-    const handler = getLoginHandler()
-    const remainingMs = 8 * 60 * 1000 // 8 minutes
-    const futureDate = new Date(Date.now() + remainingMs)
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, lockedUntil: futureDate, lockoutCount: 1 })
-    const req = makePostRequest({ email: 'user@example.com', password: 'anypassword' })
-    const result = await handler(req, {} as never)
-    expect(result.status).toBe(429)
-    const error = (result.jsonBody as { error: string }).error
-    expect(error).toContain('Account locked. Try again in')
-    expect(error).toMatch(/\d+ minutes/)
-  })
-
-  it('Test 11: locked account Retry-After header is a positive integer string (seconds)', async () => {
-    const { getLoginHandler } = await import('../functions/auth.js')
-    const handler = getLoginHandler()
-    const remainingMs = 8 * 60 * 1000
-    const futureDate = new Date(Date.now() + remainingMs)
-    mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, lockedUntil: futureDate, lockoutCount: 1 })
-    const req = makePostRequest({ email: 'user@example.com', password: 'anypassword' })
-    const result = await handler(req, {} as never)
-    const headers = result.headers as Record<string, string>
-    expect(headers['Retry-After']).toMatch(/^\d+$/)
-    expect(parseInt(headers['Retry-After'])).toBeGreaterThan(0)
-  })
-
-  it('Test 12: deactivated account returns 401 "Invalid credentials" (not affected by rate limiting)', async () => {
-    const { getLoginHandler } = await import('../functions/auth.js')
-    const handler = getLoginHandler()
+    mockLoginAttemptsCollection.findOne.mockResolvedValue(null)
     mockUsersCollection.findOne.mockResolvedValue({ ...baseUser, active: false })
     mockBcryptCompare.mockResolvedValue(true)
     const req = makePostRequest({ email: 'user@example.com', password: 'correctpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
     expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
-    // Should NOT return 429 (rate limiting should not affect deactivated accounts)
+    // Should NOT return 429
     expect(result.status).not.toBe(429)
   })
 })
