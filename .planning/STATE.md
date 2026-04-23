@@ -97,4 +97,4 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260416-jkp | fix change-password 401 in production - token not accepted | 2026-04-16 | 73b97da | [260416-jkp-fix-change-password-401-in-production-to](.planning/quick/260416-jkp-fix-change-password-401-in-production-to/) | PR #70 |
-| 260423-u59 | Fix run:update-insight XML tag visible in chat and run detail modal | 2026-04-23 | f9969f6 | [260423-u59-fix-run-update-insight-xml-tag-visible-i](.planning/quick/260423-u59-fix-run-update-insight-xml-tag-visible-i/) |
+| 260423-u59 | Fix run:update-insight XML tag visible in chat and run detail modal | 2026-04-23 | 2c52f49 | [260423-u59-fix-run-update-insight-xml-tag-visible-i](.planning/quick/260423-u59-fix-run-update-insight-xml-tag-visible-i/) | PR #78 |
