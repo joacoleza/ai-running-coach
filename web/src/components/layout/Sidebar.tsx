@@ -59,7 +59,7 @@ export function Sidebar() {
 
         {/* Dropdown menu */}
         {dropdownOpen && (
-          <div className="absolute left-0 right-0 top-full bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
+          <div className="absolute left-0 top-full min-w-[140px] bg-gray-800 border border-gray-700 rounded shadow-lg z-50">
             <button
               type="button"
               onClick={async () => {
