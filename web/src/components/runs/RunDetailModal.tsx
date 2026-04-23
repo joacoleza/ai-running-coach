@@ -124,7 +124,8 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
       const responseText = await sendMessage(message);
       if (responseText && run._id) {
         try {
-          const updated = await updateRun(run._id, { insight: responseText });
+          const cleanInsight = responseText.replace(/<[^>]+\/>/g, '').trim();
+          const updated = await updateRun(run._id, { insight: cleanInsight });
           onUpdated(updated);
         } catch {
           // Non-fatal: insight save failure doesn't block UI

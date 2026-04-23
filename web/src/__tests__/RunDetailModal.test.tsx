@@ -93,6 +93,27 @@ describe('RunDetailModal', () => {
     await waitFor(() => expect(updateRun).toHaveBeenCalledWith(mockRun._id, { insight: 'Great run feedback' }));
   });
 
+  it('strips XML tags from insight before saving to run', async () => {
+    const mockSendMessage = vi.fn().mockResolvedValue(
+      'Great run! Keep up the effort. <run:update-insight runId="abc" insight="test"/>'
+    );
+    vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: mockSendMessage });
+    vi.mocked(updateRun).mockResolvedValue({ ...mockRun, insight: 'Great run! Keep up the effort.' });
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+    await waitFor(() =>
+      expect(updateRun).toHaveBeenCalledWith(
+        mockRun._id,
+        expect.objectContaining({ insight: 'Great run! Keep up the effort.' })
+      )
+    );
+  });
+
   it('does not call updateRun when sendMessage returns empty string', async () => {
     const mockSendMessage = vi.fn().mockResolvedValue('');
     vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: mockSendMessage });
