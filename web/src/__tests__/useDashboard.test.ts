@@ -4,7 +4,11 @@ import {
   formatTotalTime,
   computeDateRange,
   groupRunsByWeek,
+  fillWeekGaps,
+  formatPaceToMMSS,
+  computePlanAdherence,
 } from '../hooks/useDashboard';
+import type { PlanData } from '../hooks/usePlan';
 
 // Minimal Run stub for groupRunsByWeek tests
 function makeRun(overrides: {
@@ -182,5 +186,182 @@ describe('groupRunsByWeek', () => {
     expect(buckets[0].avgPace).not.toBeCloseTo((45 + 1 / 60) / 6.0, 2)
     // Displayed distance is still rounded to 1 decimal
     expect(buckets[0].distance).toBe(6.0)
+  })
+
+  it('each bucket includes a weekKey ISO date string', () => {
+    const runs = [makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' })]
+    const buckets = groupRunsByWeek(runs)
+    // weekKey is an ISO date string (YYYY-MM-DD); exact date depends on timezone
+    expect(buckets[0].weekKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+});
+
+describe('formatPaceToMMSS', () => {
+  it('converts 7.0 to "7:00"', () => {
+    expect(formatPaceToMMSS(7.0)).toBe('7:00')
+  })
+
+  it('converts 7.118 to "7:07"', () => {
+    expect(formatPaceToMMSS(7.118)).toBe('7:07')
+  })
+
+  it('converts 7.92 to "7:55"', () => {
+    expect(formatPaceToMMSS(7.92)).toBe('7:55')
+  })
+
+  it('converts 8.533 to "8:32"', () => {
+    expect(formatPaceToMMSS(8.533)).toBe('8:32')
+  })
+
+  it('pads seconds < 10 with leading zero', () => {
+    expect(formatPaceToMMSS(8.083)).toBe('8:05')
+  })
+
+  it('handles rounding that pushes seconds to 60', () => {
+    // 7 + 59.5/60 rounds to 60 seconds → should be 8:00
+    expect(formatPaceToMMSS(7 + 59.5 / 60)).toBe('8:00')
+  })
+});
+
+describe('fillWeekGaps', () => {
+  it('returns the same list when fewer than 2 buckets', () => {
+    const single = groupRunsByWeek([makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' })])
+    expect(fillWeekGaps(single)).toHaveLength(1)
+    expect(fillWeekGaps([])).toHaveLength(0)
+  })
+
+  it('inserts empty bucket between two non-consecutive weeks', () => {
+    // Week of Apr 7 and week of Apr 21 are two weeks apart — one gap week in between
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' }),
+      makeRun({ date: '2026-04-21', distance: 6, duration: '48:00' }),
+    ]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(2)
+    const filled = fillWeekGaps(buckets)
+    expect(filled).toHaveLength(3)
+    // Middle bucket should have no data (weekKey is timezone-dependent)
+    expect(filled[1].weekKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(filled[1].distance).toBe(0)
+    expect(filled[1].avgPace).toBeNull()
+  })
+
+  it('does not insert gaps for consecutive weeks', () => {
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' }),  // week Apr 6
+      makeRun({ date: '2026-04-14', distance: 6, duration: '48:00' }), // week Apr 13
+    ]
+    const buckets = groupRunsByWeek(runs)
+    const filled = fillWeekGaps(buckets)
+    expect(filled).toHaveLength(2)
+  })
+});
+
+describe('computePlanAdherence', () => {
+  function makePlan(days: Array<{ type: 'run' | 'rest'; completed: boolean; skipped: boolean }>): PlanData {
+    return {
+      _id: 'test-plan',
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: { eventType: '10k', targetDate: '', weeklyMileage: 0, availableDays: 0, units: 'km' },
+      phases: [{
+        name: 'Phase 1',
+        description: '',
+        weeks: [{
+          weekNumber: 1,
+          days: days.map((d, i) => ({
+            label: d.type === 'rest' ? '' : String.fromCharCode(65 + i), // A, B, C…
+            type: d.type,
+            guidelines: '',
+            completed: d.completed,
+            skipped: d.skipped,
+          })),
+        }],
+      }],
+    }
+  }
+
+  it('returns N/A for both when plan has only rest days', () => {
+    const plan = makePlan([{ type: 'rest', completed: false, skipped: false }])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: 'N/A', progress: 'N/A' })
+  })
+
+  it('returns N/A adherence and 0% progress when nothing attempted', () => {
+    const plan = makePlan([
+      { type: 'run', completed: false, skipped: false },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: 'N/A', progress: '0%' })
+  })
+
+  it('returns 100% adherence and 100% progress when all days completed', () => {
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: true, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '100%', progress: '100%' })
+  })
+
+  it('calculates adherence as completed / (completed + skipped), not completed / total', () => {
+    // 2 completed, 1 skipped, 1 not started — 4 total
+    // adherence = 2 / (2+1) = 67%, progress = (2+1) / 4 = 75%
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '67%', progress: '75%' })
+  })
+
+  it('returns 0% adherence and some progress when all attempted days were skipped', () => {
+    // 0 completed, 2 skipped, 1 not started — 3 total
+    // adherence = 0 / (0+2) = 0%, progress = (0+2) / 3 = 67%
+    const plan = makePlan([
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '0%', progress: '67%' })
+  })
+
+  it('ignores rest days in all counts', () => {
+    // 1 run (completed) + 2 rest days — only the run counts
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'rest', completed: false, skipped: false },
+      { type: 'rest', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '100%', progress: '100%' })
+  })
+
+  it('works across multiple phases and weeks', () => {
+    // Phase 1 week 1: A completed, B skipped
+    // Phase 2 week 2: A not started
+    // adherence = 1/(1+1) = 50%, progress = (1+1)/3 = 67%
+    const plan: PlanData = {
+      _id: 'multi-phase',
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: { eventType: '10k', targetDate: '', weeklyMileage: 0, availableDays: 0, units: 'km' },
+      phases: [
+        {
+          name: 'Phase 1', description: '',
+          weeks: [{ weekNumber: 1, days: [
+            { label: 'A', type: 'run', guidelines: '', completed: true, skipped: false },
+            { label: 'B', type: 'run', guidelines: '', completed: false, skipped: true },
+          ]}],
+        },
+        {
+          name: 'Phase 2', description: '',
+          weeks: [{ weekNumber: 2, days: [
+            { label: 'A', type: 'run', guidelines: '', completed: false, skipped: false },
+          ]}],
+        },
+      ],
+    }
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '50%', progress: '67%' })
   })
 });

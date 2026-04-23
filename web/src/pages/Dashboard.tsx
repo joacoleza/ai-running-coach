@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { useDashboard, type FilterPreset } from '../hooks/useDashboard'
+import { useDashboard, formatPaceToMMSS, type FilterPreset } from '../hooks/useDashboard'
 
 export const FILTER_PRESETS: { id: FilterPreset; label: string }[] = [
   { id: 'current-plan', label: 'Current Plan' },
@@ -30,11 +30,16 @@ export function Dashboard() {
     paceData,
     paceBpmData,
     isLoading,
+    isPlanLoading,
     hasPlan,
   } = useDashboard()
 
-  const showNoPlanEmpty = activeFilter === 'current-plan' && !hasPlan && !isLoading
-  const showNoRunsEmpty = !isLoading && !showNoPlanEmpty && weeklyData.length === 0
+  const showNoPlanEmpty = activeFilter === 'current-plan' && !hasPlan && !isLoading && !isPlanLoading
+  const showNoRunsEmpty = !isLoading && !isPlanLoading && !showNoPlanEmpty && weeklyData.length === 0
+
+  // Whether any week has actual pace or HR data (to decide whether to render charts)
+  const hasPaceData = paceData.some(p => p.pace !== null)
+  const hasPaceBpmData = paceBpmData.some(p => p.pace !== null || p.avgBPM !== null)
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -91,7 +96,7 @@ export function Dashboard() {
               <p className="text-xs font-medium text-gray-600 mb-1">Total Time</p>
               <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.totalTime}</p>
             </div>
-            {/* Adherence — only shown for current-plan filter per UAT test 3 */}
+            {/* Adherence + Progress — only shown for current-plan filter */}
             {activeFilter === 'current-plan' && (
               <div
                 role="button"
@@ -99,13 +104,16 @@ export function Dashboard() {
                 className="bg-white border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 hover:shadow-sm transition-all"
               >
                 <p className="text-xs font-medium text-gray-600 mb-1">Adherence</p>
-                <p className="text-2xl font-bold text-gray-900">{isLoading ? '—' : stats.adherence}</p>
+                <p className="text-2xl font-bold text-gray-900">{isLoading || isPlanLoading ? '—' : stats.adherence}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Progress: {isLoading || isPlanLoading ? '—' : stats.progress}
+                </p>
               </div>
             )}
           </div>
 
           {/* Loading spinner */}
-          {isLoading && (
+          {(isLoading || isPlanLoading) && (
             <div className="flex justify-center py-12">
               <svg className="h-8 w-8 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -142,10 +150,10 @@ export function Dashboard() {
                 </ResponsiveContainer>
               </div>
 
-              {/* Pace Trend line chart — only if pace data exists */}
-              {paceData.length > 0 && (
+              {/* Weekly Avg Pace line chart — only if any week has pace data */}
+              {hasPaceData && (
                 <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Pace Trend</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Avg Pace</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={paceData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -153,9 +161,16 @@ export function Dashboard() {
                       <YAxis
                         label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#6b7280' } }}
                         tick={{ fontSize: 12, fill: '#6b7280' }}
+                        tickFormatter={(v) => formatPaceToMMSS(Number(v))}
                         domain={['auto', 'auto']}
                       />
-                      <Tooltip formatter={(v) => [`${Number(v).toFixed(2)} min/km`, 'Avg Pace']} />
+                      <Tooltip
+                        formatter={(v) =>
+                          v == null
+                            ? ['—', 'Avg Pace']
+                            : [`${formatPaceToMMSS(Number(v))} /km`, 'Avg Pace']
+                        }
+                      />
                       <Line
                         type="monotone"
                         dataKey="pace"
@@ -163,16 +178,17 @@ export function Dashboard() {
                         strokeWidth={2}
                         dot={{ r: 4, fill: '#3b82f6' }}
                         activeDot={{ r: 6 }}
+                        connectNulls={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
               )}
 
-              {/* Pace vs Heart Rate composed chart — only if BPM data exists */}
-              {paceBpmData.length > 0 && (
+              {/* Weekly Avg Pace vs Heart Rate composed chart — only if BPM data exists */}
+              {hasPaceBpmData && (
                 <div className="bg-white border border-gray-200 rounded-lg p-4 md:col-span-2">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Pace vs Heart Rate</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Weekly Avg Pace vs Heart Rate</h2>
                   <ResponsiveContainer width="100%" height={300}>
                     <ComposedChart data={paceBpmData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -182,6 +198,7 @@ export function Dashboard() {
                         orientation="left"
                         label={{ value: 'Pace (min/km)', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#6b7280' } }}
                         tick={{ fontSize: 12, fill: '#6b7280' }}
+                        tickFormatter={(v) => formatPaceToMMSS(Number(v))}
                         domain={['auto', 'auto']}
                       />
                       <YAxis
@@ -194,8 +211,12 @@ export function Dashboard() {
                       <Tooltip
                         formatter={(v, name) =>
                           name === 'pace'
-                            ? [`${Number(v).toFixed(2)} min/km`, 'Avg Pace']
-                            : [`${Number(v).toFixed(0)} bpm`, 'Avg HR']
+                            ? v == null
+                              ? ['—', 'Avg Pace']
+                              : [`${formatPaceToMMSS(Number(v))} /km`, 'Avg Pace']
+                            : v == null
+                              ? ['—', 'Avg HR']
+                              : [`${Number(v).toFixed(0)} bpm`, 'Avg HR']
                         }
                       />
                       <Legend />
@@ -207,7 +228,7 @@ export function Dashboard() {
                         strokeWidth={2}
                         dot={{ r: 4, fill: '#3b82f6' }}
                         activeDot={{ r: 6 }}
-                        connectNulls
+                        connectNulls={false}
                       />
                       <Line
                         yAxisId="bpm"
@@ -217,7 +238,7 @@ export function Dashboard() {
                         strokeWidth={2}
                         dot={{ r: 4, fill: '#ef4444' }}
                         activeDot={{ r: 6 }}
-                        connectNulls
+                        connectNulls={false}
                       />
                     </ComposedChart>
                   </ResponsiveContainer>

@@ -1280,3 +1280,40 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
     }).toPass({ timeout: 8_000 })
   })
 })
+
+test.describe('Adherence and progress stats in plan header', () => {
+  test('shows adherence and progress in the objective block', async ({ page }) => {
+    // mockActivePlan has objective set, 2 non-rest days: A (not started), B (completed)
+    // adherence = 1/(1+0) = 100%, progress = 1/2 = 50%
+    await loginWithPlan(page)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByText(/100%.*adherence/)).toBeVisible()
+    await expect(page.getByText(/50%.*progress/)).toBeVisible()
+  })
+
+  test('shows 0% adherence when all attempted days were skipped', async ({ page }) => {
+    const planWithSkip = {
+      ...mockActivePlan,
+      phases: [{
+        name: 'Base Building',
+        description: '',
+        weeks: [{
+          weekNumber: 1,
+          days: [
+            { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: true },
+            { label: 'B', type: 'run', objective: { kind: 'distance', value: 8, unit: 'km' }, guidelines: 'Long run', completed: false, skipped: false },
+          ],
+        }],
+      }],
+    }
+    // adherence = 0/(0+1) = 0%, progress = 1/2 = 50%
+    await loginWithPlan(page, planWithSkip)
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByText(/0%.*adherence/)).toBeVisible()
+    await expect(page.getByText(/50%.*progress/)).toBeVisible()
+  })
+})

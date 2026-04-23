@@ -9,12 +9,15 @@ vi.mock('../hooks/useDashboard', () => ({
   useDashboard: vi.fn(() => ({
     activeFilter: 'current-plan' as const,
     setActiveFilter: vi.fn(),
-    stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+    stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
     weeklyData: [],
     paceData: [],
+    paceBpmData: [],
     isLoading: false,
+    isPlanLoading: false,
     hasPlan: true,
   })),
+  formatPaceToMMSS: (v: number) => String(v),
 }))
 
 describe('Coach page', () => {
