@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PlanView } from '../components/plan/PlanView';
 import { PlanActions } from '../components/plan/PlanActions';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
+import { computePlanAdherence } from '../hooks/useDashboard';
 import type { Run } from '../hooks/useRuns';
 
 function openCoachPanel() {
@@ -169,7 +170,7 @@ export function TrainingPlan() {
           <>
             {plan.objective && (
               <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <div className="flex flex-wrap items-baseline gap-x-2">
+                <div className="flex flex-wrap items-baseline gap-x-2 mb-2">
                   <span className="font-semibold capitalize">{plan.objective.replace('-', ' ')}</span>
                   {editingDate ? (
                     <input
@@ -204,6 +205,21 @@ export function TrainingPlan() {
                     </span>
                   )}
                 </div>
+                {(() => {
+                  const { adherence, progress } = computePlanAdherence(plan);
+                  return (
+                    <div className="flex gap-4 text-sm text-gray-600">
+                      <span>
+                        <span className="font-medium text-gray-800">{adherence}</span>
+                        {' '}adherence
+                      </span>
+                      <span>
+                        <span className="font-medium text-gray-800">{progress}</span>
+                        {' '}progress
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

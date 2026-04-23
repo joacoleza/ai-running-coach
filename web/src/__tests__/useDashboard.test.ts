@@ -4,6 +4,8 @@ import {
   formatTotalTime,
   computeDateRange,
   groupRunsByWeek,
+  fillWeekGaps,
+  formatPaceToMMSS,
 } from '../hooks/useDashboard';
 
 // Minimal Run stub for groupRunsByWeek tests
@@ -182,5 +184,73 @@ describe('groupRunsByWeek', () => {
     expect(buckets[0].avgPace).not.toBeCloseTo((45 + 1 / 60) / 6.0, 2)
     // Displayed distance is still rounded to 1 decimal
     expect(buckets[0].distance).toBe(6.0)
+  })
+
+  it('each bucket includes a weekKey ISO date string', () => {
+    const runs = [makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' })]
+    const buckets = groupRunsByWeek(runs)
+    // weekKey is an ISO date string (YYYY-MM-DD); exact date depends on timezone
+    expect(buckets[0].weekKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+});
+
+describe('formatPaceToMMSS', () => {
+  it('converts 7.0 to "7:00"', () => {
+    expect(formatPaceToMMSS(7.0)).toBe('7:00')
+  })
+
+  it('converts 7.118 to "7:07"', () => {
+    expect(formatPaceToMMSS(7.118)).toBe('7:07')
+  })
+
+  it('converts 7.92 to "7:55"', () => {
+    expect(formatPaceToMMSS(7.92)).toBe('7:55')
+  })
+
+  it('converts 8.533 to "8:32"', () => {
+    expect(formatPaceToMMSS(8.533)).toBe('8:32')
+  })
+
+  it('pads seconds < 10 with leading zero', () => {
+    expect(formatPaceToMMSS(8.083)).toBe('8:05')
+  })
+
+  it('handles rounding that pushes seconds to 60', () => {
+    // 7 + 59.5/60 rounds to 60 seconds → should be 8:00
+    expect(formatPaceToMMSS(7 + 59.5 / 60)).toBe('8:00')
+  })
+});
+
+describe('fillWeekGaps', () => {
+  it('returns the same list when fewer than 2 buckets', () => {
+    const single = groupRunsByWeek([makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' })])
+    expect(fillWeekGaps(single)).toHaveLength(1)
+    expect(fillWeekGaps([])).toHaveLength(0)
+  })
+
+  it('inserts empty bucket between two non-consecutive weeks', () => {
+    // Week of Apr 7 and week of Apr 21 are two weeks apart — one gap week in between
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' }),
+      makeRun({ date: '2026-04-21', distance: 6, duration: '48:00' }),
+    ]
+    const buckets = groupRunsByWeek(runs)
+    expect(buckets).toHaveLength(2)
+    const filled = fillWeekGaps(buckets)
+    expect(filled).toHaveLength(3)
+    // Middle bucket should have no data (weekKey is timezone-dependent)
+    expect(filled[1].weekKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(filled[1].distance).toBe(0)
+    expect(filled[1].avgPace).toBeNull()
+  })
+
+  it('does not insert gaps for consecutive weeks', () => {
+    const runs = [
+      makeRun({ date: '2026-04-07', distance: 5, duration: '40:00' }),  // week Apr 6
+      makeRun({ date: '2026-04-14', distance: 6, duration: '48:00' }), // week Apr 13
+    ]
+    const buckets = groupRunsByWeek(runs)
+    const filled = fillWeekGaps(buckets)
+    expect(filled).toHaveLength(2)
   })
 });

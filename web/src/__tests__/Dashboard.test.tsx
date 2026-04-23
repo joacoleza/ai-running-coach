@@ -7,6 +7,7 @@ import { useDashboard } from '../hooks/useDashboard';
 
 vi.mock('../hooks/useDashboard', () => ({
   useDashboard: vi.fn(),
+  formatPaceToMMSS: (v: number) => String(v),
 }))
 
 const mockNavigate = vi.fn()
@@ -35,11 +36,12 @@ function makeDefaults(overrides: Partial<ReturnType<typeof useDashboard>> = {}):
   return {
     activeFilter: 'current-plan',
     setActiveFilter: vi.fn(),
-    stats: { totalDistance: '42.5km', totalRuns: 8, totalTime: '3h25m', adherence: '75%' },
+    stats: { totalDistance: '42.5km', totalRuns: 8, totalTime: '3h25m', adherence: '75%', progress: '40%' },
     weeklyData: [{ weekLabel: 'Apr 7', distance: 15 }],
     paceData: [{ weekLabel: 'Apr 7', pace: 5.2 }],
     paceBpmData: [],
     isLoading: false,
+    isPlanLoading: false,
     hasPlan: true,
     ...overrides,
   }
@@ -86,9 +88,9 @@ describe('with active plan and data', () => {
     expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
   })
 
-  it('renders Pace Trend chart section', () => {
+  it('renders Weekly Avg Pace chart section', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Pace Trend')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Avg Pace')).toBeInTheDocument()
     expect(screen.getByTestId('line-chart')).toBeInTheDocument()
   })
 
@@ -108,7 +110,7 @@ describe('empty state - no active plan', () => {
       isLoading: false,
       weeklyData: [],
       paceData: [],
-      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
     }))
   })
 
@@ -136,7 +138,7 @@ describe('empty state - has plan but no runs', () => {
       isLoading: false,
       weeklyData: [],
       paceData: [],
-      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A' },
+      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
     }))
   })
 
@@ -199,20 +201,20 @@ describe('adherence card guard', () => {
   })
 })
 
-describe('Pace vs Heart Rate ComposedChart', () => {
-  it('renders ComposedChart when paceBpmData has entries', () => {
+describe('Weekly Avg Pace vs Heart Rate ComposedChart', () => {
+  it('renders ComposedChart when paceBpmData has entries with data', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
       paceBpmData: [{ weekLabel: 'Apr 7', pace: 5.2, avgBPM: 145 }],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Pace vs Heart Rate')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Avg Pace vs Heart Rate')).toBeInTheDocument()
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
   })
 
-  it('does NOT render ComposedChart when paceBpmData is empty', () => {
+  it('does NOT render ComposedChart when paceBpmData has no actual data', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({ paceBpmData: [] }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Pace vs Heart Rate')).not.toBeInTheDocument()
+    expect(screen.queryByText('Weekly Avg Pace vs Heart Rate')).not.toBeInTheDocument()
     expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
   })
 })
