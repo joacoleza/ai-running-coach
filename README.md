@@ -35,7 +35,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
 - **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go; progress assessments are auto-saved to the plan via `<plan:update-feedback>`
 - **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
-- **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence), weekly volume bar chart, and pace trend line chart; archived plan pages show readonly coaching chat history
+- **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence + progress), weekly volume bar chart, and weekly avg pace chart; archived plan pages show readonly coaching chat history
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
 - **Admin panel** — Admins can create user accounts (generates a temp password), reset passwords, and deactivate/reactivate users from a dedicated `/admin` page; deactivated users are immediately rejected on login and on every API call
 - **Brute-force protection** — Login endpoint enforces IP-based rate limiting: 5 consecutive failures from the same IP trigger a 429 lockout with progressive duration (15 min → 30 → 60 → … → 24h cap); all 401 responses are identical regardless of whether the email exists (no enumeration); lockout message shown in the UI

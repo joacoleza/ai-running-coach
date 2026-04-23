@@ -6,7 +6,9 @@ import {
   groupRunsByWeek,
   fillWeekGaps,
   formatPaceToMMSS,
+  computePlanAdherence,
 } from '../hooks/useDashboard';
+import type { PlanData } from '../hooks/usePlan';
 
 // Minimal Run stub for groupRunsByWeek tests
 function makeRun(overrides: {
@@ -252,5 +254,114 @@ describe('fillWeekGaps', () => {
     const buckets = groupRunsByWeek(runs)
     const filled = fillWeekGaps(buckets)
     expect(filled).toHaveLength(2)
+  })
+});
+
+describe('computePlanAdherence', () => {
+  function makePlan(days: Array<{ type: 'run' | 'rest'; completed: boolean; skipped: boolean }>): PlanData {
+    return {
+      _id: 'test-plan',
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: { eventType: '10k', targetDate: '', weeklyMileage: 0, availableDays: 0, units: 'km' },
+      phases: [{
+        name: 'Phase 1',
+        description: '',
+        weeks: [{
+          weekNumber: 1,
+          days: days.map((d, i) => ({
+            label: d.type === 'rest' ? '' : String.fromCharCode(65 + i), // A, B, C…
+            type: d.type,
+            guidelines: '',
+            completed: d.completed,
+            skipped: d.skipped,
+          })),
+        }],
+      }],
+    }
+  }
+
+  it('returns N/A for both when plan has only rest days', () => {
+    const plan = makePlan([{ type: 'rest', completed: false, skipped: false }])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: 'N/A', progress: 'N/A' })
+  })
+
+  it('returns N/A adherence and 0% progress when nothing attempted', () => {
+    const plan = makePlan([
+      { type: 'run', completed: false, skipped: false },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: 'N/A', progress: '0%' })
+  })
+
+  it('returns 100% adherence and 100% progress when all days completed', () => {
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: true, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '100%', progress: '100%' })
+  })
+
+  it('calculates adherence as completed / (completed + skipped), not completed / total', () => {
+    // 2 completed, 1 skipped, 1 not started — 4 total
+    // adherence = 2 / (2+1) = 67%, progress = (2+1) / 4 = 75%
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: true, skipped: false },
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '67%', progress: '75%' })
+  })
+
+  it('returns 0% adherence and some progress when all attempted days were skipped', () => {
+    // 0 completed, 2 skipped, 1 not started — 3 total
+    // adherence = 0 / (0+2) = 0%, progress = (0+2) / 3 = 67%
+    const plan = makePlan([
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: true },
+      { type: 'run', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '0%', progress: '67%' })
+  })
+
+  it('ignores rest days in all counts', () => {
+    // 1 run (completed) + 2 rest days — only the run counts
+    const plan = makePlan([
+      { type: 'run', completed: true, skipped: false },
+      { type: 'rest', completed: false, skipped: false },
+      { type: 'rest', completed: false, skipped: false },
+    ])
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '100%', progress: '100%' })
+  })
+
+  it('works across multiple phases and weeks', () => {
+    // Phase 1 week 1: A completed, B skipped
+    // Phase 2 week 2: A not started
+    // adherence = 1/(1+1) = 50%, progress = (1+1)/3 = 67%
+    const plan: PlanData = {
+      _id: 'multi-phase',
+      status: 'active',
+      onboardingMode: 'conversational',
+      onboardingStep: 6,
+      goal: { eventType: '10k', targetDate: '', weeklyMileage: 0, availableDays: 0, units: 'km' },
+      phases: [
+        {
+          name: 'Phase 1', description: '',
+          weeks: [{ weekNumber: 1, days: [
+            { label: 'A', type: 'run', guidelines: '', completed: true, skipped: false },
+            { label: 'B', type: 'run', guidelines: '', completed: false, skipped: true },
+          ]}],
+        },
+        {
+          name: 'Phase 2', description: '',
+          weeks: [{ weekNumber: 2, days: [
+            { label: 'A', type: 'run', guidelines: '', completed: false, skipped: false },
+          ]}],
+        },
+      ],
+    }
+    expect(computePlanAdherence(plan)).toEqual({ adherence: '50%', progress: '67%' })
   })
 });

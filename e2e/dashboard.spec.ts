@@ -101,6 +101,15 @@ test.describe('Dashboard', () => {
     await expect(page.getByText('Adherence')).toBeVisible()
   })
 
+  test('Adherence card shows Progress sub-text', async ({ page }) => {
+    // mockActivePlan has 1 completed day (A) out of 2 non-rest days (A, B)
+    // adherence = 1/(1+0) = 100%, progress = 1/2 = 50%
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByText(/Progress:/)).toBeVisible()
+  })
+
   test('Adherence card navigates to /plan on click', async ({ page }) => {
     await page.goto('/dashboard')
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
