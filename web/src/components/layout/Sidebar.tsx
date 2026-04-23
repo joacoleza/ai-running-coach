@@ -34,6 +34,7 @@ export function Sidebar() {
           type="button"
           onClick={() => setDropdownOpen(prev => !prev)}
           className="flex items-center w-full px-3 py-3 hover:bg-gray-800 transition-colors cursor-pointer"
+          aria-label="Account menu"
           aria-haspopup="true"
           aria-expanded={dropdownOpen}
         >
@@ -79,6 +80,7 @@ export function Sidebar() {
                 }
                 logout();
               }}
+              aria-label="Logout"
               className="flex items-center w-full px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

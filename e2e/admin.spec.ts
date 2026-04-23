@@ -28,7 +28,7 @@ async function loginAsAdmin(page: Page) {
   await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
 
   await page.getByLabel('Email').fill('admin@example.com')
-  await page.getByLabel('Password').fill('password123')
+  await page.getByLabel('Password', { exact: true }).fill('password123')
   await page.getByRole('button', { name: 'Log In' }).click()
 
   // Wait for sidebar to confirm authenticated state
@@ -42,7 +42,7 @@ async function loginAsUser(page: Page) {
   await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
 
   await page.getByLabel('Email').fill('test@example.com')
-  await page.getByLabel('Password').fill('password123')
+  await page.getByLabel('Password', { exact: true }).fill('password123')
   await page.getByRole('button', { name: 'Log In' }).click()
 
   // Wait for sidebar to confirm authenticated state
@@ -217,7 +217,7 @@ test.describe('Admin panel', () => {
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByLabel('Email').fill('deactivate@example.com')
-    await page.getByLabel('Password').fill('password123')
+    await page.getByLabel('Password', { exact: true }).fill('password123')
     await page.getByRole('button', { name: 'Log In' }).click()
 
     // Should see invalid credentials error (same message as wrong password — no user enumeration)
