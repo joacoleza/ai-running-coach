@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { MongoClient } from 'mongodb'
 
 test.describe('Auth flows', () => {
   test.beforeEach(async ({ page }) => {
@@ -147,6 +148,19 @@ test.describe('Auth flows', () => {
 })
 
 test.describe('Login rate limiting', () => {
+  test.afterAll(async () => {
+    // Clear IP lockout so subsequent specs (e.g. isolation.spec.ts) can log in from 127.0.0.1
+    const uri = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/running-coach-e2e'
+    const client = new MongoClient(uri)
+    try {
+      await client.connect()
+      const dbName = uri.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach'
+      await client.db(dbName).collection('login_attempts').deleteMany({})
+    } finally {
+      await client.close()
+    }
+  })
+
   test('returns 429 after 5 consecutive failed attempts — works for non-existent email', async ({ page }) => {
     const loginUrl = 'http://localhost:7071/api/auth/login'
     // Use a non-existent email — proves lockout fires regardless of whether the email is registered
