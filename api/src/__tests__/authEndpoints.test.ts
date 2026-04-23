@@ -34,6 +34,7 @@ vi.mock('../shared/db.js', () => ({
     collection: vi.fn((name: string) => {
       if (name === 'users') return mockUsersCollection
       if (name === 'refresh_tokens') return mockRefreshTokensCollection
+      if (name === 'login_attempts') return { findOne: vi.fn().mockResolvedValue(null), updateOne: vi.fn().mockResolvedValue({ upsertedCount: 1 }) }
       return {}
     }),
   }),
@@ -133,7 +134,7 @@ describe('POST /api/auth/login', () => {
     expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
   })
 
-  it('Test 4: returns 401 when password is wrong', async () => {
+  it('Test 4: returns 401 when password is wrong (with rate limiting warning)', async () => {
     const { getLoginHandler } = await import('../functions/auth.js')
     const handler = getLoginHandler()
     mockUsersCollection.findOne.mockResolvedValue(validUser)
@@ -141,7 +142,7 @@ describe('POST /api/auth/login', () => {
     const req = makePostRequest({ email: 'user@example.com', password: 'wrongpassword' })
     const result = await handler(req, {} as never)
     expect(result.status).toBe(401)
-    expect((result.jsonBody as { error: string }).error).toBe('Invalid credentials')
+    expect((result.jsonBody as { error: string }).error).toContain('Invalid credentials')
   })
 
   it('Test 5: returns 200 with token, refreshToken, expiresIn on valid credentials', async () => {

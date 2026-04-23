@@ -105,3 +105,12 @@ export interface RefreshToken {
   tokenHash: string;       // SHA-256 hex of raw refresh token
   expiresAt: Date;         // TTL index auto-purges after this date
 }
+
+export interface LoginAttempt {
+  _id?: ObjectId;
+  ip: string;
+  attempts: number;       // consecutive failures since last reset
+  lockoutCount: number;   // total lockout cycles (drives progressive duration)
+  lockedUntil?: Date;     // absent = not locked
+  updatedAt: Date;        // TTL index key — records expire after 7 days of inactivity
+}

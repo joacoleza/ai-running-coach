@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { MongoClient } from 'mongodb'
 
 test.describe('Auth flows', () => {
   test.beforeEach(async ({ page }) => {
@@ -143,5 +144,48 @@ test.describe('Auth flows', () => {
     await page.goto('/dashboard')
     // App gate shows LoginPage — no redirect to /dashboard URL since it is above BrowserRouter
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
+  })
+})
+
+test.describe('Login rate limiting', () => {
+  test.afterAll(async () => {
+    // Clear IP lockout so subsequent specs (e.g. isolation.spec.ts) can log in from 127.0.0.1
+    const uri = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/running-coach-e2e'
+    const client = new MongoClient(uri)
+    try {
+      await client.connect()
+      const dbName = uri.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach'
+      await client.db(dbName).collection('login_attempts').deleteMany({})
+    } finally {
+      await client.close()
+    }
+  })
+
+  test('returns 429 after 5 consecutive failed attempts — works for non-existent email', async ({ page }) => {
+    const loginUrl = 'http://localhost:7071/api/auth/login'
+    // Use a non-existent email — proves lockout fires regardless of whether the email is registered
+    const body = { email: 'doesnotexist@example.com', password: 'wrongpassword' }
+
+    // Fire 4 requests — all should return 401
+    for (let i = 0; i < 4; i++) {
+      const resp = await page.request.post(loginUrl, {
+        data: body,
+        headers: { 'Content-Type': 'application/json' },
+      })
+      expect(resp.status()).toBe(401)
+    }
+
+    // 5th attempt — should trigger IP lockout and return 429
+    const finalResp = await page.request.post(loginUrl, {
+      data: body,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    expect(finalResp.status()).toBe(429)
+    const json = await finalResp.json()
+    expect(json.error).toContain('Too many failed attempts')
+
+    const retryAfter = finalResp.headers()['retry-after']
+    expect(retryAfter).toMatch(/^\d+$/)
+    expect(parseInt(retryAfter)).toBeGreaterThan(0)
   })
 })

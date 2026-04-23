@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: Phase 09 shipped — PR #76
-last_updated: "2026-04-19T21:34:26.323Z"
-last_activity: 2026-04-19
+status: Phase 10 shipped — PR #77
+last_updated: "2026-04-22T20:38:52.813Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
+  completed_phases: 5
+  total_plans: 17
+  completed_plans: 17
   percent: 100
 ---
 
@@ -20,16 +20,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 09 — admin-panel
+**Current focus:** Phase 10 — login-rate-limiting (complete, PR #77)
 
 ## Current Position
 
 Phase: 10
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-19
+Plan: 03 (complete)
+Status: Shipped — PR #77
+Last activity: 2026-04-22
 
-Progress: [██████████] 100% (4/4 plans complete)
+Progress: [██████████] 100% (5/5 phases complete)
 
 ## Milestone
 
@@ -90,6 +90,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 09]: LoginPage decodes JWT payload to extract isAdmin flag
 - [Phase 09]: sv-SE locale for ISO-like datetime in formatLastLogin without manual string building
 - [Phase 09]: Fire-and-forget updateOne in getRefreshHandler keeps response latency unchanged while tracking active sessions
+- [Phase 10-03]: IP-based rate limiting via login_attempts collection (not per-user fields) eliminates email enumeration; getClientIp() reads x-forwarded-for → client-ip → 127.0.0.1; DUMMY_HASH hardcoded to avoid bcrypt cost on module load; loginRateLimiting.test.ts deleted (account-based); loginRateLimit.test.ts rewritten with 10 IP-based scenarios
 
 ### Quick Tasks Completed
 

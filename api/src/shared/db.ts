@@ -22,6 +22,8 @@ export async function getDb(): Promise<Db> {
   await db.collection('plans').createIndex({ userId: 1, status: 1, createdAt: -1 });
   await db.collection('runs').createIndex({ userId: 1, date: -1 });
   await db.collection('messages').createIndex({ userId: 1, planId: 1, timestamp: 1 });
+  await db.collection('login_attempts').createIndex({ ip: 1 }, { unique: true });
+  await db.collection('login_attempts').createIndex({ updatedAt: 1 }, { expireAfterSeconds: 604800 }); // 7 days TTL
   return db;
 }
 

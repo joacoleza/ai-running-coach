@@ -41,6 +41,8 @@ export default async function globalSetup() {
 
     // Remove existing test users (idempotent re-runs)
     await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
+    // Clear IP lockout records to prevent E2E auth tests being blocked by a previous run
+    await db.collection('login_attempts').deleteMany({})
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -100,6 +102,7 @@ export default async function globalSetup() {
       createdAt: now,
       updatedAt: now,
     })
+
   } finally {
     await client.close()
   }

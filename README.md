@@ -7,10 +7,10 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-89.6%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-299%2F299-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-467%2F467-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-77%2F77-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-89.5%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-309%2F309-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-469%2F469-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-78%2F78-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -38,6 +38,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence), weekly volume bar chart, and pace trend line chart; archived plan pages show readonly coaching chat history
 - **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
 - **Admin panel** — Admins can create user accounts (generates a temp password), reset passwords, and deactivate/reactivate users from a dedicated `/admin` page; deactivated users are immediately rejected on login and on every API call
+- **Brute-force protection** — Login endpoint enforces IP-based rate limiting: 5 consecutive failures from the same IP trigger a 429 lockout with progressive duration (15 min → 30 → 60 → … → 24h cap); all 401 responses are identical regardless of whether the email exists (no enumeration); lockout message shown in the UI
 
 ## Built with
 

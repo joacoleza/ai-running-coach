@@ -34,6 +34,7 @@ vi.mock('../shared/db.js', () => ({
     collection: vi.fn((name: string) => {
       if (name === 'users') return mockUsersCollection
       if (name === 'refresh_tokens') return mockRefreshTokensCollection
+      if (name === 'login_attempts') return { findOne: vi.fn().mockResolvedValue(null), updateOne: vi.fn().mockResolvedValue({ upsertedCount: 1 }) }
       return {}
     }),
   }),
