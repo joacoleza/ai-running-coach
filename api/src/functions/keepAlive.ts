@@ -5,6 +5,7 @@ import { app, InvocationContext, Timer } from '@azure/functions';
 app.timer('keepAlive', {
   schedule: '0 */10 * * * *',
   runOnStartup: false,
+  useMonitor: false,
   handler: async (_myTimer: Timer, context: InvocationContext): Promise<void> => {
     context.log('Keep-alive ping');
   },
