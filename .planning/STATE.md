@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 Phase: 10
 Plan: 03 (complete)
 Status: Shipped — PR #77
-Last activity: 2026-04-23 - Completed quick task 260423-u59: Fix run:update-insight XML tag visible in chat and run detail modal
+Last activity: 2026-04-24 - Shipped quick task 260423-wnm: sidebar user email + logout dropdown, show-password toggle — PR #81
 
 Progress: [██████████] 100% (5/5 phases complete)
 
@@ -98,3 +98,4 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 |---|-------------|------|--------|-----------|
 | 260416-jkp | fix change-password 401 in production - token not accepted | 2026-04-16 | 73b97da | [260416-jkp-fix-change-password-401-in-production-to](.planning/quick/260416-jkp-fix-change-password-401-in-production-to/) | PR #70 |
 | 260423-u59 | Fix run:update-insight XML tag visible in chat and run detail modal | 2026-04-23 | 2c52f49 | [260423-u59-fix-run-update-insight-xml-tag-visible-i](.planning/quick/260423-u59-fix-run-update-insight-xml-tag-visible-i/) | PR #78 |
+| 260423-wnm | Sidebar user email + logout dropdown, show-password toggle on login/reset | 2026-04-24 | 8bbb26f | [260423-wnm-sidebar-user-email-display-with-logout-d](.planning/quick/260423-wnm-sidebar-user-email-display-with-logout-d/) | PR #81 |

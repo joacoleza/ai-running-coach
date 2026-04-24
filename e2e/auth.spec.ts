@@ -18,7 +18,7 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('heading', { name: 'AI Running Coach' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
-    await expect(page.getByLabel('Password')).toBeVisible()
+    await expect(page.getByLabel('Password', { exact: true })).toBeVisible()
   })
 
   test('login with invalid credentials shows error message', async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByLabel('Email').fill('wrong@example.com')
-    await page.getByLabel('Password').fill('wrongpassword')
+    await page.getByLabel('Password', { exact: true }).fill('wrongpassword')
     await page.getByRole('button', { name: 'Log In' }).click()
 
     await expect(page.getByText('Invalid email or password')).toBeVisible({ timeout: 10_000 })
@@ -49,7 +49,7 @@ test.describe('Auth flows', () => {
     })
 
     await page.getByLabel('Email').fill('test@example.com')
-    await page.getByLabel('Password').fill('password123')
+    await page.getByLabel('Password', { exact: true }).fill('password123')
     await page.getByRole('button', { name: 'Log In' }).click()
 
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 15_000 })
@@ -61,7 +61,7 @@ test.describe('Auth flows', () => {
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByLabel('Email').fill('temp@example.com')
-    await page.getByLabel('Password').fill('password123')
+    await page.getByLabel('Password', { exact: true }).fill('password123')
     await page.getByRole('button', { name: 'Log In' }).click()
 
     await expect(page.getByText('Change Your Password')).toBeVisible({ timeout: 10_000 })
@@ -86,7 +86,7 @@ test.describe('Auth flows', () => {
 
     // Log in as temp user
     await page.getByLabel('Email').fill('temp@example.com')
-    await page.getByLabel('Password').fill('password123')
+    await page.getByLabel('Password', { exact: true }).fill('password123')
     await page.getByRole('button', { name: 'Log In' }).click()
 
     await expect(page.getByText('Change Your Password')).toBeVisible({ timeout: 10_000 })
@@ -131,7 +131,8 @@ test.describe('Auth flows', () => {
     await page.goto('/dashboard')
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
 
-    // Click the logout button in the sidebar
+    // Open the account menu dropdown, then click logout
+    await page.getByRole('button', { name: /account menu/i }).click()
     await page.getByRole('button', { name: /logout/i }).click()
 
     // Should redirect to login page

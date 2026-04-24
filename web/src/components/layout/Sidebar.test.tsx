@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 
@@ -7,6 +7,8 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     token: 'fake-token',
     logout: vi.fn(),
+    email: 'test@example.com',
+    isAdmin: false,
   }),
 }))
 
@@ -55,14 +57,15 @@ describe('Sidebar', () => {
     expect(dashboardIndex).toBeLessThan(trainingPlanIndex)
   })
 
-  it('logout button calls POST /api/auth/logout', async () => {
-    // Sidebar renders with mocked useAuth — logout button should be present
+  it('logout button appears after clicking header row', async () => {
     render(
       <MemoryRouter>
         <Sidebar />
       </MemoryRouter>
     )
-    const btn = screen.getByRole('button', { name: /logout/i })
-    expect(btn).toBeInTheDocument()
+    // Logout is hidden until the header row is clicked
+    expect(screen.queryByRole('button', { name: /logout/i })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /account menu/i }))
+    expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument()
   })
 })
