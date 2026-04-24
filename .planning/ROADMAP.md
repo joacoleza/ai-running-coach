@@ -113,3 +113,15 @@ Plans:
 - [x] 10-01-PLAN.md — Extend User type + implement rate limiting in getLoginHandler() (lockout check, timing mitigation, attempt tracking, warnings, counter reset)
 - [x] 10-02-PLAN.md — Unit tests (12 scenarios) + E2E lockout smoke test + global-setup lockout user seed
 - [x] 10-03-PLAN.md — IP-based rewrite: login_attempts collection, getClientIp(), enumeration fix, LoginPage 429 handler
+
+## Backlog
+
+### Phase 999.1: Disabled "Delete run" button tooltip on linked runs (BACKLOG)
+
+**Goal:** Show a hover tooltip on the disabled "Delete run" button in RunDetailModal when the run is linked to a plan day, so users understand why the button is disabled.
+**Context:** Button is correctly disabled for linked runs. A span wrapper fix was attempted in Phase 03 but the tooltip ("Undo the training plan day first to delete this run") still doesn't appear. Minor UX gap — no visual hint for the disabled state.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
