@@ -57,9 +57,11 @@
 ### Phase 11: Usage Tracking
 
 **Goal:** Track Claude API token usage per user; compute USD cost from model pricing; show total and monthly breakdown in admin panel; let each user view their own usage via the side menu top-row dropdown.
-**Requirements**: TBD
+**Requirements**: USAGE-01 through USAGE-11
 **Depends on:** Phase 10
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 11 to break down)
+- [ ] 11-01-PLAN.md — Backend foundation: pricing.ts, UsageEvent type, usage_events indexes, usage capture in chat.ts
+- [ ] 11-02-PLAN.md — API endpoints: GET /api/usage/me and GET /api/users/usage-summary
+- [ ] 11-03-PLAN.md — Frontend: UsagePage, sidebar My Usage item, /usage route, Admin columns, E2E tests
