@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 Personal AI Running Coach** — Phases 1–5 (shipped 2026-04-14) — [archive](milestones/v1.1-ROADMAP.md)
-- 🚧 **v2.0 Multi-User Support** — Phases 6–9 (in progress)
+- ✅ **v2.0 Multi-User Support** — Phases 6–10 (shipped 2026-04-26) — [archive](milestones/v2.0-ROADMAP.md)
 
 ## Phases
 
@@ -24,104 +24,32 @@
 
 </details>
 
-### v2.0 Multi-User Support (Phases 6–9)
+<details>
+<summary>✅ v2.0 Multi-User Support (Phases 6–10) — SHIPPED 2026-04-26</summary>
 
-- [x] **Phase 6: Backend Auth Foundation** — User model, login/logout endpoints, JWT middleware, retire APP_PASSWORD (completed 2026-04-15)
-- [x] **Phase 7: Frontend Auth** — Login page, force-change-password page, auto-logout on 401, logout button (completed 2026-04-16)
-- [ ] **Phase 8: Data Isolation & Migration** — userId on all collections, scoped queries, migration script
-- [x] **Phase 9: Admin Panel** — Admin page, list/create/reset/deactivate users, isAdmin guard (completed 2026-04-19)
+- [x] Phase 6: Backend Auth Foundation (4/4 plans) — JWT login/refresh/logout, requireAuth middleware, APP_PASSWORD retired
+- [x] Phase 7: Frontend Auth (3/3 plans) — LoginPage, ChangePasswordPage, App.tsx auth gate, 401 interceptor
+- [x] Phase 8: Data Isolation & Migration (3/3 plans) — userId scoping across 7 handlers, startup migration for v1.1 data
+- [x] Phase 9: Admin Panel (4/4 plans) — list/create/reset/deactivate users, responsive UI, active flag enforcement
+- [x] Phase 10: Login Rate Limiting (3/3 plans) — IP-based lockout, email enumeration prevention, LoginPage 429 handler
 
-## Phase Details
+</details>
 
-### Phase 6: Backend Auth Foundation
-**Goal**: The API can authenticate users with email+password and enforce JWT on every route
-**Depends on**: Nothing (first v2.0 phase)
-**Requirements**: AUTH-01, AUTH-02, AUTH-05, AUTH-06
-**Success Criteria** (what must be TRUE):
-  1. A user can POST to a login endpoint with valid email+password and receive a signed JWT in return
-  2. An expired or missing JWT on any protected API route returns 401 (not 403, not 500)
-  3. A valid logout request clears the token and subsequent requests with that token are rejected
-  4. The old APP_PASSWORD gate is gone — sending the old password header no longer grants access
-**Plans**: 4/4 complete (06-01 User model+DB, 06-02 Auth endpoints, 06-03 JWT middleware, 06-04 Tests+cleanup)
+## Backlog
 
-### Phase 7: Frontend Auth
-**Goal**: Users experience a complete login/logout flow and are redirected when their password needs changing
-**Depends on**: Phase 6
-**Requirements**: AUTH-03, AUTH-04
-**Success Criteria** (what must be TRUE):
-  1. A user who visits any app route while unauthenticated is redirected to the login page
-  2. A user can enter email and password on the login page and reach the dashboard on success
-  3. A user with a temp-password flag is immediately redirected to a change-password page and cannot navigate elsewhere until the password is changed
-  4. After changing their password, the user lands on the dashboard and the force-redirect no longer triggers
-  5. Clicking logout clears the session and returns the user to the login page
-**Plans**: 3 plans
-Plans:
-- [x] 07-01-PLAN.md — Backend change-password endpoint + AuthContext + LoginPage + ChangePasswordPage
-- [x] 07-02-PLAN.md — App.tsx auth gate + 401 interceptor + migrate hooks and Sidebar to Bearer auth
-- [x] 07-03-PLAN.md — Unit tests (auth gate, sidebar logout) + E2E auth spec + update existing E2E specs
+### Phase 999.1: Disabled "Delete run" button tooltip on linked runs
 
-### Phase 8: Data Isolation & Migration
-**Goal**: Every user sees only their own data, and existing v1.1 data is preserved under a seed admin account
-**Depends on**: Phase 6
-**Requirements**: DATA-01, DATA-02, DATA-03
-**Success Criteria** (what must be TRUE):
-  1. A logged-in user's plans, runs, and chat history are invisible to any other logged-in user
-  2. API queries for plans/runs/messages automatically filter by the authenticated user's ID — no cross-user leakage possible
-  3. After running the migration on a fresh v2.0 deployment, all pre-existing v1.1 documents are accessible under the seed admin account and no data is lost
-  4. The seed admin account has `isAdmin: true` and can reach admin-only routes; a regular user cannot
-**Plans**: 3 plans
-Plans:
-- [ ] 08-01-PLAN.md — Types (userId: ObjectId on Plan/Run/ChatMessage), DB indexes, requireAdmin middleware
-- [ ] 08-02-PLAN.md — userId query scoping across all 7 handler files (DATA-01)
-- [ ] 08-03-PLAN.md — Startup migration script + index.ts wiring + full test suite (DATA-02)
+**Goal:** Show a hover tooltip on the disabled "Delete run" button in RunDetailModal when the run is linked to a plan day.
+**Plans:** 0 plans
 
-### Phase 9: Admin Panel
-**Goal**: An admin can manage all user accounts from a dedicated page in the app
-**Depends on**: Phase 8
-**Requirements**: USER-01, USER-02, USER-03, USER-04, DATA-03
-**Success Criteria** (what must be TRUE):
-  1. An admin user sees an "Admin" link in the sidebar; a non-admin user does not see it and cannot reach the admin URL
-  2. The admin page lists all user accounts with email, status, and last login date
-  3. An admin can create a new user and see the auto-generated temp password exactly once (it cannot be retrieved again)
-  4. An admin can trigger a password reset for any user; a new temp password is shown once and the user must change it on next login
-  5. An admin can deactivate a user account; that user's subsequent requests are rejected; admin can reactivate
-**Plans**: 3 plans
-
-Plans:
-- [x] 09-01-PLAN.md — User.active type, requireAuth deactivation check, login deactivation guard, all 4 admin API handlers, unit tests
-- [x] 09-02-PLAN.md — Admin.tsx page (table + modals), Sidebar link, App.tsx route, web unit tests
-- [x] 09-03-PLAN.md — E2E admin panel spec + global-setup admin user seed
+- [ ] TBD (promote with `/gsd:review-backlog` when ready)
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Backend Auth Foundation | 4/4 | Complete   | 2026-04-15 |
-| 7. Frontend Auth | 3/3 | Complete   | 2026-04-16 |
-| 8. Data Isolation & Migration | 0/3 | Not started | - |
-| 9. Admin Panel | 4/4 | Complete   | 2026-04-19 |
-| 10. Login Rate Limiting | 3/3 | Complete    | 2026-04-22 |
-
-### Phase 10: Login Rate Limiting
-
-**Goal:** Protect the login endpoint against brute-force attacks — track failed attempts per user, lock the account after 5 consecutive failures with progressive duration (15 min doubling to 24h cap), return 429 with Retry-After header and a clear message, warn users of remaining attempts before lockout, mitigate timing attacks on email enumeration. API only, no UI needed.
-**Requirements**: AUTH-07
-**Depends on:** Phase 7
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 10-01-PLAN.md — Extend User type + implement rate limiting in getLoginHandler() (lockout check, timing mitigation, attempt tracking, warnings, counter reset)
-- [x] 10-02-PLAN.md — Unit tests (12 scenarios) + E2E lockout smoke test + global-setup lockout user seed
-- [x] 10-03-PLAN.md — IP-based rewrite: login_attempts collection, getClientIp(), enumeration fix, LoginPage 429 handler
-
-## Backlog
-
-### Phase 999.1: Disabled "Delete run" button tooltip on linked runs (BACKLOG)
-
-**Goal:** Show a hover tooltip on the disabled "Delete run" button in RunDetailModal when the run is linked to a plan day, so users understand why the button is disabled.
-**Context:** Button is correctly disabled for linked runs. A span wrapper fix was attempted in Phase 03 but the tooltip ("Undo the training plan day first to delete this run") still doesn't appear. Minor UX gap — no visual hint for the disabled state.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd:review-backlog when ready)
+| 6. Backend Auth Foundation | 4/4 | ✅ Complete | 2026-04-15 |
+| 7. Frontend Auth | 3/3 | ✅ Complete | 2026-04-16 |
+| 8. Data Isolation & Migration | 3/3 | ✅ Complete | 2026-04-18 |
+| 9. Admin Panel | 4/4 | ✅ Complete | 2026-04-19 |
+| 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |

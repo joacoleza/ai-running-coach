@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Multi-User Support
-status: Phase 10 shipped — PR #77
-last_updated: "2026-04-22T20:38:52.813Z"
-last_activity: 2026-04-22
+status: "SHIPPED 2026-04-26"
+last_updated: "2026-04-26T19:28:41Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 5
   completed_phases: 5
@@ -17,31 +17,35 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-15)
+See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 10 — login-rate-limiting (complete, PR #77)
+**Current focus:** v2.0 shipped — planning next milestone
 
 ## Current Position
 
-Phase: 10
-Plan: 03 (complete)
-Status: Shipped — PR #77
-Last activity: 2026-04-24 - Shipped quick task 260423-wnm: sidebar user email + logout dropdown, show-password toggle — PR #81
+Milestone: v2.0 — Multi-User Support
+Status: ✅ SHIPPED 2026-04-26
+Archive: .planning/milestones/v2.0-ROADMAP.md
 
 Progress: [██████████] 100% (5/5 phases complete)
 
 ## Milestone
 
-**Milestone:** v2.0 — Multi-User Support 🚧 IN PROGRESS
+**Milestone:** v2.0 — Multi-User Support ✅ SHIPPED 2026-04-26
 **Previous:** v1.1 — Personal AI Running Coach ✅ SHIPPED 2026-04-14
 
-**Phase sequence:**
+**Phase sequence (complete):**
 
-- Phase 6: Backend Auth Foundation (AUTH-01, AUTH-02, AUTH-05, AUTH-06)
-- Phase 7: Frontend Auth (AUTH-03, AUTH-04)
-- Phase 8: Data Isolation & Migration (DATA-01, DATA-02, DATA-03)
-- Phase 9: Admin Panel (USER-01, USER-02, USER-03, USER-04, DATA-03)
+- Phase 6: Backend Auth Foundation (AUTH-01, AUTH-02, AUTH-05, AUTH-06) ✅
+- Phase 7: Frontend Auth (AUTH-03, AUTH-04) ✅
+- Phase 8: Data Isolation & Migration (DATA-01, DATA-02, DATA-03) ✅
+- Phase 9: Admin Panel (USER-01, USER-02, USER-03, USER-04, DATA-03) ✅
+- Phase 10: Login Rate Limiting (AUTH-07) ✅
+
+## Backlog
+
+- Phase 999.1: Disabled "Delete run" button tooltip on linked runs — promote with `/gsd:review-backlog`
 
 ## Accumulated Context
 

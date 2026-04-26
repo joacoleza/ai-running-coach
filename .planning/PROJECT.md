@@ -8,18 +8,6 @@ A multi-user web app that acts as a personal AI running coach. Each user sets a 
 
 A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened — not generic training templates.
 
-## Current Milestone: v2.0 Multi-User Support
-
-**Goal:** Replace the single-user password gate with per-user JWT authentication and an admin panel for managing users — so multiple people can each have their own independent coaching session, plan, and run history.
-
-**Target features:**
-- Email + password login with JWT sessions (JWT_SECRET env var; passwords bcrypt-hashed)
-- First-login force-change-password flow
-- Admin UI page: list users, add user with auto-generated temp password (shown once), trigger password reset
-- Per-user data isolation: plans, runs, and chat history scoped to authenticated user
-- Logout / session management
-- No public registration — admin provisions all accounts
-
 ## Requirements
 
 ### Validated
@@ -42,6 +30,14 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - ✓ Agent can save a coaching insight to a run record — v1.1
 - ✓ User can add a new phase to the training plan via UI button — v1.1
 - ✓ User can edit the target race date inline in the Training Plan header — v1.1
+- ✓ User can log in with email and password; JWT session issued on success — v2.0
+- ✓ Temp-password users force-redirected to change-password page before accessing app — v2.0
+- ✓ All API routes reject unauthenticated or expired JWTs with 401; client auto-redirects to login — v2.0
+- ✓ User can log out; session cleared; subsequent requests rejected — v2.0
+- ✓ Admin can manage all user accounts (create, reset password, deactivate/activate) via admin panel — v2.0
+- ✓ Each user's plans, runs, and chat history are isolated — only visible to that user — v2.0
+- ✓ Existing v1.1 data migrated to seed admin user on first v2.0 deployment — v2.0
+- ✓ Login endpoint enforces IP-based brute-force protection (5 failures → 429 lockout) — v2.0
 
 ### Active
 
@@ -50,22 +46,25 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 ### Out of Scope
 
-- Multi-user support — personal tool, no auth system beyond a simple gate [moved to v2.0]
 - Real-time Apple Watch sync — export upload is sufficient and simpler
 - Mobile native app — web app only
 - Strava/Garmin integrations — Apple Health export covers the use case
 - Screenshot-based run data entry — structured XML export is more reliable
 - Plan import from LLM conversation — dropped by user decision (IMP-01/02/03)
+- Google OAuth / social login — username+password is simpler; no external OAuth app needed
+- Public self-registration — closed system, admin provisions all accounts
+- Email-based forgot-password flow — admin-triggered temp password delivery out-of-band
+- Per-user Claude API cost limits — small known user base; cost monitoring sufficient
 
 ## Context
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
-- **Auth:** Full auth stack complete (Phase 6+7); `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate (unauthenticated→LoginPage, tempPassword→ChangePasswordPage, else AppShell); global 401 interceptor with refresh+retry; all hooks (`useChat`, `usePlan`, `useRuns`) use `Authorization: Bearer` headers; Sidebar logout calls `POST /api/auth/logout`. Validated in Phase 7.
-- **Test coverage:** 324 API tests, 466 web tests, 78+ E2E tests — all green as of Phase 10 (login rate limiting)
-- **Data isolation:** Per-user data isolation enforced (Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
+- **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
+- **Test coverage:** 309 API tests, 469 web tests, 77+ E2E tests — all green as of v2.0
+- **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
 - **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
-- **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request (DB lookup in `requireAuth`); responsive mobile card layout (md:hidden) + desktop table (hidden md:block); Last Login shows full datetime HH:MM:SS; `lastLoginAt` updated on token refresh. Phase 9 complete (including gap closure 09-04).
-- **Login rate limiting:** Brute-force protection on `POST /api/auth/login`; IP-based lockout via `login_attempts` collection — 5 consecutive failures from same IP triggers 429 regardless of whether email is registered (prevents enumeration); all 401 responses are identical "Invalid credentials"; lockout duration doubles per cycle (15→30→60→...1440 min); 429 + Retry-After returned during lockout; timing-safe via DUMMY_HASH; 7-day TTL auto-expires IP records; counters reset on successful login; LoginPage.tsx shows API error body on 429. Phase 10 complete (including gap closure 10-03).
+- **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request; responsive mobile + desktop layout; `lastLoginAt` updated on every token refresh
+- **Login rate limiting:** IP-based via `login_attempts` collection; 5 failures from same IP → 429 with progressive lockout (15→1440 min); all 401 responses identical (no email enumeration); 7-day TTL auto-expires records
 - **Users:** Admin-provisioned accounts only; no signup flows; small closed user base keeps Claude API costs low
 
 ## Constraints
@@ -81,7 +80,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 |----------|-----------|---------|
 | Apple Health XML export (not screenshot OCR) | Structured data is more reliable; user comfortable with export flow | Pending (not yet implemented) |
 | Chat interface for coaching | Natural for open-ended coaching questions and feedback | ✓ Good — used daily |
-| Azure free tier deployment | User wants minimal cost; usage will be low (solo) | ✓ Good — $0/month infra |
+| Azure free tier deployment | User wants minimal cost; usage will be low (small team) | ✓ Good — $0/month infra |
 | Replace GitHub OAuth with pre-shared password (Phase 1.1) | OAuth added friction with no benefit for solo use | ✓ Good — simpler, just as secure |
 | Hierarchical plan model: phases → weeks → days (Phase 2.1) | Flat sessions were too rigid for real coaching plans | ✓ Good — flexible and agent-friendly |
 | Server-side plan saving in chat.ts (not POST /api/plan/generate) | Eliminates race between stream close and client-fetch | ✓ Good — no race conditions |
@@ -89,12 +88,17 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 | Dashboard as home page (Phase 4) | More useful landing view than the plan itself | ✓ Good — immediate training context |
 | Drop plan import from LLM (IMP-01/02/03) | User decided not needed — manual logging + agent is sufficient | ✓ Correct call |
 | Global sequential week numbers + A–G day labels (no calendar dates in plan) | Removes timezone complexity; labels are stable across plan edits | ✓ Good — consistent behavior |
+| JWT + bcrypt (not sessions) for v2.0 auth | Stateless auth fits Azure Functions; bcrypt is industry standard | ✓ Good — clean implementation |
+| DB lookup on every requireAuth call | Instant deactivation without waiting for JWT expiry | ✓ Good — necessary for user management |
+| /api/users prefix (not /api/admin/users) | Azure Functions Core Tools reserves /admin path prefix at runtime | ✓ Good — avoids 404 shadow |
+| IP-based rate limiting (not per-user) | Prevents email enumeration; locks out attacker IP not victim account | ✓ Good — cleaner security model |
+| Admin-provisioned accounts only | Closed system; no signup friction; keeps Claude API costs low | ✓ Good — correct for small team |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-04-19 — Phase 9 (Admin Panel) complete.
+Last updated: 2026-04-26 — v2.0 Multi-User Support shipped.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -110,4 +114,4 @@ Last updated: 2026-04-19 — Phase 9 (Admin Panel) complete.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 — Phase 9 (Admin Panel) complete*
+*Last updated: 2026-04-26 — v2.0 Multi-User Support shipped*
