@@ -53,3 +53,13 @@
 | 8. Data Isolation & Migration | 3/3 | ✅ Complete | 2026-04-18 |
 | 9. Admin Panel | 4/4 | ✅ Complete | 2026-04-19 |
 | 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |
+
+### Phase 11: Usage Tracking
+
+**Goal:** Track Claude API token usage per user; compute USD cost from model pricing; show total and monthly breakdown in admin panel; let each user view their own usage via the side menu top-row dropdown.
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 11 to break down)
