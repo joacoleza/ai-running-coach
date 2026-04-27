@@ -147,6 +147,8 @@ export function getUsageSummaryHandler() {
 
       for (const row of rows) {
         const userKey = row._id.userId.toString();
+        // Single-model assumption: aggregation groups by {year,month,userId} without model.
+        // If a second model is added, group by {year,month,userId,model} and pass row._id.model here.
         const cost = computeCost(
           'claude-sonnet-4-20250514',
           row.totalInputTokens,
