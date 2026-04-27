@@ -71,6 +71,18 @@ app.http('createPlan', {
 
       const db = await getDb();
 
+      // Guard: block if an active plan already exists (must archive it first)
+      const activePlan = await db.collection<Plan>('plans').findOne({
+        userId: new ObjectId(userId),
+        status: 'active',
+      });
+      if (activePlan) {
+        return {
+          status: 409,
+          jsonBody: { error: 'An active training plan already exists. Archive it before starting a new one.' },
+        };
+      }
+
       // D-02: Delete abandoned/legacy plans on every new start to keep the DB clean:
       // - 'onboarding': empty abandoned plans from previous starts
       // - 'discarded': legacy status from an old schema, no longer used

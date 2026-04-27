@@ -119,8 +119,8 @@ describe('Plan Schema (PLAN-02)', () => {
   });
 });
 
-describe('createPlan - no completed-day guard', () => {
-  it('allows creating a new plan even when active plan has completed days', async () => {
+describe('createPlan - active plan guard', () => {
+  it('returns 409 when an active plan exists (with completed days)', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
@@ -135,16 +135,35 @@ describe('createPlan - no completed-day guard', () => {
     const req = makeReq('POST', { mode: 'conversational' });
     const result = await handlers.get('createPlan')!(req, ctx);
 
-    expect(result.status).toBe(201);
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toMatch(/active training plan/i);
   });
 
-  it('allows creating a new plan when active plan has no completed days', async () => {
+  it('returns 409 when an active plan exists (no completed days)', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
       onboardingStep: 6,
       goal: validGoal,
-      phases: validPhases, // no completed days
+      phases: validPhases,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      userId: TEST_USER_OID,
+    });
+
+    const req = makeReq('POST', { mode: 'conversational' });
+    const result = await handlers.get('createPlan')!(req, ctx);
+
+    expect(result.status).toBe(409);
+  });
+
+  it('allows creating a new plan when only an onboarding plan exists (onboarding is deleted first)', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'onboarding',
+      onboardingMode: 'conversational',
+      onboardingStep: 2,
+      goal: {},
+      phases: [],
       createdAt: new Date(),
       updatedAt: new Date(),
       userId: TEST_USER_OID,

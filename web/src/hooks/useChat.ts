@@ -232,6 +232,62 @@ export function useChat(): UseChatReturn {
     };
   }, [fetchPlan]);
 
+  // Re-fetch plan+messages when the page becomes visible and plan failed to load.
+  // Handles: (1) Safari killing background fetches, (2) any startup fetch failure.
+  useEffect(() => {
+    const handler = async () => {
+      if (document.visibilityState !== 'visible') return;
+      if (plan !== null || isLoading) return;
+
+      setIsLoading(true);
+      try {
+        const existingPlan = await fetchPlan();
+        if (existingPlan && (existingPlan.status === 'onboarding' || existingPlan.status === 'active')) {
+          setPlan(existingPlan);
+          try {
+            const msgRes = await fetch(`/api/messages?planId=${existingPlan._id}`, {
+              headers: authHeaders(),
+            });
+            if (msgRes.ok) {
+              const data = await msgRes.json() as { messages: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }> };
+              if (data.messages.length > 0) {
+                setMessages(data.messages.map((m) => ({
+                  role: m.role,
+                  content: m.role === 'assistant'
+                    ? m.content
+                        .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
+                        .replace(/<plan:update-phase[^/]*\/>/g, '')
+                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
+                        .replace(/<plan:update[^/]*\/>/g, '')
+                        .replace(/<plan:add[^/]*\/>/g, '')
+                        .replace(/<plan:unlink[^/]*\/>/g, '')
+                        .replace(/<plan:add-phase[^/]*\/>/g, '')
+                        .replace(/<plan:add-week[^/]*\/>/g, '')
+                        .replace(/<plan:delete-week[^/]*\/>/g, '')
+                        .replace(/<plan:update-goal[^/]*\/>/g, '')
+                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+                        .replace(/<run:create[^/]*\/>/g, '')
+                        .replace(/<run:update-insight[^/]*\/>/g, '')
+                        .replace(/<app:[^/]*\/>/g, '')
+                        .trim()
+                    : m.content,
+                  timestamp: typeof m.timestamp === 'string' ? m.timestamp : new Date(m.timestamp).toISOString(),
+                })));
+              }
+            }
+          } catch {
+            // Non-fatal: messages will just start empty
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handler);
+    return () => document.removeEventListener('visibilitychange', handler);
+  }, [plan, isLoading, fetchPlan]);
+
   /**
    * Apply plan:update / plan:add / phase-update / phase-delete tags found in
    * accumulatedText. Updates displayed message, calls APIs, refreshes plan state.
