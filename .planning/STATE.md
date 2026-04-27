@@ -24,9 +24,9 @@ See: .planning/PROJECT.md (updated 2026-04-26)
 ## Current Position
 
 Phase: 11 (usage-tracking) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Milestone: v2.0 — Multi-User Support
-Status: Ready to execute
+Status: Ready to execute (11-02 complete)
 Archive: .planning/milestones/v2.0-ROADMAP.md
 
 Progress: [██████████] 100% (5/5 phases complete)
@@ -98,6 +98,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 10-03]: IP-based rate limiting via login_attempts collection (not per-user fields) eliminates email enumeration; getClientIp() reads x-forwarded-for → client-ip → 127.0.0.1; DUMMY_HASH hardcoded to avoid bcrypt cost on module load; loginRateLimiting.test.ts deleted (account-based); loginRateLimit.test.ts rewritten with 10 IP-based scenarios
 - [Phase 11]: Tokens stored raw in usage_events; cost computed at query time from MODEL_PRICING to allow repricing without re-running writes
 - [Phase 11]: Model hardcoded as 'claude-sonnet-4-20250514' in usage capture; must change alongside stream() call if model is updated
+- [Phase 11-02]: Single aggregation pass for admin usage summary (all users, all months) then reduced to map in JS — one DB round-trip; users absent from map show $0.00 in Admin.tsx
+- [Phase 11-02]: Route 'users/usage-summary' (not 'admin/users/usage-summary') — Azure Functions reserves /admin prefix
 
 ### Quick Tasks Completed
 
