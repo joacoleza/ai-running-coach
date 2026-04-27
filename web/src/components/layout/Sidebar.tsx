@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const navItems = [
@@ -13,6 +13,7 @@ export function Sidebar() {
   const { token, logout, isAdmin, email } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -61,6 +62,17 @@ export function Sidebar() {
         {/* Dropdown — inline block, not absolute, so it never clips */}
         {dropdownOpen && (
           <div className="bg-gray-800 border-t border-gray-700">
+            <button
+              type="button"
+              onClick={() => { setDropdownOpen(false); navigate('/usage'); }}
+              aria-label="My Usage"
+              className="flex items-center w-full px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="ml-2 hidden md:inline">My Usage</span>
+            </button>
             <button
               type="button"
               onClick={async () => {

@@ -11,6 +11,7 @@ import { Runs } from './pages/Runs'
 import { Archive } from './pages/Archive'
 import { ArchivePlan } from './pages/ArchivePlan'
 import { Admin } from './pages/Admin'
+import { Usage } from './pages/Usage'
 
 // Inner component — uses useAuth(), must be inside AuthProvider
 function AppInner() {
@@ -131,6 +132,7 @@ function AppInner() {
             <Route path="/runs" element={<Runs />} />
             <Route path="/archive" element={<Archive />} />
             <Route path="/archive/:id" element={<ArchivePlan />} />
+            <Route path="/usage" element={<Usage />} />
             <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
