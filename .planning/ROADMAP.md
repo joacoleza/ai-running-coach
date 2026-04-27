@@ -59,7 +59,7 @@
 **Goal:** Track Claude API token usage per user; compute USD cost from model pricing; show total and monthly breakdown in admin panel; let each user view their own usage via the side menu top-row dropdown.
 **Requirements**: USAGE-01 through USAGE-11
 **Depends on:** Phase 10
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 11-01-PLAN.md — Backend foundation: pricing.ts, UsageEvent type, usage_events indexes, usage capture in chat.ts
