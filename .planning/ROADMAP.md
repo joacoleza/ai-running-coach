@@ -65,3 +65,14 @@ Plans:
 - [x] 11-01-PLAN.md — Backend foundation: pricing.ts, UsageEvent type, usage_events indexes, usage capture in chat.ts
 - [ ] 11-02-PLAN.md — API endpoints: GET /api/usage/me and GET /api/users/usage-summary
 - [ ] 11-03-PLAN.md — Frontend: UsagePage, sidebar My Usage item, /usage route, Admin columns, E2E tests
+
+### Phase 12: Delete last empty week of a phase (UI button + chat tag)
+
+**Goal:** Allow users and the AI coach to remove trailing empty weeks from a training phase — symmetric inverse of the existing "+ Add week" / `<plan:add-week>` functionality. Guards prevent deleting weeks that contain any workout days.
+**Requirements**: WEEK-DELETE-01 through WEEK-DELETE-05
+**Depends on:** Phase 11
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 12-01-PLAN.md — Backend: DELETE /api/plan/phases/:phaseIndex/weeks/last endpoint + unit tests
+- [x] 12-02-PLAN.md — Frontend: usePlan.deleteLastWeek, PlanView "− week" button, useChat plan:delete-week tag, E2E test

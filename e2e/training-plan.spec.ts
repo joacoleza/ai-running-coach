@@ -1281,6 +1281,120 @@ test.describe('Phase 5 features — Add phase and target date editing', () => {
   })
 })
 
+test.describe('Delete last empty week (Phase 12)', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('shows minus-week button and deletes last empty week on confirm', async ({ page }) => {
+    // Plan with 2 weeks: week 1 has a run day, week 2 is empty (no non-rest days)
+    const twoWeekPlan = {
+      ...mockActivePlan,
+      phases: [
+        {
+          name: 'Base Building',
+          description: 'Build your aerobic base',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [
+                { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy Zone 2 run', completed: false, skipped: false },
+              ],
+            },
+            {
+              weekNumber: 2,
+              days: [],
+            },
+          ],
+        },
+      ],
+    }
+
+    // Track DELETE calls
+    let deleteWasCalled = false
+    let deleteUrl = ''
+
+    await loginWithPlan(page, twoWeekPlan)
+
+    // Mock the DELETE endpoint for deleting last week
+    await page.route('**/api/plan/phases/0/weeks/last', async (route: any) => {
+      if (route.request().method() === 'DELETE') {
+        deleteWasCalled = true
+        deleteUrl = route.request().url()
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ plan: mockActivePlan }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // The '− week' button should be visible (phase has 2 weeks, last is empty)
+    const minusWeekBtn = page.getByTitle('Delete last empty week')
+    await expect(minusWeekBtn).toBeVisible({ timeout: 5_000 })
+
+    // The button should be enabled (last week is empty)
+    await expect(minusWeekBtn).not.toBeDisabled()
+
+    // Accept the confirm dialog
+    page.once('dialog', async (dialog) => {
+      await dialog.accept()
+    })
+
+    await minusWeekBtn.click()
+
+    // Verify the DELETE request was made to the correct URL
+    await expect(async () => {
+      expect(deleteWasCalled).toBe(true)
+      expect(deleteUrl).toContain('/api/plan/phases/0/weeks/last')
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('minus-week button is disabled when last week has workout days', async ({ page }) => {
+    // mockActivePlan has only 1 week with workout days — button not shown (phase.weeks.length <= 1)
+    // Use a plan with 2 weeks where the last week has a workout day
+    const twoWeekWithWorkout = {
+      ...mockActivePlan,
+      phases: [
+        {
+          name: 'Base Building',
+          description: '',
+          weeks: [
+            {
+              weekNumber: 1,
+              days: [
+                { label: 'A', type: 'run', objective: { kind: 'distance', value: 5, unit: 'km' }, guidelines: 'Easy run', completed: false, skipped: false },
+              ],
+            },
+            {
+              weekNumber: 2,
+              days: [
+                { label: 'A', type: 'run', objective: { kind: 'distance', value: 8, unit: 'km' }, guidelines: 'Tempo run', completed: false, skipped: false },
+              ],
+            },
+          ],
+        },
+      ],
+    }
+
+    await loginWithPlan(page, twoWeekWithWorkout)
+
+    await page.getByRole('link', { name: 'Plan' }).click()
+    await expect(page.getByText('Base Building')).toBeVisible({ timeout: 10_000 })
+
+    // Button should be visible but disabled (last week has a workout day)
+    const minusWeekBtn = page.getByTitle('Last week has workout days — cannot delete')
+    await expect(minusWeekBtn).toBeVisible({ timeout: 5_000 })
+    await expect(minusWeekBtn).toBeDisabled()
+  })
+})
+
 test.describe('Adherence and progress stats in plan header', () => {
   test('shows adherence and progress in the objective block', async ({ page }) => {
     // mockActivePlan has objective set, 2 non-rest days: A (not started), B (completed)

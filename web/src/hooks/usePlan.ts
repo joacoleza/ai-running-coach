@@ -56,6 +56,7 @@ interface UsePlanReturn {
   deleteLastPhase: () => Promise<void>;
   addPhase: (name?: string, description?: string) => Promise<void>;
   addWeek: (phaseIndex: number) => Promise<void>;
+  deleteLastWeek: (phaseIndex: number) => Promise<void>;
 }
 
 export function usePlan(): UsePlanReturn {
@@ -176,6 +177,18 @@ export function usePlan(): UsePlanReturn {
     await refreshPlan();
   }, [refreshPlan]);
 
+  const deleteLastWeek = useCallback(async (phaseIndex: number) => {
+    const res = await fetch(`/api/plan/phases/${phaseIndex}/weeks/last`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({ error: 'Failed to delete week' })) as { error?: string };
+      throw new Error(errData.error ?? 'Failed to delete week');
+    }
+    await refreshPlan();
+  }, [refreshPlan]);
+
   const archivePlan = useCallback(async () => {
     const res = await fetch('/api/plan/archive', {
       method: 'POST',
@@ -194,5 +207,5 @@ export function usePlan(): UsePlanReturn {
     return () => window.removeEventListener('plan-updated', handler);
   }, [refreshPlan]);
 
-  return { plan, linkedRuns, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, addPhase, addWeek };
+  return { plan, linkedRuns, isLoading, error, refreshPlan, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, addPhase, addWeek, deleteLastWeek };
 }

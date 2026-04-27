@@ -60,6 +60,10 @@ beforeAll(async () => {
   process.env.MONGODB_CONNECTION_STRING = mongod.getUri();
   mongoClient = new MongoClient(mongod.getUri());
   await mongoClient.connect();
+  // Warm up getDb() once so index creation doesn't eat into individual test timeouts.
+  // _resetDbForTest() is NOT called in beforeEach — the URI is constant within this file.
+  const { getDb } = await import('../shared/db.js');
+  await getDb();
 }, 30_000);
 
 afterAll(async () => {
@@ -69,7 +73,6 @@ afterAll(async () => {
 }, 30_000);
 
 beforeEach(async () => {
-  _resetDbForTest();
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
 });
 

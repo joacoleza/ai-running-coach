@@ -16,7 +16,7 @@ function openCoachPanel() {
 
 export function TrainingPlan() {
   const { token } = useAuth();
-  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan, addPhase, addWeek } = usePlan();
+  const { plan, linkedRuns, isLoading, error, updateDay, deleteDay, addDay, archivePlan, updatePhase, deleteLastPhase, refreshPlan, addPhase, addWeek, deleteLastWeek } = usePlan();
   const { sendMessage } = useChatContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -266,7 +266,7 @@ export function TrainingPlan() {
       {/* Scrollable content area — PlanView and empty states */}
       <div className="px-6 pt-4 pb-6">
         {hasActivePlan && plan ? (
-          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} onAddPhase={addPhase} onAddWeek={addWeek} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
+          <PlanView plan={plan} linkedRuns={linkedRuns} onUpdateDay={updateDay} onDeleteDay={deleteDay} onAddDay={addDay} onUpdatePhase={updatePhase} onDeletePhase={deleteLastPhase} onAddPhase={addPhase} onAddWeek={addWeek} onDeleteLastWeek={deleteLastWeek} lastCompletedDayRef={lastCompletedRef} dayRefsMap={dayRefsMap} />
         ) : !plan || plan.status === 'onboarding' ? (
           <p className="mt-4 text-gray-600">
             {plan?.status === 'onboarding'

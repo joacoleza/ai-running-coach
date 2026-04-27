@@ -129,12 +129,13 @@ interface PlanViewProps {
   onDeletePhase?: () => Promise<void>;
   onAddPhase?: () => Promise<void>;
   onAddWeek?: (phaseIndex: number) => Promise<void>;
+  onDeleteLastWeek?: (phaseIndex: number) => Promise<void>;
   readonly?: boolean;
   lastCompletedDayRef?: React.RefObject<HTMLDivElement | null>;
   dayRefsMap?: React.RefObject<Map<string, HTMLDivElement>>;
 }
 
-export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, onAddWeek, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
+export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, onAddWeek, onDeleteLastWeek, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
   const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
 
@@ -244,15 +245,41 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
                 </div>
               );
             })}
-            {!readonly && onAddWeek && (
-              <button
-                onClick={() => void onAddWeek(idx)}
-                className="cursor-pointer mt-2 text-xs text-gray-400 hover:text-blue-600 transition-colors"
-                title="Add a week to this phase"
-              >
-                + Add week
-              </button>
-            )}
+            {!readonly && (onAddWeek || onDeleteLastWeek) && (() => {
+              const lastWeek = phase.weeks[phase.weeks.length - 1];
+              const lastWeekIsEmpty = !lastWeek || lastWeek.days.every(d => d.type === 'rest');
+              return (
+                <div className="flex items-center gap-0">
+                  {onAddWeek && (
+                    <button
+                      onClick={() => void onAddWeek(idx)}
+                      className="cursor-pointer mt-2 text-xs text-gray-400 hover:text-blue-600 transition-colors"
+                      title="Add a week to this phase"
+                    >
+                      + Add week
+                    </button>
+                  )}
+                  {onDeleteLastWeek && phase.weeks.length > 1 && (
+                    <button
+                      onClick={() => {
+                        if (!lastWeekIsEmpty) return;
+                        if (!window.confirm('Delete the last week of this phase? It has no workout days.')) return;
+                        void onDeleteLastWeek(idx);
+                      }}
+                      disabled={!lastWeekIsEmpty}
+                      className={`cursor-pointer mt-2 ml-3 text-xs transition-colors ${
+                        lastWeekIsEmpty
+                          ? 'text-gray-400 hover:text-red-500'
+                          : 'text-gray-200 cursor-not-allowed'
+                      }`}
+                      title={lastWeekIsEmpty ? 'Delete last empty week' : 'Last week has workout days — cannot delete'}
+                    >
+                      − week
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </section>
         ))}
         {!readonly && onAddPhase && (

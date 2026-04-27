@@ -39,6 +39,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - ✓ Existing v1.1 data migrated to seed admin user on first v2.0 deployment — v2.0
 - ✓ Login endpoint enforces IP-based brute-force protection (5 failures → 429 lockout) — v2.0
 - ✓ Claude API token usage tracked per user; USD cost computed from model pricing; user-facing /usage page + admin panel columns — Phase 11
+- ✓ User and coach can delete the last empty week of a training phase (UI button + `<plan:delete-week>` chat tag) — Phase 12
 
 ### Active
 
@@ -61,9 +62,9 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
-- **Test coverage:** 332 API tests, 469 web tests, 77+ E2E tests — all green as of Phase 11
+- **Test coverage:** 341 API tests, 88 E2E tests — all green as of Phase 12
 - **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
-- **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
+- **Agent protocol:** 11 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:delete-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request; responsive mobile + desktop layout; `lastLoginAt` updated on every token refresh
 - **Login rate limiting:** IP-based via `login_attempts` collection; 5 failures from same IP → 429 with progressive lockout (15→1440 min); all 401 responses identical (no email enumeration); 7-day TTL auto-expires records
 - **Users:** Admin-provisioned accounts only; no signup flows; small closed user base keeps Claude API costs low
@@ -115,4 +116,4 @@ Last updated: 2026-04-26 — v2.0 Multi-User Support shipped.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 — v2.0 Multi-User Support shipped*
+*Last updated: 2026-04-27 — Phase 12 (delete last empty week) complete*

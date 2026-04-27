@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: completed
-last_updated: "2026-04-27T11:23:34.504Z"
+status: Phase 12 shipped — PR #85
+last_updated: "2026-04-27T15:40:00.000Z"
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 3
+  completed_phases: 2
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 11 — usage-tracking
+**Current focus:** Phase 12 — delete-last-empty-week
 
 ## Current Position
 
 Phase: 999.1
 Plan: Not started
 Milestone: v2.0 — Multi-User Support
-Status: Ready to execute (11-02 complete)
+Status: Phase complete — ready for verification
 Archive: .planning/milestones/v2.0-ROADMAP.md
 
 Progress: [██████████] 100% (5/5 phases complete)
@@ -100,6 +100,9 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 11]: Model hardcoded as 'claude-sonnet-4-20250514' in usage capture; must change alongside stream() call if model is updated
 - [Phase 11-02]: Single aggregation pass for admin usage summary (all users, all months) then reduced to map in JS — one DB round-trip; users absent from map show $0.00 in Admin.tsx
 - [Phase 11-02]: Route 'users/usage-summary' (not 'admin/users/usage-summary') — Azure Functions reserves /admin prefix
+- Phase 12 added: Delete last empty week of a phase (UI button + chat tag)
+- [Phase 12]: deleteLastWeekOfPhase guard order mirrors addWeekToPhase: phaseIndex validation, plan lookup, bounds, single-week, non-rest day
+- [Phase 12]: Used IIFE in JSX to compute lastWeekIsEmpty per phase; button disabled not hidden when last week has workout days; plan:delete-week tag symmetric with plan:add-week in 4 strip locations
 
 ### Quick Tasks Completed
 
