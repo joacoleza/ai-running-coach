@@ -39,8 +39,11 @@ export function getUsageMeHandler() {
       const currentMonth = now.getMonth() + 1;
 
       const monthly = rows.map((row) => {
+<<<<<<< HEAD
         // Single-model assumption: aggregation groups by {year,month} without model.
         // If a second model is added, group by {year,month,model} and pass row._id.model here.
+=======
+>>>>>>> feat(11-02): implement GET /api/usage/me with TDD - 6 tests pass
         const cost = computeCost(
           'claude-sonnet-4-20250514',
           row.totalInputTokens,
