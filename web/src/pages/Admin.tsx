@@ -67,11 +67,7 @@ export function Admin() {
       setUsers(data.users);
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json() as { summary: Record<string, { thisMonth: number; allTime: number }> };
-<<<<<<< HEAD
         setUsageSummary(summaryData.summary ?? {});
-=======
-        setUsageSummary(summaryData.summary);
->>>>>>> feat(11-03): add usage columns to Admin.tsx and E2E usage tests
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users. Please refresh the page.');

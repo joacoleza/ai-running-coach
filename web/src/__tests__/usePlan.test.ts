@@ -228,6 +228,40 @@ describe('usePlan', () => {
     })).rejects.toThrow('Cannot delete the only phase');
   });
 
+  it('deleteLastWeek DELETEs /api/plan/phases/:index/weeks/last and refreshes plan', async () => {
+    const updatedPlan = { ...mockPlan, _id: 'p1-week-deleted' };
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) }) // initial fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }) // DELETE returns updated plan
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: updatedPlan }) }); // refresh
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.deleteLastWeek(1);
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/plan/phases/1/weeks/last',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+    expect(result.current.plan).toEqual(updatedPlan);
+  });
+
+  it('deleteLastWeek throws when DELETE fails', async () => {
+    mockFetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ plan: mockPlan }) })
+      .mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Cannot delete the only week in a phase' }) });
+
+    const { result } = renderHook(() => usePlan());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await expect(act(async () => {
+      await result.current.deleteLastWeek(0);
+    })).rejects.toThrow('Cannot delete the only week in a phase');
+  });
+
   it('refreshes plan when plan-updated event fires', async () => {
     const updatedPlan = { ...mockPlan, _id: 'after-event' };
     mockFetch

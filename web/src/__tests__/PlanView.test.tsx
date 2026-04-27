@@ -325,4 +325,96 @@ describe('PlanView', () => {
 
     expect(screen.queryByText('Adding…')).not.toBeInTheDocument();
   });
+
+  it('does not show − week button without onDeleteLastWeek prop', () => {
+    render(<PlanView plan={plan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onAddWeek={vi.fn()} />);
+    expect(screen.queryByText('− week')).not.toBeInTheDocument();
+  });
+
+  it('does not show − week button when phase has only one week', () => {
+    const singleWeekPlan: PlanData = {
+      ...plan,
+      phases: [{ name: 'Solo', description: '', weeks: [{ weekNumber: 1, days: [] }] }],
+    };
+    render(<PlanView plan={singleWeekPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onDeleteLastWeek={vi.fn()} />);
+    expect(screen.queryByText('− week')).not.toBeInTheDocument();
+  });
+
+  it('shows enabled − week button when last week is empty', () => {
+    const emptyLastWeekPlan: PlanData = {
+      ...plan,
+      phases: [{
+        name: 'Base',
+        description: '',
+        weeks: [
+          { weekNumber: 1, days: [{ label: 'A', type: 'run', guidelines: 'Easy', completed: false, skipped: false }] },
+          { weekNumber: 2, days: [] },
+        ],
+      }],
+    };
+    render(<PlanView plan={emptyLastWeekPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onDeleteLastWeek={vi.fn()} />);
+    const btn = screen.getByTitle('Delete last empty week');
+    expect(btn).toBeInTheDocument();
+    expect(btn).not.toBeDisabled();
+  });
+
+  it('shows disabled − week button when last week has workout days', () => {
+    const workoutLastWeekPlan: PlanData = {
+      ...plan,
+      phases: [{
+        name: 'Base',
+        description: '',
+        weeks: [
+          { weekNumber: 1, days: [{ label: 'A', type: 'run', guidelines: 'Easy', completed: false, skipped: false }] },
+          { weekNumber: 2, days: [{ label: 'A', type: 'run', guidelines: 'Tempo', completed: false, skipped: false }] },
+        ],
+      }],
+    };
+    render(<PlanView plan={workoutLastWeekPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onDeleteLastWeek={vi.fn()} />);
+    const btn = screen.getByTitle('Last week has workout days — cannot delete');
+    expect(btn).toBeInTheDocument();
+    expect(btn).toBeDisabled();
+  });
+
+  it('clicking − week button with confirm calls onDeleteLastWeek with phase index', async () => {
+    const onDeleteLastWeek = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const emptyLastWeekPlan: PlanData = {
+      ...plan,
+      phases: [{
+        name: 'Base',
+        description: '',
+        weeks: [
+          { weekNumber: 1, days: [{ label: 'A', type: 'run', guidelines: 'Easy', completed: false, skipped: false }] },
+          { weekNumber: 2, days: [] },
+        ],
+      }],
+    };
+    render(<PlanView plan={emptyLastWeekPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onDeleteLastWeek={onDeleteLastWeek} />);
+    await act(async () => {
+      fireEvent.click(screen.getByTitle('Delete last empty week'));
+    });
+    expect(onDeleteLastWeek).toHaveBeenCalledWith(0);
+    vi.restoreAllMocks();
+  });
+
+  it('does not call onDeleteLastWeek when confirm is cancelled', async () => {
+    const onDeleteLastWeek = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const emptyLastWeekPlan: PlanData = {
+      ...plan,
+      phases: [{
+        name: 'Base',
+        description: '',
+        weeks: [
+          { weekNumber: 1, days: [{ label: 'A', type: 'run', guidelines: 'Easy', completed: false, skipped: false }] },
+          { weekNumber: 2, days: [] },
+        ],
+      }],
+    };
+    render(<PlanView plan={emptyLastWeekPlan} linkedRuns={new Map()} onUpdateDay={vi.fn()} onDeleteDay={vi.fn()} onDeleteLastWeek={onDeleteLastWeek} />);
+    fireEvent.click(screen.getByTitle('Delete last empty week'));
+    expect(onDeleteLastWeek).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
 });

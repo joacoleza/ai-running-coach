@@ -76,7 +76,7 @@ Not applicable — this phase adds a mutation endpoint (DELETE) and a UI button.
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
 | API unit tests pass (341 total including 9 new DELETE endpoint tests) | `npm test` in api/ | 341 passed, 0 failed | PASS |
-| Web unit tests pass (487 total including updated mock fixtures) | `npm test` in web/ | 487 passed, 0 failed | PASS |
+| Web unit tests pass (499 total including PlanView, usePlan, planUpdate coverage for phase 12) | `npm test` in web/ | 499 passed, 0 failed | PASS |
 | TypeScript build clean | `npm run build` in web/ | 1069 modules, no errors | PASS |
 
 E2E behavioral spot-check routed to human verification below (requires running browser).

@@ -161,3 +161,38 @@ describe('plan:unlink tag stripping', () => {
     expect(result).toBe(message);
   });
 });
+
+describe('plan:delete-week tag stripping', () => {
+  const planDeleteWeekRegex = /<plan:delete-week\s+([^/]+)\/>/g;
+
+  it('strips plan:delete-week tag from a message', () => {
+    const message = 'Removed the last empty week.\n<plan:delete-week phaseIndex="0"/>';
+    const result = message.replace(planDeleteWeekRegex, '').trim();
+    expect(result).toBe('Removed the last empty week.');
+    expect(result).not.toContain('<plan:delete-week');
+  });
+
+  it('plan:delete-week regex captures phaseIndex attribute', () => {
+    const message = '<plan:delete-week phaseIndex="2"/>';
+    const matches = [...message.matchAll(planDeleteWeekRegex)];
+    expect(matches).toHaveLength(1);
+    const attrs = parseXmlAttrs(matches[0][1]);
+    expect(attrs.phaseIndex).toBe('2');
+  });
+
+  it('strips multiple plan:delete-week tags from message', () => {
+    const message =
+      'Trimmed two phases.\n' +
+      '<plan:delete-week phaseIndex="0"/>\n' +
+      '<plan:delete-week phaseIndex="1"/>';
+    const result = message.replace(planDeleteWeekRegex, '').trim();
+    expect(result).toBe('Trimmed two phases.');
+    expect(result).not.toContain('<plan:delete-week');
+  });
+
+  it('returns message unchanged when no plan:delete-week tags present', () => {
+    const message = 'Looking good — no changes needed.';
+    const result = message.replace(planDeleteWeekRegex, '').trim();
+    expect(result).toBe(message);
+  });
+});
