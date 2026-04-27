@@ -67,7 +67,7 @@ export function Admin() {
       setUsers(data.users);
       if (summaryRes.ok) {
         const summaryData = await summaryRes.json() as { summary: Record<string, { thisMonth: number; allTime: number }> };
-        setUsageSummary(summaryData.summary);
+        setUsageSummary(summaryData.summary ?? {});
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users. Please refresh the page.');
