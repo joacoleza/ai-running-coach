@@ -146,6 +146,61 @@ app.http('addWeekToPhase', {
   },
 });
 
+app.http('deleteLastWeekOfPhase', {
+  methods: ['DELETE'],
+  authLevel: 'anonymous',
+  route: 'plan/phases/{phaseIndex}/weeks/last',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requireAuth(req);
+    if (denied) return denied;
+    const { userId } = getAuthContext(req);
+
+    const phaseIndexParam = req.params['phaseIndex'];
+    const phaseIndex = Number(phaseIndexParam);
+    if (!phaseIndexParam || isNaN(phaseIndex) || phaseIndex < 0 || !Number.isInteger(phaseIndex)) {
+      return { status: 400, jsonBody: { error: 'Invalid phaseIndex. Expected a non-negative integer.' } };
+    }
+
+    const db = await getDb();
+    try {
+      const plan = await db.collection<Plan>('plans').findOne({ status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) });
+      if (!plan) return { status: 404, jsonBody: { error: 'No active plan found' } };
+      if (phaseIndex >= plan.phases.length) {
+        return { status: 404, jsonBody: { error: `Phase index ${phaseIndex} does not exist` } };
+      }
+
+      const phase = plan.phases[phaseIndex];
+
+      if (phase.weeks.length <= 1) {
+        return { status: 400, jsonBody: { error: 'Cannot delete the only week in a phase' } };
+      }
+
+      const lastWeek = phase.weeks[phase.weeks.length - 1];
+      if (lastWeek.days.some(d => d.type !== 'rest')) {
+        return { status: 400, jsonBody: { error: 'Cannot delete a week that contains workout days' } };
+      }
+
+      const updatedPhases = plan.phases.map((p, i) =>
+        i === phaseIndex
+          ? { ...p, weeks: p.weeks.slice(0, -1) }
+          : p
+      );
+      const recomputed = assignPlanStructure(updatedPhases);
+
+      const result = await db.collection<Plan>('plans').findOneAndUpdate(
+        { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
+        { $set: { phases: recomputed, updatedAt: new Date() } },
+        { returnDocument: 'after' },
+      );
+      if (!result) return { status: 404, jsonBody: { error: 'Plan not found' } };
+      return { status: 200, jsonBody: { plan: result } };
+    } catch (err) {
+      context.log('Error deleting last week of phase:', err);
+      return { status: 503, jsonBody: { error: 'Service temporarily unavailable' } };
+    }
+  },
+});
+
 app.http('deleteLastPhase', {
   methods: ['DELETE'],
   authLevel: 'anonymous',
