@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { getDb } from '../shared/db.js';
 import { User } from '../shared/types.js';
 import { requireAdmin, getAuthContext } from '../middleware/auth.js';
+import { computeCost } from '../shared/pricing.js';
 
 function generateTempPassword(): string {
   return crypto.randomBytes(9).toString('base64url').slice(0, 12);
@@ -109,6 +110,67 @@ export function getToggleActiveHandler() {
   };
 }
 
+export function getUsageSummaryHandler() {
+  return async (req: HttpRequest, _context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requireAdmin(req);
+    if (denied) return denied;
+
+    try {
+      const db = await getDb();
+      const rows = await db.collection('usage_events').aggregate([
+        {
+          $group: {
+            _id: {
+              userId: '$userId',
+              year: { $year: '$timestamp' },
+              month: { $month: '$timestamp' },
+            },
+            totalInputTokens: { $sum: '$inputTokens' },
+            totalOutputTokens: { $sum: '$outputTokens' },
+            totalCacheWriteTokens: { $sum: '$cacheWriteTokens' },
+            totalCacheReadTokens: { $sum: '$cacheReadTokens' },
+          },
+        },
+      ]).toArray() as Array<{
+        _id: { userId: ObjectId; year: number; month: number };
+        totalInputTokens: number;
+        totalOutputTokens: number;
+        totalCacheWriteTokens: number;
+        totalCacheReadTokens: number;
+      }>;
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const summary: Record<string, { thisMonth: number; allTime: number }> = {};
+
+      for (const row of rows) {
+        const userKey = row._id.userId.toString();
+        const cost = computeCost(
+          'claude-sonnet-4-20250514',
+          row.totalInputTokens,
+          row.totalOutputTokens,
+          row.totalCacheWriteTokens,
+          row.totalCacheReadTokens,
+        );
+
+        if (!summary[userKey]) {
+          summary[userKey] = { thisMonth: 0, allTime: 0 };
+        }
+        summary[userKey].allTime += cost;
+        if (row._id.year === currentYear && row._id.month === currentMonth) {
+          summary[userKey].thisMonth += cost;
+        }
+      }
+
+      return { status: 200, jsonBody: { summary } };
+    } catch {
+      return { status: 500, jsonBody: { error: 'Internal server error' } };
+    }
+  };
+}
+
 // Register Azure Functions handlers
 // NOTE: Azure Functions Core Tools reserves the '/admin' route prefix for the host management API.
 // To avoid conflicts, these routes use 'users' as their prefix (accessed at /api/users).
@@ -139,4 +201,11 @@ app.http('adminToggleActive', {
   authLevel: 'anonymous',
   route: 'users/{id}',
   handler: getToggleActiveHandler(),
+});
+
+app.http('adminUsageSummary', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'users/usage-summary',
+  handler: getUsageSummaryHandler(),
 });
