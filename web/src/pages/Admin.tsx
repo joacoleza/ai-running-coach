@@ -27,6 +27,10 @@ function StatusBadge({ user }: { user: AdminUser }) {
   return <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">Deactivated</span>;
 }
 
+function formatCost(n: number): string {
+  return '$' + n.toFixed(2);
+}
+
 function formatLastLogin(date?: Date | string): string {
   if (!date) return 'Never';
   const d = new Date(date);
@@ -47,16 +51,24 @@ export function Admin() {
   const [createLoading, setCreateLoading] = useState(false);
   const [tempPasswordModal, setTempPasswordModal] = useState<{ password: string; heading: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [usageSummary, setUsageSummary] = useState<Record<string, { thisMonth: number; allTime: number }>>({});
   const { token, email: adminEmail } = useAuth();
 
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/users', { headers: { 'X-Authorization': `Bearer ${token}` } });
-      if (!res.ok) throw new Error('Failed to load users. Please refresh the page.');
-      const data = await res.json() as { users: AdminUser[] };
+      const [usersRes, summaryRes] = await Promise.all([
+        fetch('/api/users', { headers: { 'X-Authorization': `Bearer ${token}` } }),
+        fetch('/api/users/usage-summary', { headers: { 'X-Authorization': `Bearer ${token}` } }),
+      ]);
+      if (!usersRes.ok) throw new Error('Failed to load users. Please refresh the page.');
+      const data = await usersRes.json() as { users: AdminUser[] };
       setUsers(data.users);
+      if (summaryRes.ok) {
+        const summaryData = await summaryRes.json() as { summary: Record<string, { thisMonth: number; allTime: number }> };
+        setUsageSummary(summaryData.summary);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load users. Please refresh the page.');
     } finally {
@@ -163,7 +175,10 @@ export function Admin() {
                       <span className="text-sm font-bold text-gray-900 break-all">{user.email}</span>
                       <StatusBadge user={user} />
                     </div>
-                    <p className="text-xs text-gray-400 mb-3">Last login: {formatLastLogin(user.lastLoginAt)}</p>
+                    <p className="text-xs text-gray-400">Last login: {formatLastLogin(user.lastLoginAt)}</p>
+                    <p className="text-xs text-gray-400 mb-3">
+                      Month: {formatCost(usageSummary[user._id]?.thisMonth ?? 0)} &nbsp;&middot;&nbsp; All-time: {formatCost(usageSummary[user._id]?.allTime ?? 0)}
+                    </p>
                     <div className="flex gap-3 flex-wrap">
                       <button
                         onClick={() => handleResetPassword(user)}
@@ -211,6 +226,8 @@ export function Admin() {
                     <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Email</th>
                     <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
                     <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Last Login</th>
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Month</th>
+                    <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">All-time</th>
                     <th scope="col" className="px-4 py-3 text-xs font-bold text-gray-500 uppercase tracking-wide text-left">Actions</th>
                   </tr>
                 </thead>
@@ -226,6 +243,8 @@ export function Admin() {
                         <td className="px-4 py-3 text-sm text-gray-500">
                           {lastLogin === 'Never' ? <span className="text-gray-400">Never</span> : lastLogin}
                         </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{formatCost(usageSummary[user._id]?.thisMonth ?? 0)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{formatCost(usageSummary[user._id]?.allTime ?? 0)}</td>
                         <td className="px-4 py-3">
                           <button
                             onClick={() => handleResetPassword(user)}
