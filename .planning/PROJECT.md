@@ -38,6 +38,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - ✓ Each user's plans, runs, and chat history are isolated — only visible to that user — v2.0
 - ✓ Existing v1.1 data migrated to seed admin user on first v2.0 deployment — v2.0
 - ✓ Login endpoint enforces IP-based brute-force protection (5 failures → 429 lockout) — v2.0
+- ✓ Claude API token usage tracked per user; USD cost computed from model pricing; user-facing /usage page + admin panel columns — Phase 11
 
 ### Active
 
@@ -60,7 +61,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
-- **Test coverage:** 309 API tests, 469 web tests, 77+ E2E tests — all green as of v2.0
+- **Test coverage:** 332 API tests, 469 web tests, 77+ E2E tests — all green as of Phase 11
 - **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
 - **Agent protocol:** 10 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request; responsive mobile + desktop layout; `lastLoginAt` updated on every token refresh
