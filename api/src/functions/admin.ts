@@ -147,8 +147,11 @@ export function getUsageSummaryHandler() {
 
       for (const row of rows) {
         const userKey = row._id.userId.toString();
+<<<<<<< HEAD
         // Single-model assumption: aggregation groups by {year,month,userId} without model.
         // If a second model is added, group by {year,month,userId,model} and pass row._id.model here.
+=======
+>>>>>>> feat(11-02): add GET /api/users/usage-summary and register usage.ts in index - 6 tests pass
         const cost = computeCost(
           'claude-sonnet-4-20250514',
           row.totalInputTokens,
