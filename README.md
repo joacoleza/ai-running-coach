@@ -8,9 +8,9 @@
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-89%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-332%2F332-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-341%2F341-brightgreen)
 ![Web Tests](https://img.shields.io/badge/web_tests-487%2F487-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-86%2F86-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-88%2F88-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -27,8 +27,8 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 - **Training plan view** — View your plan as phases → weeks → days labeled Day A, Day B, Day C
 - **Inline day editing** — Click any day's objective or guidelines to edit in place; add new days to any week
 - **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
-- **Chat app control** — Tell the coach to update a day (`<plan:update>`), add a session (`<plan:add>`), add a phase (`<plan:add-phase>`), add a week (`<plan:add-week>`), or change the race date (`<plan:update-goal>`) — all applied live without a page refresh
-- **Plan structure editing** — `+ Add phase` and `+ Add week` buttons let you extend the plan from the UI; inline click-to-edit target race date on the plan header
+- **Chat app control** — Tell the coach to update a day (`<plan:update>`), add a session (`<plan:add>`), add a phase (`<plan:add-phase>`), add a week (`<plan:add-week>`), delete an empty week (`<plan:delete-week>`), or change the race date (`<plan:update-goal>`) — all applied live without a page refresh
+- **Plan structure editing** — `+ Add phase`, `+ Add week`, and `− week` buttons let you extend or trim the plan from the UI; inline click-to-edit target race date on the plan header
 - **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
 - **Run logging** — Log a run manually after each session, or tell the coach about it and it logs automatically via `<run:create>`; the coach saves feedback directly to the run record
 - **Run/plan cross-navigation** — Click a completed day's run date to open the run detail; click the Week/Day badge in a run to jump back to that training day
