@@ -332,6 +332,140 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 });
 
+function makeDeleteLastWeekReq(phaseIndex: string): HttpRequest {
+  const url = `http://localhost/api/plan/phases/${phaseIndex}/weeks/last`;
+  const req = new HttpRequest({
+    method: 'DELETE',
+    url,
+    headers: { 'x-app-password': 'test-pw' },
+    params: { phaseIndex },
+  });
+  return req;
+}
+
+describe('DELETE /api/plan/phases/:phaseIndex/weeks/last', () => {
+  // Plan with 2 phases, each with 2 weeks — phase0 week2 and phase1 week2 have empty days
+  const twoPhasesTwoWeeks = {
+    ...validActivePlan,
+    phases: [
+      {
+        name: 'Base Building',
+        description: 'Build aerobic base',
+        weeks: [
+          { weekNumber: 1, days: makeWeekDays() },
+          { weekNumber: 2, days: [] },
+        ],
+      },
+      {
+        name: 'Build Phase',
+        description: 'Increase intensity',
+        weeks: [
+          { weekNumber: 3, days: makeWeekDays() },
+          { weekNumber: 4, days: [] },
+        ],
+      },
+    ],
+  };
+
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...twoPhasesTwoWeeks });
+  });
+
+  it('returns 404 when no active plan exists (no beforeEach insert)', async () => {
+    // Override: clear the collection that was just seeded
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('No active plan found');
+  });
+
+  it('returns 400 for non-integer phaseIndex (e.g. abc)', async () => {
+    const req = makeDeleteLastWeekReq('abc');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid phaseIndex');
+  });
+
+  it('returns 400 for negative phaseIndex', async () => {
+    const req = makeDeleteLastWeekReq('-1');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid phaseIndex');
+  });
+
+  it('returns 404 when phaseIndex is out of bounds', async () => {
+    const req = makeDeleteLastWeekReq('99');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(404);
+    expect(result.jsonBody.error).toContain('Phase index 99 does not exist');
+  });
+
+  it('returns 400 when phase has only one week', async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [
+        { name: 'Base', description: '', weeks: [{ weekNumber: 1, days: [] }] },
+        { name: 'Build', description: '', weeks: [{ weekNumber: 2, days: makeWeekDays() }] },
+      ],
+    });
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Cannot delete the only week in a phase');
+  });
+
+  it('returns 400 when last week has a non-rest day', async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      phases: [
+        {
+          name: 'Base',
+          description: '',
+          weeks: [
+            { weekNumber: 1, days: [] },
+            { weekNumber: 2, days: makeWeekDays() }, // contains a 'run' day
+          ],
+        },
+        { name: 'Build', description: '', weeks: [{ weekNumber: 3, days: [] }] },
+      ],
+    });
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Cannot delete a week that contains workout days');
+  });
+
+  it('returns 200 when last week is empty (days: []) and decrements week count', async () => {
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.plan.phases[0].weeks).toHaveLength(1);
+  });
+
+  it('returns 200 and recomputes globally sequential week numbers after deletion', async () => {
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(200);
+    // After deleting last week of phase0 (was 2 weeks → now 1), phase1 week numbers shift
+    // phase0: [1], phase1: [2, 3]
+    expect(result.jsonBody.plan.phases[0].weeks[0].weekNumber).toBe(1);
+    expect(result.jsonBody.plan.phases[1].weeks[0].weekNumber).toBe(2);
+    expect(result.jsonBody.plan.phases[1].weeks[1].weekNumber).toBe(3);
+  });
+
+  it('returns 200 and does not modify other phases structure', async () => {
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(200);
+    // Phase 1 still has 2 weeks
+    expect(result.jsonBody.plan.phases[1].weeks).toHaveLength(2);
+    expect(result.jsonBody.plan.phases[1].name).toBe('Build Phase');
+  });
+});
+
 describe('DELETE /api/plan/phases/last', () => {
   it('returns 400 when only one phase exists', async () => {
     await mongoClient.db('running-coach').collection('plans').insertOne({
