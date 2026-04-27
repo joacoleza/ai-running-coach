@@ -53,3 +53,15 @@
 | 8. Data Isolation & Migration | 3/3 | ✅ Complete | 2026-04-18 |
 | 9. Admin Panel | 4/4 | ✅ Complete | 2026-04-19 |
 | 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |
+
+### Phase 11: Usage Tracking
+
+**Goal:** Track Claude API token usage per user; compute USD cost from model pricing; show total and monthly breakdown in admin panel; let each user view their own usage via the side menu top-row dropdown.
+**Requirements**: USAGE-01 through USAGE-11
+**Depends on:** Phase 10
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 11-01-PLAN.md — Backend foundation: pricing.ts, UsageEvent type, usage_events indexes, usage capture in chat.ts
+- [ ] 11-02-PLAN.md — API endpoints: GET /api/usage/me and GET /api/users/usage-summary
+- [ ] 11-03-PLAN.md — Frontend: UsagePage, sidebar My Usage item, /usage route, Admin columns, E2E tests

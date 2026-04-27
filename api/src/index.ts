@@ -19,3 +19,4 @@ import './functions/planArchive.js';
 import './functions/runs.js';
 import './functions/keepAlive.js';
 import './functions/admin.js';
+import './functions/usage.js';

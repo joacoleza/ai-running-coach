@@ -24,6 +24,8 @@ export async function getDb(): Promise<Db> {
   await db.collection('messages').createIndex({ userId: 1, planId: 1, timestamp: 1 });
   await db.collection('login_attempts').createIndex({ ip: 1 }, { unique: true });
   await db.collection('login_attempts').createIndex({ updatedAt: 1 }, { expireAfterSeconds: 604800 }); // 7 days TTL
+  await db.collection('usage_events').createIndex({ userId: 1, timestamp: -1 });
+  await db.collection('usage_events').createIndex({ timestamp: -1 }); // for admin aggregation
   return db;
 }
 

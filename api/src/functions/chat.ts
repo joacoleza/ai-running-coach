@@ -5,7 +5,7 @@ import { getDb } from '../shared/db.js';
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import { assignPlanStructure } from '../shared/planUtils.js';
-import { ChatMessage, Plan, PlanPhase, PlanGoal, Run } from '../shared/types.js';
+import { ChatMessage, Plan, PlanPhase, PlanGoal, Run, UsageEvent } from '../shared/types.js';
 
 /**
  * Format a decimal pace (minutes per km/mile) as "M:SS"
@@ -213,8 +213,9 @@ app.http('chat', {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
           });
 
+          let fm: Awaited<ReturnType<typeof stream.finalMessage>>;
           try {
-            await stream.finalMessage();
+            fm = await stream.finalMessage();
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             context.error('Claude stream error:', { message: msg, planId, stack: err instanceof Error ? err.stack : undefined });
@@ -286,6 +287,23 @@ app.http('chat', {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `Plan save failed: ${msg}` })}\n\n`));
               }
             }
+          }
+
+          // Capture usage event — non-fatal (D-02)
+          try {
+            const usage = fm!.usage;
+            const usageEvent: UsageEvent = {
+              userId: new ObjectId(userId),
+              timestamp: new Date(),
+              model: 'claude-sonnet-4-20250514',
+              inputTokens: usage.input_tokens,
+              outputTokens: usage.output_tokens,
+              cacheWriteTokens: (usage as any).cache_creation_input_tokens ?? 0,
+              cacheReadTokens: (usage as any).cache_read_input_tokens ?? 0,
+            };
+            await db.collection<UsageEvent>('usage_events').insertOne(usageEvent);
+          } catch {
+            // Non-fatal — usage tracking failure must not block response
           }
 
           // Trigger summarization if needed (fire and forget)

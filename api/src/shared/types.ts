@@ -114,3 +114,14 @@ export interface LoginAttempt {
   lockedUntil?: Date;     // absent = not locked
   updatedAt: Date;        // TTL index key — records expire after 7 days of inactivity
 }
+
+export interface UsageEvent {
+  _id?: ObjectId;
+  userId: ObjectId;
+  timestamp: Date;
+  model: string;           // e.g. "claude-sonnet-4-20250514"
+  inputTokens: number;
+  outputTokens: number;
+  cacheWriteTokens: number; // cache_creation_input_tokens, 0 if absent
+  cacheReadTokens: number;  // cache_read_input_tokens, 0 if absent
+}

@@ -1,15 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Multi-User Support
-status: "SHIPPED 2026-04-26"
-last_updated: "2026-04-26T19:28:41Z"
-last_activity: 2026-04-26
+milestone: v1.1
+milestone_name: milestone
+status: completed
+last_updated: "2026-04-27T11:23:34.504Z"
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 17
-  completed_plans: 17
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -20,12 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-26)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** v2.0 shipped — planning next milestone
+**Current focus:** Phase 11 — usage-tracking
 
 ## Current Position
 
+Phase: 999.1
+Plan: Not started
 Milestone: v2.0 — Multi-User Support
-Status: ✅ SHIPPED 2026-04-26
+Status: Ready to execute (11-02 complete)
 Archive: .planning/milestones/v2.0-ROADMAP.md
 
 Progress: [██████████] 100% (5/5 phases complete)
@@ -95,6 +96,10 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 09]: sv-SE locale for ISO-like datetime in formatLastLogin without manual string building
 - [Phase 09]: Fire-and-forget updateOne in getRefreshHandler keeps response latency unchanged while tracking active sessions
 - [Phase 10-03]: IP-based rate limiting via login_attempts collection (not per-user fields) eliminates email enumeration; getClientIp() reads x-forwarded-for → client-ip → 127.0.0.1; DUMMY_HASH hardcoded to avoid bcrypt cost on module load; loginRateLimiting.test.ts deleted (account-based); loginRateLimit.test.ts rewritten with 10 IP-based scenarios
+- [Phase 11]: Tokens stored raw in usage_events; cost computed at query time from MODEL_PRICING to allow repricing without re-running writes
+- [Phase 11]: Model hardcoded as 'claude-sonnet-4-20250514' in usage capture; must change alongside stream() call if model is updated
+- [Phase 11-02]: Single aggregation pass for admin usage summary (all users, all months) then reduced to map in JS — one DB round-trip; users absent from map show $0.00 in Admin.tsx
+- [Phase 11-02]: Route 'users/usage-summary' (not 'admin/users/usage-summary') — Azure Functions reserves /admin prefix
 
 ### Quick Tasks Completed
 

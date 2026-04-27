@@ -43,6 +43,8 @@ export default async function globalSetup() {
     await users.deleteMany({ email: { $in: ['test@example.com', 'temp@example.com', 'userb@example.com', 'admin@example.com', 'deactivate@example.com'] } })
     // Clear IP lockout records to prevent E2E auth tests being blocked by a previous run
     await db.collection('login_attempts').deleteMany({})
+    // Clear usage events to prevent cross-test contamination
+    await db.collection('usage_events').deleteMany({})
 
     const passwordHash = await bcrypt.hash('password123', 10)
     const now = new Date()
@@ -102,6 +104,20 @@ export default async function globalSetup() {
       createdAt: now,
       updatedAt: now,
     })
+
+    // Seed one usage event for test@example.com so UsagePage tests have data
+    const testUser = await users.findOne({ email: 'test@example.com' })
+    if (testUser?._id) {
+      await db.collection('usage_events').insertOne({
+        userId: testUser._id,
+        timestamp: new Date(),
+        model: 'claude-sonnet-4-20250514',
+        inputTokens: 1000,
+        outputTokens: 500,
+        cacheWriteTokens: 0,
+        cacheReadTokens: 0,
+      })
+    }
 
   } finally {
     await client.close()
