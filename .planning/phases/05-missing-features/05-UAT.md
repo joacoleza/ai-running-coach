@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: complete
 phase: 05-missing-features
 source: [05-01-SUMMARY.md, 05-02-SUMMARY.md, 05-03-SUMMARY.md, 05-04-SUMMARY.md]
 started: 2026-04-13T00:00:00Z
