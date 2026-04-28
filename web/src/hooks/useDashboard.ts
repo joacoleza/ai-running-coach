@@ -36,6 +36,21 @@ export type FilterPreset =
   | 'this-year'
   | 'all-time'
 
+// Module-level cache so data persists across Dashboard mounts (navigation away and back).
+// Stale-while-revalidate: show cached data immediately, refresh silently in background.
+interface RunsCacheEntry {
+  runs: Run[]
+  filter: FilterPreset
+  planId: string | undefined
+  timestamp: number
+}
+let _runsCache: RunsCacheEntry | null = null
+const CACHE_TTL_MS = 60_000
+
+export function clearDashboardCache(): void {
+  _runsCache = null
+}
+
 /**
  * Parse a duration string ("MM:SS" or "HH:MM:SS") into total minutes.
  * Returns 0 for invalid input.
@@ -303,8 +318,21 @@ export function useDashboard() {
 
   useEffect(() => {
     let cancelled = false
-    async function load() {
+
+    const cacheHit = _runsCache !== null
+      && _runsCache.filter === activeFilter
+      && _runsCache.planId === plan?._id
+      && (Date.now() - _runsCache.timestamp) < CACHE_TTL_MS
+
+    if (cacheHit) {
+      // Show cached data instantly; still fetch in background to keep data fresh
+      setRuns(_runsCache!.runs)
+      setIsLoading(false)
+    } else {
       setIsLoading(true)
+    }
+
+    async function load() {
       try {
         const range = computeDateRange(activeFilter, new Date())
         let fetched: Run[]
@@ -316,9 +344,12 @@ export function useDashboard() {
           const result = await fetchRuns({ limit: 1000, ...range })
           fetched = result.runs
         }
-        if (!cancelled) setRuns(fetched)
+        if (!cancelled) {
+          _runsCache = { runs: fetched, filter: activeFilter, planId: plan?._id, timestamp: Date.now() }
+          setRuns(fetched)
+        }
       } catch {
-        if (!cancelled) setRuns([])
+        if (!cancelled && !cacheHit) setRuns([])
       } finally {
         if (!cancelled) setIsLoading(false)
       }

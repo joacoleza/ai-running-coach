@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { ChatProvider } from './contexts/ChatContext'
@@ -19,7 +19,10 @@ function AppInner() {
   const isRefreshing = useRef(false)
   const refreshQueue = useRef<Array<(newToken: string | null) => void>>([])
 
-  useEffect(() => {
+  // useLayoutEffect ensures the interceptor is installed before any child useEffect runs
+  // (all layout effects fire before passive effects across the entire tree), fixing the
+  // race where useChat's init fetch fires before the 401→refresh handler is in place.
+  useLayoutEffect(() => {
     const originalFetch = window.fetch
 
     window.fetch = async (...args) => {
