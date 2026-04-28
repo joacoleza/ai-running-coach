@@ -1,44 +1,43 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: Usage & Plan Controls
-status: complete
-last_updated: "2026-04-28T00:00:00.000Z"
+milestone: v3.0
+milestone_name: Multi-Discipline Training Coach
+status: in_progress
+last_updated: "2026-04-29T00:00:00.000Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-28)
+See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Planning next milestone (v2.2 or v3.0)
+**Current focus:** v3.0 — Multi-Discipline Training Coach
 
 ## Current Position
 
-Phase: —
+Phase: Not started (defining requirements)
 Plan: —
-Milestone: v2.1 — Usage & Plan Controls ✅ SHIPPED 2026-04-28
-Status: Milestone complete — ready for next milestone
+Status: Defining requirements
+Last activity: 2026-04-29 — Milestone v3.0 started
 
-Progress: [██████████] 100% (2/2 phases complete)
+Progress: [░░░░░░░░░░] 0% (0/? phases complete)
 
 ## Milestone
 
-**Milestone:** v2.1 — Usage & Plan Controls ✅ SHIPPED 2026-04-28
-**Previous:** v2.0 — Multi-User Support ✅ SHIPPED 2026-04-26
+**Milestone:** v3.0 — Multi-Discipline Training Coach (in progress)
+**Previous:** v2.1 — Usage & Plan Controls ✅ SHIPPED 2026-04-28
 
-**Phase sequence (complete):**
+**Phase sequence:**
 
-- Phase 11: Usage Tracking (USAGE-01 through USAGE-11) ✅
-- Phase 12: Delete Last Empty Week (WEEK-DELETE-01 through WEEK-DELETE-05) ✅
+- Phases to be defined by roadmapper
 
 ## Backlog
 

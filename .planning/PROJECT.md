@@ -8,6 +8,19 @@ A multi-user web app that acts as a personal AI running coach. Each user sets a 
 
 A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened — not generic training templates.
 
+## Current Milestone: v3.0 Multi-Discipline Training Coach
+
+**Goal:** Extend the app from run-only to support gym and cycling alongside running, with a unified training plan and dashboard.
+
+**Target features:**
+- App renamed: ai-running-coach → ai-training-coach throughout (repo, titles, strings)
+- Discipline tag on every session and plan day (Run / Gym / Cycle)
+- Gym session logging: duration, type, notes
+- Gym plan days include an exercise checklist (sets × reps × weight) user can tick off or skip
+- Cycling session logging: distance, duration, speed, optional HR + notes
+- Training plan: one unified plan, days tagged by discipline, coach generates cross-discipline load
+- Dashboard: discipline filter + adapted stats per discipline + multi-discipline volume chart
+
 ## Requirements
 
 ### Validated
@@ -45,6 +58,14 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
+- [ ] App renamed to ai-training-coach throughout (repo, package.json, HTML title, README)
+- [ ] Each session and plan day is tagged with a discipline (Run / Gym / Cycle)
+- [ ] User can log a gym session (duration, type, notes)
+- [ ] Gym plan days include an exercise checklist (name, sets, reps, weight) user can mark done or skip
+- [ ] Coach generates gym plan days with exercise lists
+- [ ] User can log a cycling session (distance, duration, speed, optional HR and notes)
+- [ ] Coach generates cycling plan days with distance/duration targets
+- [ ] Dashboard supports multi-discipline filter and adapted stats
 
 ### Out of Scope
 
@@ -119,4 +140,4 @@ Last updated: 2026-04-28 — v2.1 Usage & Plan Controls shipped.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 — v2.1 Usage & Plan Controls milestone complete*
+*Last updated: 2026-04-29 — v3.0 Multi-Discipline Training Coach milestone started*
