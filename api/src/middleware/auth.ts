@@ -36,7 +36,7 @@ export async function requireAuth(req: HttpRequest): Promise<HttpResponseInit | 
   }
 
   try {
-    const payload = jwt.verify(token, secret) as {
+    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] }) as {
       sub: string;
       email: string;
       isAdmin: boolean;
@@ -56,11 +56,10 @@ export async function requireAuth(req: HttpRequest): Promise<HttpResponseInit | 
     });
 
     return null;
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
+  } catch {
     return {
       status: 401,
-      jsonBody: { error: `Invalid or expired token: ${reason}` },
+      jsonBody: { error: 'Invalid or expired token' },
     };
   }
 }
