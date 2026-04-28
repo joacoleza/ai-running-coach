@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { clearDashboardCache } from "../../hooks/useDashboard";
 
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
@@ -90,6 +91,7 @@ export function Sidebar() {
                 } catch {
                   // ignore — clear client state regardless
                 }
+                clearDashboardCache();
                 logout();
               }}
               aria-label="Logout"
