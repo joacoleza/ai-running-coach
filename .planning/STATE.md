@@ -5,7 +5,7 @@ milestone_name: Multi-Discipline Training Coach
 status: in_progress
 last_updated: "2026-04-29T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -23,12 +23,12 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 13 — Discipline Foundation (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-29 — Milestone v3.0 started
+Status: Roadmap defined, ready to plan Phase 13
+Last activity: 2026-04-29 — v3.0 roadmap created (Phases 13–17)
 
-Progress: [░░░░░░░░░░] 0% (0/? phases complete)
+Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 
 ## Milestone
 
@@ -37,7 +37,11 @@ Progress: [░░░░░░░░░░] 0% (0/? phases complete)
 
 **Phase sequence:**
 
-- Phases to be defined by roadmapper
+- Phase 13: Discipline Foundation — data model, migrations, API + coach updates
+- Phase 14: Gym Support — gym logging UI, exercise checklist, gym plan days, coach gym integration
+- Phase 15: Cycling Support — cycling logging, speed display, cycling plan days, coach cycling integration
+- Phase 16: Multi-Discipline Dashboard — discipline filter, adapted stats, multi-discipline volume chart, weight progression chart
+- Phase 17: App Rename — rename ai-running-coach → ai-training-coach throughout
 
 ## Backlog
 
@@ -59,6 +63,15 @@ Progress: [░░░░░░░░░░] 0% (0/? phases complete)
 - User and RefreshToken interfaces exported from api/src/shared/types.ts — all auth plans import from here
 - DB indexes created in getDb(): users.email (unique), refresh_tokens.expiresAt (TTL)
 
+### v3.0 Roadmap Notes
+
+- Phase 13 is purely backend + data layer: adds `discipline` field to `runs` and plan day documents, runs migrations for existing data, updates API endpoints, and updates the system prompt so Claude understands multi-discipline coaching. No UI changes in this phase.
+- Phase 14 introduces the first discipline-specific UI: the session entry form adapts fields based on selected discipline (first fully realized in gym context). The discipline badge and filter on the Runs list ship here because gym is the first new discipline being logged.
+- Phase 15 reuses the Phase 13+14 infrastructure with cycling-specific field mappings (speed instead of pace). Most changes are field-level adaptations of existing components.
+- Phase 16 touches dashboard.ts API and all dashboard React components. The weight progression chart is a new chart type — needs a new `/api/runs/exercise-weights?exercise=...` or similar endpoint.
+- Phase 17 is a mechanical rename pass — no logic changes. Kept last to avoid merge conflicts during active development.
+- DISC-03 (form field adaptation), DISC-04 (discipline badge), DISC-05 (discipline filter) are assigned to Phase 14 because gym is the first discipline that triggers the need for them. They will be implemented to support all three disciplines (run/gym/cycle) but are delivered in Phase 14.
+
 ## Decisions
 
 - [06-01] Used jsonwebtoken and bcrypt per D-15 as the auth libraries for JWT signing and password hashing
@@ -67,7 +80,7 @@ Progress: [░░░░░░░░░░] 0% (0/? phases complete)
 ---
 
 _Initialized: 2026-03-21_
-_Last updated: 2026-04-28 — Completed quick task 260428-drl: security review of the whole code_
+_Last updated: 2026-04-29 — v3.0 roadmap defined (Phases 13–17)_
 
 - [Phase 06]: Exported handler factory pattern (getLoginHandler, etc.) for unit testability while still registering with Azure Functions app.http()
 - [Phase 06]: Uniform 401 error message for wrong email and wrong password prevents user enumeration

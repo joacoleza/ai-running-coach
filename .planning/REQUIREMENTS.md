@@ -65,23 +65,23 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| RENAME-01 | TBD | — |
-| DISC-01 | TBD | — |
-| DISC-02 | TBD | — |
-| DISC-03 | TBD | — |
-| DISC-04 | TBD | — |
-| DISC-05 | TBD | — |
-| GYM-01 | TBD | — |
-| GYM-02 | TBD | — |
-| GYM-03 | TBD | — |
-| GYM-04 | TBD | — |
-| GYM-05 | TBD | — |
-| GYM-06 | TBD | — |
-| CYCLE-01 | TBD | — |
-| CYCLE-02 | TBD | — |
-| CYCLE-03 | TBD | — |
-| CYCLE-04 | TBD | — |
-| DASH-01 | TBD | — |
-| DASH-02 | TBD | — |
-| DASH-03 | TBD | — |
-| DASH-04 | TBD | — |
+| RENAME-01 | Phase 17 | Pending |
+| DISC-01 | Phase 13 | Pending |
+| DISC-02 | Phase 13 | Pending |
+| DISC-03 | Phase 14 | Pending |
+| DISC-04 | Phase 14 | Pending |
+| DISC-05 | Phase 14 | Pending |
+| GYM-01 | Phase 14 | Pending |
+| GYM-02 | Phase 14 | Pending |
+| GYM-03 | Phase 14 | Pending |
+| GYM-04 | Phase 14 | Pending |
+| GYM-05 | Phase 14 | Pending |
+| GYM-06 | Phase 14 | Pending |
+| CYCLE-01 | Phase 15 | Pending |
+| CYCLE-02 | Phase 15 | Pending |
+| CYCLE-03 | Phase 15 | Pending |
+| CYCLE-04 | Phase 15 | Pending |
+| DASH-01 | Phase 16 | Pending |
+| DASH-02 | Phase 16 | Pending |
+| DASH-03 | Phase 16 | Pending |
+| DASH-04 | Phase 16 | Pending |
