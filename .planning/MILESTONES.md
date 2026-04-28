@@ -1,5 +1,25 @@
 # Milestones
 
+## v2.1 Usage & Plan Controls (Shipped: 2026-04-28)
+
+**Phases completed:** 2 phases (11–12), 5 plans
+
+**Key accomplishments:**
+
+1. MongoDB `usage_events` collection capturing raw Anthropic token counts (input/output/cacheWrite/cacheRead) after every Claude API call, with `pricing.ts` (MODEL_PRICING map + `computeCost()`) and compound indexes for per-user queries
+2. Two API endpoints: `GET /api/usage/me` (per-user allTime + thisMonth + monthly breakdown) and `GET /api/users/usage-summary` (admin aggregation), both backed by single-pass MongoDB aggregation
+3. UsagePage with all-time/this-month stat cards and monthly breakdown table; My Usage sidebar dropdown item; Admin panel Month/All-time cost columns with parallel fetch — 5 E2E tests
+4. `DELETE /api/plan/phases/:phaseIndex/weeks/last` endpoint with guards (400 if only 1 week, 400 if last week has workout days) and `assignPlanStructure` recomputation
+5. "− week" UI button in PlanView (disabled when last week has workout days) and `<plan:delete-week>` chat tag support symmetric with `<plan:add-week>` — 2 E2E tests
+
+**Archived:**
+
+- `.planning/milestones/v2.1-ROADMAP.md`
+- `.planning/milestones/v2.1-REQUIREMENTS.md`
+- `.planning/milestones/post-v2.0-MILESTONE-AUDIT.md` (as `v2.1` audit)
+
+---
+
 ## v2.0 Multi-User Support (Shipped: 2026-04-26)
 
 **Phases completed:** 6 phases, 17 plans, 27 tasks

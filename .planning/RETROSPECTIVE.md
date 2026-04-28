@@ -52,6 +52,47 @@
 
 ---
 
+## Milestone: v2.1 — Usage & Plan Controls
+
+**Shipped:** 2026-04-28
+**Phases:** 2 | **Plans:** 5 | **Timeline:** 2 days (2026-04-26 → 2026-04-27)
+
+### What Was Built
+
+- `usage_events` MongoDB collection capturing raw Anthropic token counts per chat call; `pricing.ts` (`MODEL_PRICING` map + `computeCost()`); compound indexes for per-user and admin aggregation
+- `GET /api/usage/me` (per-user allTime + thisMonth + monthly breakdown) and `GET /api/users/usage-summary` (admin userId → cost map) via single-pass aggregation
+- `UsagePage` with all-time/this-month stat cards and monthly breakdown table; "My Usage" sidebar dropdown; `/usage` route; Admin panel Month/All-time cost columns; 5 E2E tests
+- `DELETE /api/plan/phases/:phaseIndex/weeks/last` endpoint with guard conditions; `assignPlanStructure` recomputation after deletion
+- "− week" UI button in `PlanView` (disabled not hidden when last week has workout days); `<plan:delete-week>` chat tag support in `useChat.ts` (4 strip locations, `applyPlanOperations` processing, 2 E2E tests)
+
+### What Worked
+
+- **Nyquist validation retroactively applied and passed:** Both phases had VALIDATION.md files created post-execution; the retroactive Nyquist audit caught no gaps because the executor had already built thorough tests. Indicates the testing discipline is now internalized, not just checklist-driven.
+- **Symmetric design with existing patterns:** Phase 12's "− week" button was explicitly designed as the inverse of "+ Add week" — same 4 strip locations, same `applyPlanOperations` loop, same disabled-vs-hidden UX convention. Symmetry made implementation fast and correctness obvious.
+- **Non-fatal pattern for usage capture:** The try/catch around `usage_events.insertOne` with an empty catch block is clean and safe — a write failure never blocks the SSE response. Simple, testable, correct.
+
+### What Was Inefficient
+
+- **MILESTONES.md extraction artifacts:** The `gsd-tools milestone complete` CLI extracted some malformed lines ("One-liner:", "1. [Rule 1 - Bug]...") from SUMMARY.md files into the MILESTONES.md accomplishments list. Required manual cleanup post-archival. The CLI extracts the `one_liner` frontmatter field but falls back to body content that can include deviation notes.
+
+### Patterns Established
+
+- **Raw token storage + compute-at-query-time:** Store `inputTokens`, `outputTokens`, `cacheWriteTokens`, `cacheReadTokens` raw; compute USD cost from `MODEL_PRICING` at read time. Allows repricing historical data without re-running writes.
+- **Plan mutation tag symmetry (4-location strip):** Every new plan-mutation chat tag must be stripped in 4 places in `useChat.ts`: mount stripping, `sendMessage` onText, `startPlan` onText, and `applyPlanOperations`. Template for future tags.
+
+### Key Lessons
+
+1. **Small milestones (2 phases) are clean and fast.** The 2-day timeline with 16 requirements and 45 E2E tests shows that focused scoping keeps momentum high and audit overhead low.
+2. **Retroactive Nyquist audit works as a safety net but not as a substitute.** Building tests alongside the implementation (as the executor did) is why the retroactive audit found nothing to add.
+
+### Cost Observations
+
+- Sessions: 2 days of execution
+- Model mix: Primarily Sonnet 4.6 (executor), Haiku for Nyquist audit agents
+- Notable: Phase 11 execution in 7 min (11-01) and 12 min (11-03) — tight scoping and clear plans enable fast execution even for multi-file changes
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -60,6 +101,7 @@
 |-----------|--------|-------|------------|
 | v1.1 | 11 | 41 | Established plan → execute → verify loop; hierarchical plan model; agent XML protocol |
 | v2.0 | 5 | 17 | Added gap-closure sub-phases (09-04, 10-03); first multi-user security milestone; audit-milestone workflow used |
+| v2.1 | 2 | 5 | Focused micro-milestone; Nyquist retroactively applied; symmetric tag pattern established |
 
 ### Cumulative Quality
 
@@ -67,6 +109,7 @@
 |-----------|-----------|-----------|-----------|
 | v1.1 | ~223 | ~427 | ~66 |
 | v2.0 | 309 | 469 | 77+ |
+| v2.1 | 344 | 507 | 45 |
 
 ### Top Lessons (Verified Across Milestones)
 
