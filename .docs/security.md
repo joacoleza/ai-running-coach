@@ -1,0 +1,382 @@
+# Security Review — AI Running Coach
+
+## Scope
+
+**What was reviewed:** Full codebase — Azure Functions API (Node.js/TypeScript) and React/Vite web frontend.
+
+**Components reviewed:**
+- `api/src/middleware/auth.ts` — JWT verification, requireAuth, requireAdmin
+- `api/src/functions/auth.ts` — login, refresh, logout, change-password
+- `api/src/functions/admin.ts` — admin-only user management
+- `api/src/functions/chat.ts` — AI streaming endpoint, plan persistence from chat
+- `api/src/functions/runs.ts` — run CRUD with userId scoping
+- `api/src/functions/plan.ts` — plan CRUD
+- `api/src/functions/planDays.ts` — day patch/delete
+- `api/src/functions/planPhases.ts` — phase/week operations
+- `api/src/functions/planArchive.ts` — plan archival
+- `api/src/functions/messages.ts` — chat message retrieval
+- `api/src/functions/usage.ts` — usage tracking endpoint
+- `api/src/shared/db.ts` — MongoDB connection and index creation
+- `api/src/shared/context.ts` — chat context builder (buildContextMessages)
+- `api/src/shared/types.ts` — data model interfaces
+- `web/src/contexts/AuthContext.tsx` — token storage in localStorage
+- `web/src/App.tsx` — 401 interceptor, auth gate
+- `web/src/pages/LoginPage.tsx` — login form, JWT decode
+- `web/src/pages/Admin.tsx` — admin panel UI
+- `web/index.html` — page shell, meta tags
+- `api/host.json` — Azure Functions host configuration
+- `api/package.json` and `web/package.json` — dependency surface
+
+**Date:** 2026-04-28
+
+**Reviewer:** Automated code review (AI Running Coach GSD security audit)
+
+**Methodology:** Manual code review across OWASP Top 10 categories. No automated scanner or penetration test was performed. Includes `npm audit` dependency checks for both `api/` and `web/`.
+
+---
+
+## Executive Summary
+
+The AI Running Coach application demonstrates a solid security posture for a small-team SaaS product. Authentication is well-designed: bcrypt password hashing (10 rounds), SHA-256-hashed refresh tokens, IP-based rate limiting with progressive lockouts, timing-safe dummy bcrypt to prevent email enumeration, and per-request DB user lookup to enforce instant deactivation. Data isolation is correctly implemented — all API queries scope by `userId` using MongoDB's typed ObjectId, making IDOR attacks impractical.
+
+**Thirteen findings** were identified: 0 Critical, 1 High, 3 Medium, 5 Low, 4 Info. The single High finding is a missing Content-Security-Policy header, which would amplify any future XSS. The most architecturally noteworthy Medium finding is that `buildContextMessages()` in `api/src/shared/context.ts` queries chat messages by `planId` (a string) without a `userId` scope, creating a latent cross-user data exposure vector if a user can guess or learn another user's planId.
+
+**Severity summary:** 0 Critical / 1 High / 3 Medium / 5 Low / 4 Info
+
+---
+
+## Findings
+
+### SEC-01: No Content-Security-Policy (CSP) Header — High
+
+**Affected:** `web/index.html`, `api/host.json`, Azure Static Web Apps configuration
+
+**Description:** No `Content-Security-Policy` header is set on any response — neither from the web frontend nor from the API. Without a CSP, any XSS vulnerability (current or future) has unrestricted access to the DOM, localStorage (where JWTs are stored), and the ability to make arbitrary API calls. The existing protections (React's JSX escaping, XML-stripping regex) are defense-in-depth measures that a CSP would reinforce. The absence of a CSP also means there is no protection against clickjacking via iframe embedding or data exfiltration to external origins.
+
+**Recommendation:** Add a `Content-Security-Policy` header. For a React SPA served via Azure Static Web Apps, configure it in `staticwebapp.config.json`:
+
+```json
+{
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://api.anthropic.com; frame-ancestors 'none';",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+}
+```
+
+Note: Vite bundles scripts as modules; `'unsafe-inline'` for scripts is not needed. Test the CSP in report-only mode (`Content-Security-Policy-Report-Only`) before enforcing.
+
+---
+
+### SEC-02: Access Tokens Stored in localStorage — Medium
+
+**Affected:** `web/src/contexts/AuthContext.tsx` (lines 18–23, 29–35)
+
+**Description:** Both the JWT access token and the refresh token are stored in `localStorage` (`access_token`, `refresh_token`). Any JavaScript executing on the page (including injected scripts via XSS) can read `localStorage` and exfiltrate both tokens. An attacker who extracts the refresh token has 30-day persistent access even after the 15-minute access token expires.
+
+The application uses `react-markdown` to render coach responses. While React's JSX escaping applies, `react-markdown` processes user-influenced AI-generated content, and markdown renderers have historically had XSS vectors (e.g., via link href attributes). A single XSS payload executed in the context of the SPA would allow full account takeover.
+
+**Recommendation (preferred):** Migrate to httpOnly, Secure, SameSite=Strict cookies for the refresh token. The access token can remain in memory (React state only, not localStorage). On page reload, call the refresh endpoint to get a new access token. This eliminates the most persistent token from XSS reach.
+
+**Recommendation (interim):** If the cookie migration is deferred, add a robust CSP (SEC-01) to reduce XSS surface. Also consider binding refresh tokens to a client fingerprint or IP as an additional heuristic check.
+
+---
+
+### SEC-03: No Rate Limiting on Chat Endpoint — Medium
+
+**Affected:** `api/src/functions/chat.ts`
+
+**Description:** The `POST /api/chat` endpoint calls the Anthropic API on every request without any per-user or global rate limiting. An authenticated user (or a compromised account) can send an unbounded number of chat messages, driving up Anthropic API costs with no throttle. A single user sending thousands of requests per minute would generate unbounded costs with no automatic circuit breaker.
+
+Usage is tracked after-the-fact (`usage_events` collection) for monitoring and admin visibility, but tracking does not prevent abuse — it only makes abuse visible in retrospect.
+
+**Recommendation:** Add a sliding-window rate limit on `POST /api/chat` keyed by `userId`. A reasonable limit for a coaching app is 20–60 messages per hour per user. Implement using an `$inc` on a `rateLimit` document with a TTL-indexed `windowStart` field, or use a lightweight Redis counter if available. Return HTTP 429 with `Retry-After` when the limit is exceeded. Consider also a global request cap per day as a cost ceiling.
+
+---
+
+### SEC-04: `buildContextMessages` Does Not Scope by userId — Medium
+
+**Affected:** `api/src/shared/context.ts` (line 11), called from `api/src/functions/chat.ts` (line 100)
+
+**Description:** `buildContextMessages(planId, db)` queries the `messages` collection using only `{ planId }` — without a `userId` scope:
+
+```typescript
+// context.ts line 11
+const messages = await db.collection<ChatMessage>('messages')
+  .find({ planId })  // <-- no userId filter
+```
+
+The `planId` is a MongoDB ObjectId (12 bytes, base-24 encoded = ~16 characters). While ObjectIds are not sequential and are cryptographically difficult to guess, they are not a secret — they are returned in API responses, embedded in client-side routing URLs, and potentially logged. A user who learns another user's `planId` (e.g., from a support log, a URL visible in a shared screenshot, or a misconfigured log aggregator) could call `POST /api/chat` with that `planId` and receive the other user's full chat history via the injected context messages.
+
+The `chat.ts` handler does scope the plan lookup by userId:
+```typescript
+const plan = await db.collection<Plan>('plans').findOne({
+  _id: new ObjectId(planId), userId: new ObjectId(userId)  // correctly scoped
+})
+```
+But `buildContextMessages` is called with the raw `planId` string after this check. If the plan lookup returns null (e.g., wrong user — plan doesn't match), `phases` will be null and the synthetic context injection is skipped, but `buildContextMessages` still runs and returns messages for any plan matching that planId string regardless of owner.
+
+Similarly, `maybeSummarize` in `context.ts` uses `{ planId: planId as any }` without userId scope on the `plans.updateOne` call.
+
+**Recommendation:** Add `userId` to `buildContextMessages` signature and filter the messages query:
+
+```typescript
+export async function buildContextMessages(
+  planId: string, db: Db, userId: string
+): Promise<Anthropic.MessageParam[]> {
+  const messages = await db.collection<ChatMessage>('messages')
+    .find({ planId, userId: new ObjectId(userId) })
+    ...
+```
+
+Update `maybeSummarize` similarly. Update all callers.
+
+---
+
+### SEC-05: JWT Error Message Leaks Library Error Details — Low
+
+**Affected:** `api/src/middleware/auth.ts` (lines 59–64)
+
+**Description:** On JWT verification failure, the error handler returns the raw jsonwebtoken error message to the client:
+
+```typescript
+catch (err) {
+  const reason = err instanceof Error ? err.message : String(err);
+  return { status: 401, jsonBody: { error: `Invalid or expired token: ${reason}` } };
+}
+```
+
+The `reason` may include library-internal detail such as `"jwt malformed"`, `"jwt signature is required"`, `"invalid algorithm"`, `"jwt expired"`, or `"invalid audience"`. While none of these reveal secret key material, they give an attacker precise feedback about why their crafted token was rejected, aiding token-forgery attempts.
+
+**Recommendation:** Return a generic error message:
+```typescript
+return { status: 401, jsonBody: { error: 'Invalid or expired token' } };
+```
+Log the detailed reason server-side for debugging: `context.warn('JWT verification failed:', reason)`.
+
+---
+
+### SEC-06: Refresh Token Not Rotated on Use — Low
+
+**Affected:** `api/src/functions/auth.ts` — `getRefreshHandler()` (lines 152–191)
+
+**Description:** When a refresh token is used to obtain a new access token, the refresh handler does not invalidate the used refresh token or issue a new one. It only validates that the token exists and is not expired. This means:
+
+1. A stolen refresh token can be reused indefinitely until its 30-day expiry.
+2. There is no mechanism to detect refresh token theft (refresh token rotation would cause a token collision when both attacker and victim try to refresh).
+3. Logout only deletes the specific refresh token the client sends — if an attacker has the refresh token, logout by the legitimate user does not revoke attacker access (though this is the same issue for any session management without server-side invalidation).
+
+**Recommendation:** Implement refresh token rotation: on each use, delete the old token and insert a new one. Return the new refresh token to the client. This limits the window of a stolen token to the period between the theft and the next legitimate use. This is an O(1) DB operation (deleteOne + insertOne within a transaction or using findOneAndDelete).
+
+---
+
+### SEC-07: JWT Algorithm Not Explicitly Pinned — Low
+
+**Affected:** `api/src/middleware/auth.ts` (line 39), `api/src/functions/auth.ts` (line 21)
+
+**Description:** `jwt.verify(token, secret)` is called without explicitly specifying `{ algorithms: ['HS256'] }`. While `jsonwebtoken` v9 defaults to the algorithm encoded in the token header and does not accept `"alg":"none"` by default, an explicit algorithm allowlist is a defense-in-depth measure against algorithm confusion attacks and guards against future library behavior changes.
+
+**Recommendation:**
+```typescript
+const payload = jwt.verify(token, secret, { algorithms: ['HS256'] }) as { ... };
+```
+
+---
+
+### SEC-08: Progressive Lockout Resets `lockoutCount` on Success — Low
+
+**Affected:** `api/src/functions/auth.ts` (lines 122–127)
+
+**Description:** On successful login, the IP attempt counter is reset to `{ attempts: 0, lockoutCount: 0, updatedAt: new Date() }`. This resets the progressive lockout count to zero, meaning the next lockout for that IP starts at 15 minutes again (not the longer duration from prior lockout cycles). A patient attacker can:
+1. Try 4 passwords (below threshold)
+2. Wait, or successfully guess the correct password
+3. If they guessed correctly: full session. If not: their lockout cycle restarts at 15 minutes.
+
+The reset of `lockoutCount` to 0 on success is arguably correct behavior for legitimate users who forget their password (you wouldn't want the lockout duration to grow forever). However, it does allow a brute-force strategy of "try 4, wait, try 4, wait" indefinitely without escalating lockout duration.
+
+**Recommendation:** On success, reset `attempts: 0` but do not reset `lockoutCount: 0`. Only reset `lockoutCount` after a user-initiated password reset or after a configurable inactivity period (e.g., 30 days). This way, repeated lockout cycles from the same IP escalate in duration even if the attacker occasionally guesses correctly.
+
+---
+
+### SEC-09: Missing Security Response Headers — Low
+
+**Affected:** `api/host.json`, Azure Static Web Apps configuration (missing `staticwebapp.config.json`)
+
+**Description:** The following security response headers are absent:
+
+| Header | Risk if missing |
+|--------|----------------|
+| `X-Frame-Options: DENY` | Clickjacking — the app can be embedded in a malicious iframe |
+| `X-Content-Type-Options: nosniff` | MIME-sniffing attacks in older browsers |
+| `Referrer-Policy: strict-origin-when-cross-origin` | Referer header may leak URL paths to third parties |
+| `Permissions-Policy` | Browser features (microphone, camera, geolocation) unrestricted |
+
+`Strict-Transport-Security` (HSTS) is typically enforced by Azure Static Web Apps at the platform level, but it is not verified here and should be confirmed in the production deployment.
+
+**Recommendation:** Add a `staticwebapp.config.json` at the project root with `globalHeaders` for all security headers listed above (see also SEC-01 for CSP). This is low-effort and eliminates an entire class of browser-level attack vectors.
+
+---
+
+### SEC-10: Admin Password Reset Returns Plaintext Temp Password in API Response — Info
+
+**Affected:** `api/src/functions/admin.ts` — `getResetPasswordHandler()` (line 79), `getCreateUserHandler()` (line 55)
+
+**Description:** The admin `POST /api/users/{id}/reset-password` endpoint returns the plaintext temporary password in the JSON response body: `{ tempPassword: "abc123xyz789" }`. Similarly, `POST /api/users` (create user) returns the temp password in the 201 response. This is intentional — there is no email delivery mechanism, so the admin must manually deliver the temp password to the user out-of-band.
+
+The risk is that this plaintext credential appears in:
+1. Application logs (Azure Functions may log request/response bodies if Application Insights is misconfigured)
+2. Network logs if HTTPS is not enforced end-to-end
+3. Browser history if the admin copies it from the devtools Network tab
+
+**Recommendation:** Document this as an accepted design risk (no email delivery mechanism). Ensure:
+1. Application Insights is not configured to capture request/response bodies (verify in `host.json` sampling settings)
+2. The frontend (`Admin.tsx`) shows the temp password only in a modal with a "copy to clipboard" button and does not log it to the console (currently correct)
+3. Consider logging only the hash of the temp password server-side, not the plaintext
+
+---
+
+### SEC-11: `react-markdown` Renders AI-Generated Content — Info
+
+**Affected:** `web/src/components/` (wherever `react-markdown` is used to render coach responses)
+
+**Description:** Coach responses from Claude are rendered using `react-markdown` with `remark-gfm`. The content is AI-generated and passes through several sanitization steps: XML tags are stripped before rendering, and React's JSX escaping applies to text nodes. However, `react-markdown` renders links and potentially other HTML constructs.
+
+A prompt-injection attack where a user crafts a message that tricks Claude into generating a markdown link like `[click me](javascript:alert(1))` could result in a rendered anchor tag. Modern browsers block `javascript:` URIs in anchor clicks but this is browser-dependent.
+
+**Recommendation:** Pass a custom `components` prop to `react-markdown` that overrides the `a` renderer to open links in a new tab with `rel="noopener noreferrer"` and filters non-http(s) schemes:
+
+```tsx
+components={{
+  a: ({ href, children }) => {
+    const safe = href?.startsWith('http://') || href?.startsWith('https://');
+    return safe
+      ? <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+      : <span>{children}</span>;
+  }
+}}
+```
+
+---
+
+### SEC-12: CSRF — Not Applicable (by Design) — Info
+
+**Affected:** All API endpoints
+
+**Description:** The API uses a custom `X-Authorization` header for authentication rather than cookies. Browser same-origin policy prevents cross-site scripts from setting or reading custom request headers, making CSRF attacks impossible against this API design. No CSRF tokens are required.
+
+This is a positive design decision that should be preserved. Any future migration to cookie-based authentication would require adding CSRF tokens.
+
+---
+
+### SEC-13: HTTPS/HSTS Not Verified at Application Layer — Info
+
+**Affected:** `api/host.json`, Azure deployment configuration
+
+**Description:** HTTPS enforcement and HSTS (`Strict-Transport-Security`) are expected to be provided by Azure Static Web Apps at the platform layer. There is no application-layer HTTPS enforcement (redirect from http to https) visible in the reviewed code. This is standard practice for PaaS deployments but should be verified in the production Azure configuration.
+
+**Recommendation:** Confirm that the Azure Static Web Apps deployment has HTTPS-only mode enabled and that HSTS is set with `max-age=31536000; includeSubDomains; preload`. This can be validated with a tool like `curl -I https://<your-domain>` checking for the `Strict-Transport-Security` response header.
+
+---
+
+## Positive Security Controls
+
+The following security controls are well-implemented and should be maintained:
+
+**Authentication:**
+- bcrypt with 10 rounds for password hashing — industry standard
+- 64-byte random refresh tokens stored as SHA-256 hashes in DB — raw token never persisted
+- Temporary passwords use `crypto.randomBytes(9).toString('base64url')` — 72 bits of entropy, suitable for temporary credentials
+- JWT_SECRET sourced from environment variable, never hardcoded; failure throws at startup
+- Access tokens expire in 15 minutes; refresh tokens expire in 30 days
+- `requireAuth` performs a MongoDB user lookup on every authenticated request, enforcing instant deactivation even before token expiry — the DB cost is a deliberate trade-off for correctness
+
+**Login rate limiting:**
+- IP-based lockout after 5 consecutive failures — prevents brute force and email enumeration
+- Progressive lockout duration: 15 → 30 → 60 → ... minutes (capped at 24h) — deters persistent attackers
+- Timing-safe bcrypt dummy hash for email-not-found path — prevents email enumeration via response time
+- Uniform "Invalid credentials" error for wrong email and wrong password — no enumeration signal
+- 7-day TTL index on `login_attempts.updatedAt` — automatic cleanup of stale records
+
+**Authorization:**
+- `requireAdmin()` wraps `requireAuth()` — admin routes always check both auth and admin flag
+- All data queries scope by `userId: new ObjectId(userId)` — IDOR attacks impractical across all collections (runs, plans, messages, usage_events)
+- Admin self-deactivation prevention — `getToggleActiveHandler` checks `id === authCtx.userId`
+- Admin routes use `/api/users` prefix (not `/api/admin/users`) to avoid Azure Functions Core Tools host management API collision
+
+**Injection prevention:**
+- All MongoDB queries use typed ObjectId constructor — BSON typing prevents query injection
+- `progressFeedback` is XML-stripped before saving to DB: `responseText.replace(/<[^>]+\/>/g, '').trim()` — agent-injected XML tags cannot persist to storage
+- No `dangerouslySetInnerHTML` usage in the React frontend — confirmed by code review
+
+**Sensitive data:**
+- ANTHROPIC_API_KEY explicitly cleared to empty string in Playwright test config — no key leakage in CI
+- Error handlers catch exceptions and return generic "Internal server error" — stack traces not exposed to clients
+- `passwordHash` excluded from user list response via projection `{ projection: { passwordHash: 0 } }`
+
+**X-Authorization header strategy:** Using a custom `X-Authorization` header (instead of the standard `Authorization` header) avoids Azure Static Web Apps overwriting custom JWTs with Easy Auth tokens. This is a pragmatic workaround for the Azure SWA architecture and is correctly documented.
+
+---
+
+## Dependency Audit
+
+### API (`api/`) — 7 vulnerabilities found
+
+| Package | Severity | CVE / Advisory | Notes |
+|---------|----------|----------------|-------|
+| `@anthropic-ai/sdk` 0.79–0.80 | Moderate | GHSA-5474-4w2j-mq4c | Memory tool path validation allows sandbox escape to sibling directories. **Fix requires breaking change:** `npm audit fix --force` installs v0.91.1 |
+| `brace-expansion` 2.0.0–2.0.2 | Moderate | GHSA-f886-m6hf-6m8v | Zero-step sequence causes process hang and memory exhaustion. In `azure-functions-core-tools` and glob. `npm audit fix` available |
+| `follow-redirects` ≤1.15.11 | Moderate | GHSA-r4q5-vmmm-2653 | Leaks custom authentication headers to cross-domain redirect targets. `npm audit fix` available |
+| `minimatch` 8.0.0–8.0.5 | High | GHSA-3ppc-4f35-3m26, GHSA-7r86-cg39-jmmj, GHSA-23c5-xmqv-rm74 | Multiple ReDoS vulnerabilities. In `azure-functions-core-tools`. `npm audit fix` available |
+| `picomatch` 4.0.0–4.0.3 | High | GHSA-3v7f-55p6-f55p, GHSA-c2c7-rcm5-vvqj | Method injection and ReDoS. `npm audit fix` available |
+| `postcss` <8.5.10 | Moderate | GHSA-qx2v-qp2m-jg93 | XSS via unescaped `</style>` in CSS stringify output (dev tooling only). `npm audit fix` available |
+| `vite` 7.0.0–7.3.1 | High | GHSA-4w7w-66w2-5vf9, GHSA-v2wj-q39q-566r, GHSA-p9ff-h696-f583 | Path traversal and arbitrary file read via dev server. **Dev tooling only** — not deployed to production |
+
+**Risk assessment for API vulnerabilities:**
+- `@anthropic-ai/sdk` sandbox escape: relevant only if the Memory tool (not used by this application) is enabled. The application uses `messages.stream()` only. Low actual risk but should be updated when a non-breaking fix is available.
+- `minimatch`, `picomatch`, `brace-expansion`, `postcss`: all in `azure-functions-core-tools` (dev dependency) or build tooling — not deployed to production. No production exposure.
+- `follow-redirects`: transitive dev dependency. Review if any production request goes through an HTTP redirect chain.
+- `vite`: dev server only — not deployed to production (Vite builds the static bundle, it is not the production server).
+
+**Recommendation:** Run `npm audit fix` in `api/` to resolve all fixable vulnerabilities. For `@anthropic-ai/sdk`, plan an upgrade to v0.91.1+ and test for breaking API changes.
+
+### Web (`web/`) — 4 vulnerabilities found
+
+| Package | Severity | CVE / Advisory | Notes |
+|---------|----------|----------------|-------|
+| `brace-expansion` ≤1.1.12, 2.0.0–2.0.2 | Moderate | GHSA-f886-m6hf-6m8v | In build tooling and test coverage tooling |
+| `picomatch` 4.0.0–4.0.3 | High | GHSA-3v7f-55p6-f55p, GHSA-c2c7-rcm5-vvqj | In Vite/Vitest (dev tooling) |
+| `postcss` <8.5.10 | Moderate | GHSA-qx2v-qp2m-jg93 | Tailwind CSS build tooling — not deployed |
+| `vite` 7.0.0–7.3.1 and 8.0.0–8.0.4 | High | GHSA-4w7w-66w2-5vf9, GHSA-v2wj-q39q-566r, GHSA-p9ff-h696-f583 | Vite dev server — not deployed to production |
+
+**Risk assessment for web vulnerabilities:** All 4 vulnerabilities are in dev/build tooling (Vite, PostCSS, Vitest). None are present in the deployed production bundle. The Vite dev server vulnerabilities are only exploitable when running `vite dev` on a development machine. No production exposure.
+
+**Recommendation:** Run `npm audit fix` in `web/` to update fixable packages. The Vite version bump should be tested with `npm run build` to confirm the build remains functional.
+
+---
+
+## Recommendations Summary (Prioritized)
+
+| Priority | ID | Finding | Effort | Impact |
+|----------|-----|---------|--------|--------|
+| P1 (fix now) | SEC-01 | No Content-Security-Policy header | Low — add `staticwebapp.config.json` | High — eliminates XSS amplification, clickjacking |
+| P1 (fix now) | SEC-09 | Missing X-Frame-Options, X-Content-Type-Options, Referrer-Policy | Low — same `staticwebapp.config.json` as SEC-01 | Medium |
+| P1 (fix now) | SEC-05 | JWT error message leaks library error detail | Low — one-line change | Low |
+| P1 (fix now) | SEC-07 | JWT algorithm not explicitly pinned | Low — add `algorithms: ['HS256']` option | Low |
+| P1 (fix now) | Deps | Run `npm audit fix` in `api/` and `web/` | Low | Medium (removes known CVEs) |
+| P2 (fix soon) | SEC-04 | `buildContextMessages` missing userId scope | Medium — update function signature and callers | High — cross-user chat history exposure |
+| P2 (fix soon) | SEC-03 | No rate limiting on chat endpoint | Medium — add sliding-window counter | High — unbounded Anthropic API cost |
+| P2 (fix soon) | SEC-06 | Refresh token not rotated on use | Medium — delete+insert on refresh | Medium — limits stolen refresh token window |
+| P3 (consider) | SEC-08 | lockoutCount reset on successful login | Low — remove `lockoutCount: 0` from success reset | Low |
+| P3 (consider) | SEC-02 | Tokens in localStorage (XSS exfiltration risk) | High — requires httpOnly cookie migration | High if XSS occurs |
+| P3 (consider) | SEC-11 | react-markdown link href not sanitized | Low — add custom `a` component | Low |
+| P4 (informational) | SEC-10 | Plaintext temp password in API response | None required — accepted by design | Info |
+| P4 (informational) | SEC-12 | CSRF — not applicable | None required | Info |
+| P4 (informational) | SEC-13 | HSTS not verified at application layer | Low — verify Azure SWA config | Info |
+
+**P1 items (SEC-01, SEC-05, SEC-07, SEC-09, dependency fixes)** are all low-effort changes with meaningful security improvement and no risk of breaking functionality. They should be completed in the next development sprint.
+
+**P2 items (SEC-04, SEC-03, SEC-06)** require moderate development effort and have significant security or cost implications. SEC-04 in particular should be treated as a bug fix — missing userId scope is a correctness issue, not just a hardening measure.
+
+**P3 items** involve architectural trade-offs (localStorage vs cookies, rate limiting design) that should be planned as part of a larger sprint.
