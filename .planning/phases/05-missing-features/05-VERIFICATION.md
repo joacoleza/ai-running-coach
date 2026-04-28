@@ -1,17 +1,10 @@
 ---
 phase: 05-missing-features
 verified: 2026-04-11T19:30:00Z
-status: gaps_found
-score: 9/10 must-haves verified
-gaps:
-  - truth: "plan:add-phase tag is stripped from chat display during streaming and on history reload"
-    status: partial
-    reason: "The live-streaming strip in startPlan's onText callback (lines 774-781 of useChat.ts) is missing the four new tag replace chains that exist in sendMessage's onText. Tags will appear raw during live streaming if emitted during initial plan onboarding. History reload and applyPlanOperations (onDone) both strip correctly."
-    artifacts:
-      - path: "web/src/hooks/useChat.ts"
-        issue: "startPlan onText block (around line 774) lacks .replace(/<plan:add-phase[^/]*\\/>/g, ''), .replace(/<plan:update-goal[^/]*\\/>/g, ''), .replace(/<run:create[^/]*\\/>/g, ''), .replace(/<run:update-insight[^/]*\\/>/g, '') chains that exist in sendMessage's onText"
-    missing:
-      - "Add four new tag replace chains to startPlan onText's setMessages content block to match sendMessage onText (lines 590-594)"
+updated: 2026-04-28T00:00:00Z
+status: passed
+score: 10/10 must-haves verified
+gaps: []
 human_verification:
   - test: "Click '+ Add phase' on the Training Plan page"
     expected: "A new phase appears below the existing phases without a page reload"
@@ -37,7 +30,7 @@ human_verification:
 | 1 | POST /api/plan/phases creates a new phase with correct sequential week numbers | ✓ VERIFIED | `addPhase` handler in `planPhases.ts` lines 63-100: calls `assignPlanStructure([...plan.phases, newPhase])`, returns 201 with updated plan |
 | 2 | PATCH /api/plan accepts targetDate and saves or clears it | ✓ VERIFIED | `patchPlan` in `plan.ts` lines 120-158: `body.targetDate` handled; empty string triggers `$unset`, non-empty goes to `$set` |
 | 3 | System prompt documents all four new XML commands with examples | ✓ VERIFIED | `prompts.ts`: `plan:add-phase`, `plan:update-goal`, `run:create`, `run:update-insight` all present with rules and examples |
-| 4 | plan:add-phase tag is stripped from chat display during streaming and on history reload | ✗ FAILED | History reload (lines 205-208): all four tags stripped correctly. sendMessage onText (lines 590-594): all four stripped. startPlan onText (lines 774-781): MISSING all four new strips — only strips old tag types |
+| 4 | plan:add-phase tag is stripped from chat display during streaming and on history reload | ✓ VERIFIED | All three locations strip correctly: history reload, sendMessage onText, startPlan onText — unified via `stripAgentTags()` helper (fixed 2026-04-28) |
 | 5 | plan:update-goal tag triggers PATCH /api/plan with targetDate and refreshes plan | ✓ VERIFIED | `applyPlanOperations` lines 421-438: fetches PATCH `/api/plan` with `{ targetDate: attrs.targetDate ?? '' }`, then fetchPlan + plan-updated dispatched |
 | 6 | run:create tag triggers POST /api/runs and dispatches plan-updated when a day is linked | ✓ VERIFIED | `applyPlanOperations` lines 441-474: POSTs to `/api/runs` without `unit` field; `hasPlanMutation` includes `runCreateMatches.length > 0` so plan-updated dispatched |
 | 7 | run:update-insight tag triggers PATCH /api/runs/:runId with insight (silent, no plan refresh) | ✓ VERIFIED | `applyPlanOperations` lines 477-498: PATCH to `/api/runs/${attrs.runId}`; `hasPlanMutation` does NOT include `runInsightMatches` so no plan-updated dispatched |
@@ -45,7 +38,7 @@ human_verification:
 | 9 | Training Plan header shows inline target date editor | ✓ VERIFIED | `TrainingPlan.tsx` lines 26-111, 172-200: `editingDate` state, `saveDate` calls PATCH `/api/plan`, `+ Set target date` placeholder shown when no date |
 | 10 | All new features have unit and E2E test coverage | ✓ VERIFIED | 16 new useChat unit tests in `useChat.trainingPlan.test.ts`; 3 new E2E tests in `training-plan.spec.ts`; API unit tests in `planPhases.test.ts` and `plan.test.ts` |
 
-**Score:** 9/10 truths verified
+**Score:** 10/10 truths verified
 
 ### Required Artifacts
 
@@ -55,7 +48,7 @@ human_verification:
 | `api/src/functions/plan.ts` | Extended patchPlan accepting targetDate | ✓ VERIFIED | `targetDate` in body type; `$unset` for empty string; `$set` otherwise |
 | `api/src/shared/prompts.ts` | System prompt with all four new XML commands | ✓ VERIFIED | `plan:add-phase`, `plan:update-goal`, `run:create`, `run:update-insight` all documented |
 | `api/src/functions/chat.ts` | RunId exposed in completed-day context | ✓ VERIFIED | Line 159: `line += \` | RunId: ${(run as any)._id.toString()}\`` |
-| `web/src/hooks/useChat.ts` | Four new tag handlers in applyPlanOperations + strip in both locations | ✗ PARTIAL | applyPlanOperations: all four handlers present and correct. History load strip: correct. sendMessage onText strip: correct. startPlan onText strip: MISSING four new chains |
+| `web/src/hooks/useChat.ts` | Four new tag handlers in applyPlanOperations + strip in both locations | ✓ VERIFIED | applyPlanOperations: all four handlers present and correct. History load strip: correct. sendMessage onText strip: correct. startPlan onText strip: fixed via `stripAgentTags()` helper (2026-04-28) |
 | `web/src/components/plan/PlanView.tsx` | Add phase button and onAddPhase prop wiring | ✓ VERIFIED | `onAddPhase` in `PlanViewProps`; button rendered at lines 248-254 |
 | `web/src/hooks/usePlan.ts` | addPhase function exposed from hook | ✓ VERIFIED | `addPhase` in `UsePlanReturn`; implemented with `useCallback` at line 151; included in return object |
 | `web/src/pages/TrainingPlan.tsx` | Inline target date editor in plan header | ✓ VERIFIED | `editingDate` state, `saveDate`, full inline editor JSX present |
@@ -106,9 +99,7 @@ Step 7b: SKIPPED — requires running server and real MongoDB connection to test
 
 ### Anti-Patterns Found
 
-| File | Location | Pattern | Severity | Impact |
-|------|----------|---------|----------|--------|
-| `web/src/hooks/useChat.ts` | startPlan onText ~line 774-781 | Four new tag strips missing (plan:add-phase, plan:update-goal, run:create, run:update-insight not in replace chain) | ⚠️ Warning | If agent emits these tags during initial plan onboarding streaming, they appear raw briefly in the displayed message. Fully stripped in `onDone` by `applyPlanOperations`. Unlikely in practice since onboarding precedes plan creation. |
+None. The previously flagged pattern (missing strip chains in `startPlan` onText) was resolved by refactoring all strip logic into the shared `stripAgentTags()` helper (2026-04-28).
 
 ### Human Verification Required
 
@@ -116,23 +107,21 @@ Step 7b: SKIPPED — requires running server and real MongoDB connection to test
 
 **Test:** Log in, navigate to Training Plan, scroll to bottom of plan, click "+ Add phase"
 **Expected:** A new empty phase appears below existing phases within 1-2 seconds, no page reload
-**Why human:** E2E tests use route mocking; real server behavior (MongoDB write + re-fetch latency) not covered
+**Result:** ✅ PASSED (2026-04-28)
 
 #### 2. Target date inline editor — save flow
 
 **Test:** Click "Target: YYYY-MM-DD" in the plan header, change the date in the native picker, press Enter
 **Expected:** Updated date appears in header immediately after save
-**Why human:** Native date picker interactions vary by OS/browser; Playwright cannot reliably simulate date input on all platforms
+**Result:** ✅ PASSED (2026-04-28)
 
 ### Gaps Summary
 
-One gap found: the `startPlan` onText callback in `useChat.ts` is missing the four new tag strip chains that were added to `sendMessage`'s onText. This means live streaming during initial plan onboarding could momentarily show raw XML tags (`<plan:add-phase .../>`, `<plan:update-goal .../>`, `<run:create .../>`, `<run:update-insight .../>`) in the chat bubble before the stream completes and `applyPlanOperations` cleans them up.
+No gaps. All 10 must-haves verified.
 
-**Impact assessment:** Low. These commands are only relevant after a plan exists. The `startPlan` path is for creating a brand-new plan from scratch; the agent has no reason to emit these tags during onboarding. The cleanup in `onDone` → `applyPlanOperations` is correct and complete. The `sendMessage` path (used for all post-plan chat) is fully correct. However, the symmetry requirement stated in plan 05-02 ("Two-location strip rule — MUST update both") was not fully applied to all three strip call sites — `startPlan` onText is a third strip location that was missed.
-
-**Fix:** In `web/src/hooks/useChat.ts`, inside `startPlan`'s `onText` callback, add the four missing replace chains after `.replace(/<plan:unlink[^/]*\/>/g, '')` and before `.trim()`.
+**Gap closed 2026-04-28:** The `startPlan` onText strip gap was resolved by extracting all repeated tag-strip chains into a shared `stripAgentTags(text, streaming)` helper in `useChat.ts`. Both `sendMessage` and `startPlan` `onText` callbacks now call this helper uniformly — the symmetry requirement from plan 05-02 is fully satisfied.
 
 ---
 
-_Verified: 2026-04-11T19:30:00Z_
+_Verified: 2026-04-11T19:30:00Z — Gap closed: 2026-04-28_
 _Verifier: Claude (gsd-verifier)_

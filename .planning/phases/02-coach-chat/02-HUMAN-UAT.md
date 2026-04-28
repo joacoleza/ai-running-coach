@@ -22,12 +22,10 @@ expected: After onboarding, coach response contains `<training_plan>` JSON; plan
 result: [closed — passed in 02-UAT.md]
 
 ### 3. Session Modal Inline Editing
-expected: [STALE — SessionModal.tsx deleted by Phase 02.1; inline editing now lives in DayRow.tsx, tested in 02.1-HUMAN-UAT.md]
-result: [stale — closed]
+result: removed — SessionModal.tsx deleted by Phase 02.1; retested as "Inline Click-to-Edit" in 02.1-HUMAN-UAT.md
 
 ### 4. Mark Session Complete
-expected: [STALE — PlanCalendar.tsx deleted by Phase 02.1; day complete/skip now via DayRow buttons + PATCH /api/plan/days/:week/:day, tested in 02.1-HUMAN-UAT.md]
-result: [stale — closed]
+result: removed — PlanCalendar.tsx deleted by Phase 02.1; retested as DayRow complete/skip in 02.1-HUMAN-UAT.md
 
 ### 5. Chat History After Page Refresh
 expected: After having a chat conversation and refreshing the page, the History view shows the previously sent messages loaded from MongoDB.
