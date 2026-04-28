@@ -1,6 +1,7 @@
 ---
 milestone: post-v2.0
 audited: 2026-04-28T10:00:00Z
+updated: 2026-04-28T12:00:00Z
 status: passed
 scores:
   requirements: 16/16
@@ -13,10 +14,10 @@ gaps:
   flows: []
 tech_debt: []
 nyquist:
-  compliant_phases: []
+  compliant_phases: [11, 12]
   partial_phases: []
-  missing_phases: [11, 12]
-  overall: MISSING
+  missing_phases: []
+  overall: COMPLIANT
 ---
 
 # Post-v2.0 Enhancements — Milestone Audit
@@ -35,7 +36,7 @@ nyquist:
 | Phases | **2/2** | Both VERIFICATION.md files present and passed |
 | Integration | **16/16** | All cross-phase wiring verified — auth, data isolation, route conventions |
 | E2E Flows | **4/4** | /usage page, admin usage columns, UI delete-week, chat tag delete-week |
-| Nyquist | **0/2** | VALIDATION.md missing for both phases — run `/gsd:validate-phase 11` and `/gsd:validate-phase 12` |
+| Nyquist | **2/2** | Both VALIDATION.md files present and `nyquist_compliant: true` |
 
 ---
 
@@ -128,7 +129,7 @@ nyquist:
 |-------|-------|--------|
 | API unit tests | 344 | ✓ All pass |
 | Web unit tests | 507 | ✓ All pass |
-| E2E tests (including 5 usage + 2 delete-week) | ≥40 | ✓ All pass |
+| E2E tests (including 5 usage + 2 delete-week) | 45 | ✓ All pass |
 | TypeScript build | — | ✓ Clean (1069 modules) |
 
 ---
@@ -137,12 +138,12 @@ nyquist:
 
 **Config:** `workflow.nyquist_validation = true` (enabled)
 
-| Phase | VALIDATION.md | Status | Action |
-|-------|---------------|--------|--------|
-| 11 — Usage Tracking | ❌ Missing | MISSING | `/gsd:validate-phase 11` |
-| 12 — Delete Last Empty Week | ❌ Missing | MISSING | `/gsd:validate-phase 12` |
+| Phase | VALIDATION.md | nyquist_compliant | wave_0_complete | Status |
+|-------|---------------|-------------------|-----------------|--------|
+| 11 — Usage Tracking | ✅ Present | `true` | `true` | COMPLIANT |
+| 12 — Delete Last Empty Week | ✅ Present | `true` | `true` | COMPLIANT |
 
-Both phases were built and verified without Nyquist validation passes. All functionality works correctly (tests pass, VERIFICATION.md passed), but gap/coverage validation was skipped. Run the validate-phase commands above to fill this in.
+Both phases have VALIDATION.md files created 2026-04-28. Phase 11 covers 11 requirements across 6 per-task verifications (23 unit + 5 E2E tests). Phase 12 covers 5 requirements across 5 per-task verifications (no manual-only items). Both validation sign-offs approved 2026-04-28.
 
 ---
 
@@ -159,11 +160,10 @@ None. Both phases are clean:
 
 ## Gaps Summary
 
-**No gaps found.** All 16 requirements are satisfied across both phases. Cross-phase integration verified by reading actual source files — auth guards, data isolation, route conventions, and chat tag symmetry all correct.
-
-The only open item is Nyquist VALIDATION.md coverage (both phases MISSING) — this is discovery-level, not a blocker.
+**No gaps found.** All 16 requirements are satisfied across both phases. Cross-phase integration verified by reading actual source files — auth guards, data isolation, route conventions, and chat tag symmetry all correct. Nyquist compliance verified for both phases.
 
 ---
 
 _Audited: 2026-04-28_
+_Updated: 2026-04-28 (Nyquist status updated — both phases now COMPLIANT)_
 _Auditor: Claude (gsd-audit-milestone)_
