@@ -172,4 +172,24 @@ describe('requireAuth (JWT-based middleware)', () => {
     expect(result?.status).toBe(401)
     expect((result?.jsonBody as any)?.error).toBe('Account is deactivated')
   })
+
+  it('Test 14: returns 401 for a JWT signed with a non-HS256 algorithm (algorithm pin)', async () => {
+    const token = jwt.sign(
+      { sub: VALID_USER_ID.toString(), email: 'test@example.com', isAdmin: false },
+      TEST_SECRET,
+      { algorithm: 'HS512' } as jwt.SignOptions,
+    )
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+  })
+
+  it('Test 15: error message does not leak JWT internals on verification failure', async () => {
+    const token = makeValidToken({ expiresIn: -1 })
+    const req = makeRequest(`Bearer ${token}`)
+    const result = await requireAuth(req)
+    expect(result?.status).toBe(401)
+    expect((result?.jsonBody as any)?.error).toBe('Invalid or expired token')
+  })
 })
