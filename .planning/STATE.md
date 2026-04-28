@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: milestone
-status: verifying
-last_updated: "2026-04-28T20:38:19.454Z"
+milestone: v2.1
+milestone_name: Usage & Plan Controls
+status: complete
+last_updated: "2026-04-28T00:00:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 3
+  total_phases: 2
+  completed_phases: 2
+  total_plans: 5
   completed_plans: 5
   percent: 100
 ---
@@ -16,33 +16,29 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-26)
+See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 12 — delete-last-empty-week
+**Current focus:** Planning next milestone (v2.2 or v3.0)
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Milestone: v2.0 — Multi-User Support
-Status: Phase complete — ready for verification
-Archive: .planning/milestones/v2.0-ROADMAP.md
+Phase: —
+Plan: —
+Milestone: v2.1 — Usage & Plan Controls ✅ SHIPPED 2026-04-28
+Status: Milestone complete — ready for next milestone
 
-Progress: [██████████] 100% (5/5 phases complete)
+Progress: [██████████] 100% (2/2 phases complete)
 
 ## Milestone
 
-**Milestone:** v2.0 — Multi-User Support ✅ SHIPPED 2026-04-26
-**Previous:** v1.1 — Personal AI Running Coach ✅ SHIPPED 2026-04-14
+**Milestone:** v2.1 — Usage & Plan Controls ✅ SHIPPED 2026-04-28
+**Previous:** v2.0 — Multi-User Support ✅ SHIPPED 2026-04-26
 
 **Phase sequence (complete):**
 
-- Phase 6: Backend Auth Foundation (AUTH-01, AUTH-02, AUTH-05, AUTH-06) ✅
-- Phase 7: Frontend Auth (AUTH-03, AUTH-04) ✅
-- Phase 8: Data Isolation & Migration (DATA-01, DATA-02, DATA-03) ✅
-- Phase 9: Admin Panel (USER-01, USER-02, USER-03, USER-04, DATA-03) ✅
-- Phase 10: Login Rate Limiting (AUTH-07) ✅
+- Phase 11: Usage Tracking (USAGE-01 through USAGE-11) ✅
+- Phase 12: Delete Last Empty Week (WEEK-DELETE-01 through WEEK-DELETE-05) ✅
 
 ## Backlog
 
