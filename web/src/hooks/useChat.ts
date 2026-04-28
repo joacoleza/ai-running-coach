@@ -47,6 +47,31 @@ export function parseXmlAttrs(attrString: string): Record<string, string> {
   return result;
 }
 
+/**
+ * Strip all AI agent XML command tags from a text string.
+ * @param streaming - true during live SSE: the <training_plan> block may be incomplete
+ *   (no closing tag yet) so everything from the opening tag onwards is dropped.
+ *   For completed or stored messages the full open+close block is stripped precisely.
+ */
+export function stripAgentTags(text: string, streaming = false): string {
+  return text
+    .replace(streaming ? /<training_plan>[\s\S]*/g : /<training_plan>[\s\S]*?<\/training_plan>/g, '')
+    .replace(/<plan:update-phase[^/]*\/>/g, '')
+    .replace(/<plan:delete-phase[^/]*\/>/g, '')
+    .replace(/<plan:update[^/]*\/>/g, '')
+    .replace(/<plan:add[^/]*\/>/g, '')
+    .replace(/<plan:unlink[^/]*\/>/g, '')
+    .replace(/<plan:add-phase[^/]*\/>/g, '')
+    .replace(/<plan:add-week[^/]*\/>/g, '')
+    .replace(/<plan:delete-week[^/]*\/>/g, '')
+    .replace(/<plan:update-goal[^/]*\/>/g, '')
+    .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
+    .replace(/<run:create[^/]*\/>/g, '')
+    .replace(/<run:update-insight[^/]*\/>/g, '')
+    .replace(/<app:[^/]*\/>/g, '')
+    .trim();
+}
+
 /** SSE payload shape emitted by the server */
 type SSEPayload = { text?: string; done?: boolean; planGenerated?: boolean; error?: string };
 
@@ -196,24 +221,7 @@ export function useChat(): UseChatReturn {
               if (!cancelled && data.messages.length > 0) {
                 setMessages(data.messages.map((m) => ({
                   role: m.role,
-                  content: m.role === 'assistant'
-                    ? m.content
-                        .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
-                        .replace(/<plan:update-phase[^/]*\/>/g, '')
-                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                        .replace(/<plan:update[^/]*\/>/g, '')
-                        .replace(/<plan:add[^/]*\/>/g, '')
-                        .replace(/<plan:unlink[^/]*\/>/g, '')
-                        .replace(/<plan:add-phase[^/]*\/>/g, '')
-                        .replace(/<plan:add-week[^/]*\/>/g, '')
-                        .replace(/<plan:delete-week[^/]*\/>/g, '')
-                        .replace(/<plan:update-goal[^/]*\/>/g, '')
-                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                        .replace(/<run:create[^/]*\/>/g, '')
-                        .replace(/<run:update-insight[^/]*\/>/g, '')
-                        .replace(/<app:[^/]*\/>/g, '')
-                        .trim()
-                    : m.content,
+                  content: m.role === 'assistant' ? stripAgentTags(m.content) : m.content,
                   timestamp: typeof m.timestamp === 'string' ? m.timestamp : new Date(m.timestamp).toISOString(),
                 })));
               }
@@ -253,24 +261,7 @@ export function useChat(): UseChatReturn {
               if (data.messages.length > 0) {
                 setMessages(data.messages.map((m) => ({
                   role: m.role,
-                  content: m.role === 'assistant'
-                    ? m.content
-                        .replace(/<training_plan>[\s\S]*?<\/training_plan>/g, '')
-                        .replace(/<plan:update-phase[^/]*\/>/g, '')
-                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                        .replace(/<plan:update[^/]*\/>/g, '')
-                        .replace(/<plan:add[^/]*\/>/g, '')
-                        .replace(/<plan:unlink[^/]*\/>/g, '')
-                        .replace(/<plan:add-phase[^/]*\/>/g, '')
-                        .replace(/<plan:add-week[^/]*\/>/g, '')
-                        .replace(/<plan:delete-week[^/]*\/>/g, '')
-                        .replace(/<plan:update-goal[^/]*\/>/g, '')
-                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                        .replace(/<run:create[^/]*\/>/g, '')
-                        .replace(/<run:update-insight[^/]*\/>/g, '')
-                        .replace(/<app:[^/]*\/>/g, '')
-                        .trim()
-                    : m.content,
+                  content: m.role === 'assistant' ? stripAgentTags(m.content) : m.content,
                   timestamp: typeof m.timestamp === 'string' ? m.timestamp : new Date(m.timestamp).toISOString(),
                 })));
               }
@@ -334,20 +325,7 @@ export function useChat(): UseChatReturn {
           if (last?.role === 'assistant') {
             updated[updated.length - 1] = {
               ...last,
-              content: last.content
-                .replace(/<plan:update-phase\s+([^/]+)\/>/g, '')
-                .replace(/<plan:delete-phase\s*\/>/g, '')
-                .replace(/<plan:update\s+([^/]+)\/>/g, '')
-                .replace(/<plan:add\s+([^/]+)\/>/g, '')
-                .replace(/<plan:unlink\s+([^/]+)\/>/g, '')
-                .replace(/<plan:add-phase[^/]*\/>/g, '')
-                .replace(/<plan:add-week[^/]*\/>/g, '')
-                .replace(/<plan:delete-week[^/]*\/>/g, '')
-                .replace(/<plan:update-goal[^/]*\/>/g, '')
-                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                .replace(/<run:create[^/]*\/>/g, '')
-                .replace(/<run:update-insight[^/]*\/>/g, '')
-                .trim(),
+              content: stripAgentTags(last.content),
             };
           }
           return updated;
@@ -612,21 +590,7 @@ export function useChat(): UseChatReturn {
             // so we capture the _id from the POST response and save insight immediately.
             const created = await res.json().catch(() => ({})) as { _id?: string };
             if (created._id) {
-              const insightText = accumulatedText
-                .replace(/<plan:update-phase[^/]*\/>/g, '')
-                .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                .replace(/<plan:update[^/]*\/>/g, '')
-                .replace(/<plan:add[^/]*\/>/g, '')
-                .replace(/<plan:unlink[^/]*\/>/g, '')
-                .replace(/<plan:add-phase[^/]*\/>/g, '')
-                .replace(/<plan:add-week[^/]*\/>/g, '')
-                .replace(/<plan:delete-week[^/]*\/>/g, '')
-                .replace(/<plan:update-goal[^/]*\/>/g, '')
-                .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                .replace(/<run:create[^/]*\/>/g, '')
-                .replace(/<run:update-insight[^/]*\/>/g, '')
-                .replace(/<app:[^/]*\/>/g, '')
-                .trim();
+              const insightText = stripAgentTags(accumulatedText);
               await fetch(`/api/runs/${created._id}`, {
                 method: 'PATCH',
                 headers: authHeaders(),
@@ -746,21 +710,7 @@ export function useChat(): UseChatReturn {
             if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
               updated[lastIdx] = {
                 ...updated[lastIdx],
-                content: acc
-                  .replace(/<training_plan>[\s\S]*/g, '')
-                  .replace(/<plan:update-phase[^/]*\/>/g, '')
-                  .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                  .replace(/<plan:update[^/]*\/>/g, '')
-                  .replace(/<plan:add[^/]*\/>/g, '')
-                  .replace(/<plan:unlink[^/]*\/>/g, '')
-                  .replace(/<plan:add-phase[^/]*\/>/g, '')
-                  .replace(/<plan:add-week[^/]*\/>/g, '')
-                  .replace(/<plan:delete-week[^/]*\/>/g, '')
-                  .replace(/<plan:update-goal[^/]*\/>/g, '')
-                  .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                  .replace(/<run:create[^/]*\/>/g, '')
-                  .replace(/<run:update-insight[^/]*\/>/g, '')
-                  .trim(),
+                content: stripAgentTags(acc, true),
               };
             }
             return updated;
@@ -940,21 +890,7 @@ export function useChat(): UseChatReturn {
                   if (lastIdx >= 0 && updated[lastIdx].role === 'assistant') {
                     updated[lastIdx] = {
                       ...updated[lastIdx],
-                      content: acc
-                        .replace(/<training_plan>[\s\S]*/g, '')
-                        .replace(/<plan:update-phase[^/]*\/>/g, '')
-                        .replace(/<plan:delete-phase[^/]*\/>/g, '')
-                        .replace(/<plan:update[^/]*\/>/g, '')
-                        .replace(/<plan:add[^/]*\/>/g, '')
-                        .replace(/<plan:unlink[^/]*\/>/g, '')
-                        .replace(/<plan:add-phase[^/]*\/>/g, '')
-                        .replace(/<plan:add-week[^/]*\/>/g, '')
-                        .replace(/<plan:delete-week[^/]*\/>/g, '')
-                        .replace(/<plan:update-goal[^/]*\/>/g, '')
-                        .replace(/<plan:update-feedback[\s\S]*?\/>/g, '')
-                        .replace(/<run:create[^/]*\/>/g, '')
-                        .replace(/<run:update-insight[^/]*\/>/g, '')
-                        .trim(),
+                      content: stripAgentTags(acc, true),
                     };
                   }
                   return updated;

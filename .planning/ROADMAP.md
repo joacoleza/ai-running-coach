@@ -63,8 +63,8 @@
 
 Plans:
 - [x] 11-01-PLAN.md — Backend foundation: pricing.ts, UsageEvent type, usage_events indexes, usage capture in chat.ts
-- [ ] 11-02-PLAN.md — API endpoints: GET /api/usage/me and GET /api/users/usage-summary
-- [ ] 11-03-PLAN.md — Frontend: UsagePage, sidebar My Usage item, /usage route, Admin columns, E2E tests
+- [x] 11-02-PLAN.md — API endpoints: GET /api/usage/me and GET /api/users/usage-summary
+- [x] 11-03-PLAN.md — Frontend: UsagePage, sidebar My Usage item, /usage route, Admin columns, E2E tests
 
 ### Phase 12: Delete last empty week of a phase (UI button + chat tag)
 

@@ -114,13 +114,13 @@ Scan summary:
 
 **Test:** With a real running plan that has a phase with 2 weeks (last week empty), navigate to `/plan`, find the "− week" button, confirm the dialog, and verify the week disappears.
 **Expected:** Button visible and enabled; clicking triggers a browser confirm dialog; after accept, the week is removed from the UI; plan refreshes to show correct week count.
-**Why human:** Playwright tests use mocked API routes. Real DB interaction with actual plan data not exercised by automated tests.
+**Result:** ✅ PASSED (2026-04-28)
 
 ### 2. E2E Browser Test — Disabled Button When Last Week Has Workout Days
 
 **Test:** With a plan where the last week of a phase has a workout day, navigate to `/plan`, find the "− week" button.
 **Expected:** Button is visible but disabled (grayed out) with title "Last week has workout days — cannot delete". Clicking does nothing.
-**Why human:** E2E test mocks `loginWithPlan` — real DB interaction not tested.
+**Result:** ✅ PASSED (2026-04-28)
 
 ---
 

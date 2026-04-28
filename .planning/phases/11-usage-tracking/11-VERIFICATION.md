@@ -131,19 +131,17 @@ No anti-patterns detected. Scanned:
 
 ## Human Verification Required
 
-The following items require a running app to verify visually:
-
 ### 1. My Usage sidebar navigation (live app)
 
 **Test:** Log in as a regular user, open the sidebar dropdown (click the logo/email area), confirm "My Usage" appears above "Logout", click it.
 **Expected:** Browser navigates to /usage; "My Usage" h1 is visible; two stat cards (All-time, This month) render; monthly table is present.
-**Why human:** Requires live running app + MongoDB with seeded usage_events data.
+**Result:** ✅ PASSED (2026-04-28)
 
 ### 2. Admin panel usage columns (live app)
 
 **Test:** Log in as admin@example.com, navigate to /admin, view the user table on desktop viewport.
 **Expected:** "Month" and "All-time" column headers visible; deactivate@example.com row shows "$0.00" for both columns.
-**Why human:** Requires live running app + real usage_events data from global-setup seeding.
+**Result:** ✅ PASSED (2026-04-28)
 
 ---
 

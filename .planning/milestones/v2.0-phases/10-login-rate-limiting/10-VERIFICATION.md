@@ -121,7 +121,7 @@ No implementation gaps. All phase must-haves for the final IP-based implementati
 - `login_attempts.deleteMany({})` in global-setup prevents IP lockout from blocking subsequent E2E runs
 - `lockout@example.com` removed from global-setup (no longer needed)
 
-The only finding is a documentation gap: `AUTH-07` / `RATE-01` are not registered in `.planning/REQUIREMENTS.md`. This does not affect correctness.
+No documentation gaps. AUTH-07 is registered in `.planning/milestones/v2.0-REQUIREMENTS.md` at line 26 and in the traceability table.
 
 ---
 
