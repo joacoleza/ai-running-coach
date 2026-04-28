@@ -22,23 +22,12 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 ## What it does
 
-- **Goal setting** — Tell the coach your target race (5K, 10K, half marathon, marathon) and when
-- **Onboarding chat** — The coach asks about your current fitness, availability, and history, then generates a personalized training plan
-- **Training plan view** — View your plan as phases → weeks → days labeled Day A, Day B, Day C
-- **Inline day editing** — Click any day's objective or guidelines to edit in place; add new days to any week
-- **Day tracking** — Mark days complete or skipped; undo either action; delete days; convert rest days to runs
-- **Chat app control** — Tell the coach to update a day (`<plan:update>`), add a session (`<plan:add>`), add a phase (`<plan:add-phase>`), add a week (`<plan:add-week>`), delete an empty week (`<plan:delete-week>`), or change the race date (`<plan:update-goal>`) — all applied live without a page refresh
-- **Plan structure editing** — `+ Add phase`, `+ Add week`, and `− week` buttons let you extend or trim the plan from the UI; inline click-to-edit target race date on the plan header
-- **Plan archive** — Close a finished plan and browse all archived plans in a read-only view
-- **Run logging** — Log a run manually after each session, or tell the coach about it and it logs automatically via `<run:create>`; the coach saves feedback directly to the run record
-- **Run/plan cross-navigation** — Click a completed day's run date to open the run detail; click the Week/Day badge in a run to jump back to that training day
-- **Unlink runs** — Detach a logged run from a plan day without losing the run history; the coach can also unlink via `<plan:unlink>` XML commands
-- **Adaptive coaching** — The coach adjusts the plan based on how your runs actually go; progress assessments are auto-saved to the plan via `<plan:update-feedback>`
-- **Coach Feedback panel** — Request a written progress assessment directly from the Training Plan page; refreshable at any time
-- **Dashboard** — Home page with filter presets (current plan, last 4–12 weeks, this year, all time), stat cards (total distance, runs, time, adherence + progress), weekly volume bar chart, and weekly avg pace chart; archived plan pages show readonly coaching chat history
-- **Mobile-friendly** — Coach panel opens as a full-screen overlay on mobile via a floating action button; inputs use 16px font to prevent iOS auto-zoom
-- **Admin panel** — Admins can create user accounts (generates a temp password), reset passwords, and deactivate/reactivate users from a dedicated `/admin` page; deactivated users are immediately rejected on login and on every API call
-- **Brute-force protection** — Login endpoint enforces IP-based rate limiting: 5 consecutive failures from the same IP trigger a 429 lockout with progressive duration (15 min → 30 → 60 → … → 24h cap); all 401 responses are identical regardless of whether the email exists (no enumeration); lockout message shown in the UI
+- **AI coaching chat** — Onboarding conversation generates a personalized training plan; ongoing chat adapts it as your runs progress
+- **Training plan** — Phases → weeks → days; mark days complete/skipped, edit objectives inline, add or remove phases and weeks, set a target race date
+- **Run logging** — Log runs manually or via chat; each run links to its plan day and stores coaching feedback
+- **Dashboard** — Stats (distance, time, adherence), weekly volume and pace charts, with filters by plan or date range
+- **Plan archive** — Close finished plans and browse their history with read-only coaching chat replay
+- **Admin** — Create accounts, reset passwords, deactivate users; IP-based login rate limiting with progressive lockout
 
 ## Built with
 
