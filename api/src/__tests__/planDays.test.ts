@@ -185,6 +185,18 @@ describe('PATCH /api/plan/days/:week/:day', () => {
     expect(result.status).toBe(400);
     expect(result.jsonBody.error).toContain('No valid fields');
   });
+
+  it('updates discipline field via PATCH /api/plan/days/:week/:day', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const handler = handlers.get('patchDay')!;
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { discipline: 'cycle' });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(200);
+    const { plan } = res.jsonBody as { plan: any };
+    const week1 = plan.phases[0].weeks.find((w: any) => w.weekNumber === 1);
+    const dayA = week1.days.find((d: any) => d.label === 'A');
+    expect(dayA.discipline).toBe('cycle');
+  });
 });
 
 describe('DELETE /api/plan/days/:week/:day', () => {
@@ -322,5 +334,38 @@ describe('POST /api/plan/days', () => {
     const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
     const newDay = plan?.phases[0]?.weeks[0]?.days?.find((d: any) => d.label === 'B');
     expect(newDay?.completed).toBe(true);
+  });
+
+  it('stores discipline on new day when provided', async () => {
+    const handler = handlers.get('addDay')!;
+    const req = makePostReq({
+      weekNumber: 1,
+      label: 'B',
+      type: 'cross-train',
+      guidelines: 'Gym day',
+      discipline: 'gym',
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(201);
+    const { plan } = res.jsonBody as { plan: any };
+    const week1 = plan.phases[0].weeks.find((w: any) => w.weekNumber === 1);
+    const dayB = week1.days.find((d: any) => d.label === 'B');
+    expect(dayB.discipline).toBe('gym');
+  });
+
+  it('does not inject discipline when absent from POST /api/plan/days body', async () => {
+    const handler = handlers.get('addDay')!;
+    const req = makePostReq({
+      weekNumber: 1,
+      label: 'C',
+      type: 'run',
+      guidelines: 'Easy run',
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(201);
+    const { plan } = res.jsonBody as { plan: any };
+    const week1 = plan.phases[0].weeks.find((w: any) => w.weekNumber === 1);
+    const dayC = week1.days.find((d: any) => d.label === 'C');
+    expect(dayC.discipline).toBeUndefined();
   });
 });
