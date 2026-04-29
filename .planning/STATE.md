@@ -2,13 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: in_progress
-last_updated: "2026-04-29T00:00:00.000Z"
+status: executing
+last_updated: "2026-04-29T16:23:22.988Z"
+last_activity: 2026-04-29
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 3
+  completed_plans: 1
   percent: 0
 ---
 
@@ -19,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** v3.0 — Multi-Discipline Training Coach
+**Current focus:** Phase 13 — discipline-foundation
 
 ## Current Position
 
-Phase: Phase 13 — Discipline Foundation (not started)
-Plan: —
-Status: Roadmap defined, ready to plan Phase 13
-Last activity: 2026-04-29 — v3.0 roadmap created (Phases 13–17)
+Phase: 13 (discipline-foundation) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-29
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 
@@ -111,6 +112,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - Phase 12 added: Delete last empty week of a phase (UI button + chat tag)
 - [Phase 12]: deleteLastWeekOfPhase guard order mirrors addWeekToPhase: phaseIndex validation, plan lookup, bounds, single-week, non-rest day
 - [Phase 12]: Used IIFE in JSX to compute lastWeekIsEmpty per phase; button disabled not hidden when last week has workout days; plan:delete-week tag symmetric with plan:add-week in 4 strip locations
+- [Phase 13]: Discipline field optional in Run and PlanDay interfaces to preserve compatibility with 30+ existing test fixtures
+- [Phase 13]: userId orphan guard restructured from early-return to if/else so discipline migration always runs on cold start independently
 
 ### Quick Tasks Completed
 
