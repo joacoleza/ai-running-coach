@@ -3,9 +3,9 @@ import { buildSystemPrompt } from '../shared/prompts.js';
 import type { PlanPhase } from '../shared/types.js';
 
 describe('buildSystemPrompt — basic structure', () => {
-  it('includes running coach identity', () => {
+  it('includes training coach identity', () => {
     const prompt = buildSystemPrompt();
-    expect(prompt).toContain('AI running coach');
+    expect(prompt).toContain('AI training coach');
   });
 
   it('includes stay on topic instruction', () => {
@@ -229,5 +229,38 @@ describe('buildSystemPrompt — Phase 5 agent commands', () => {
   it('documents run:update-insight command', () => {
     const prompt = buildSystemPrompt();
     expect(prompt).toContain('run:update-insight');
+  });
+});
+
+describe('buildSystemPrompt — discipline instructions', () => {
+  it('includes discipline attribute in plan:add examples', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('discipline="run"');
+    expect(prompt).toContain('discipline="gym"');
+    expect(prompt).toContain('discipline="cycle"');
+  });
+
+  it('includes Disciplines section with three discipline values', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('## Disciplines');
+    expect(prompt).toContain('run — running sessions');
+    expect(prompt).toContain('gym — strength/gym sessions');
+    expect(prompt).toContain('cycle — cycling sessions');
+  });
+
+  it('instructs type=cross-train for gym and cycle days (not type=gym or type=cycle)', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('type="cross-train" discipline="gym"');
+    expect(prompt).toContain('type="cross-train" discipline="cycle"');
+    // The prompt should not define type="gym" or type="cycle" as plan day types —
+    // only "run", "rest", and "cross-train" are valid. Discipline is the discriminator.
+    // Note: the Disciplines section may warn against these strings, so check plan:add examples specifically.
+    expect(prompt).not.toContain('<plan:add week="3" day="D" type="gym"');
+    expect(prompt).not.toContain('<plan:add week="3" day="D" type="cycle"');
+  });
+
+  it('warns that type gym and cycle are not valid', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('Never use `type="gym"` or `type="cycle"`');
   });
 });
