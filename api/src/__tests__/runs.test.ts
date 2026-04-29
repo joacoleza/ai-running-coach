@@ -734,6 +734,56 @@ describe('POST /api/runs/:id/unlink - unlinkRun', () => {
   });
 });
 
+// ── POST /api/runs - discipline field ────────────────────────────────────────
+
+describe('POST /api/runs - discipline field', () => {
+  it('stores discipline when provided in POST /api/runs', async () => {
+    const handler = handlers.get('createRun')!;
+    const req = makePostReq('https://localhost/api/runs', {
+      date: '2026-05-01',
+      distance: 10,
+      duration: '60:00',
+      discipline: 'gym',
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(201);
+    expect(res.jsonBody.discipline).toBe('gym');
+  });
+
+  it('creates run without discipline when field is absent', async () => {
+    const handler = handlers.get('createRun')!;
+    const req = makePostReq('https://localhost/api/runs', {
+      date: '2026-05-02',
+      distance: 5,
+      duration: '30:00',
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(201);
+    expect(res.jsonBody.discipline).toBeUndefined();
+  });
+});
+
+// ── PATCH /api/runs/:id - discipline field ─────────────────────────────────
+
+describe('PATCH /api/runs/:id - discipline field', () => {
+  it('updates discipline via PATCH /api/runs/:id', async () => {
+    const db = mongoClient.db('running-coach');
+    const { insertedId } = await db.collection('runs').insertOne({
+      date: '2026-05-01', distance: 5, duration: '30:00', pace: 6,
+      userId: new ObjectId(TEST_USER_ID), createdAt: new Date(), updatedAt: new Date(),
+    });
+    const handler = handlers.get('updateRun')!;
+    const req = makePatchReq(
+      'https://localhost/api/runs/' + insertedId.toString(),
+      { id: insertedId.toString() },
+      { discipline: 'cycle' }
+    );
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(200);
+    expect(res.jsonBody.discipline).toBe('cycle');
+  });
+});
+
 // ── PATCH /api/plan - patchPlan ────────────────────────────────────────────
 
 describe('PATCH /api/plan - patchPlan', () => {

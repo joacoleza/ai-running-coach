@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { ObjectId } from 'mongodb';
 import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import type { Plan, Run } from '../shared/types.js';
+import type { Plan, Run, Discipline } from '../shared/types.js';
 
 /**
  * Compute pace (minutes per distance unit) from distance and duration string.
@@ -40,6 +40,7 @@ app.http('createRun', {
       notes?: string;
       weekNumber?: number;
       dayLabel?: string;
+      discipline?: string;
     };
 
     try {
@@ -71,6 +72,7 @@ app.http('createRun', {
 
       if (body.avgHR !== undefined) newRun.avgHR = body.avgHR;
       if (body.notes !== undefined) newRun.notes = body.notes;
+      if (body.discipline !== undefined) newRun.discipline = body.discipline as Discipline;
 
       // If weekNumber AND dayLabel provided, link to plan day
       if (body.weekNumber !== undefined && body.dayLabel !== undefined) {
@@ -242,6 +244,7 @@ app.http('updateRun', {
       avgHR?: number;
       notes?: string;
       insight?: string;
+      discipline?: string;
     };
 
     try {
@@ -263,6 +266,7 @@ app.http('updateRun', {
       if (body.avgHR !== undefined) $set['avgHR'] = body.avgHR;
       if (body.notes !== undefined) $set['notes'] = body.notes;
       if (body.insight !== undefined) $set['insight'] = body.insight;
+      if (body.discipline !== undefined) $set['discipline'] = body.discipline as Discipline;
 
       // Recompute pace if distance or duration changed
       const newDistance = body.distance ?? existing.distance;
