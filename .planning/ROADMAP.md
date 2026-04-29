@@ -74,7 +74,12 @@
   3. `POST /api/runs` and `GET /api/runs` accept and return the `discipline` field without errors
   4. Plan day create and update endpoints accept `discipline` on the day payload
   5. The coach system prompt instructs Claude to tag plan days with their discipline and understand gym/cycle day types
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — TypeScript Discipline type + startup migration backfill (runs + plan days)
+- [ ] 13-02-PLAN.md — API handler discipline field acceptance (POST/PATCH runs, POST/PATCH plan days)
+- [ ] 13-03-PLAN.md — System prompt: training coach identity + discipline coaching instructions
 
 ### Phase 14: Gym Support
 **Goal**: Users can log gym sessions with exercises, view gym plan days with an interactive exercise checklist, and the coach can generate and discuss gym workouts
@@ -138,7 +143,7 @@
 | 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
-| 13. Discipline Foundation | 0/? | Not started | — |
+| 13. Discipline Foundation | 0/3 | Not started | — |
 | 14. Gym Support | 0/? | Not started | — |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
