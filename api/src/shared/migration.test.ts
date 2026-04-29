@@ -130,3 +130,63 @@ describe('runStartupMigration', () => {
     );
   });
 });
+
+describe('runStartupMigration — discipline backfill', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('sets discipline: run on runs when runs lack the field', async () => {
+    const cols = makeMockDb({ orphanedPlans: 0, orphanedRuns: 0, orphanedMessages: 0 });
+    // Override runs countDocuments to return 3 (runs needing discipline)
+    cols.runs.countDocuments
+      .mockResolvedValueOnce(0)   // first call: userId orphan check
+      .mockResolvedValueOnce(3);  // second call: discipline check
+    cols.runs.updateMany.mockResolvedValue({ modifiedCount: 3 });
+    // plans.findOne returns null (no plans need discipline)
+    cols.plans.findOne.mockResolvedValue(null);
+
+    await runStartupMigration();
+
+    expect(cols.runs.updateMany).toHaveBeenCalledWith(
+      { discipline: { $exists: false } },
+      { $set: { discipline: 'run' } }
+    );
+  });
+
+  it('sets discipline: run on non-rest plan days via arrayFilters', async () => {
+    const cols = makeMockDb({ orphanedPlans: 0, orphanedRuns: 0, orphanedMessages: 0 });
+    cols.runs.countDocuments.mockResolvedValue(0);
+    // totalOrphans === 0, so userId backfill block is skipped entirely.
+    // The discipline check is the ONLY plans.findOne call in this scenario.
+    cols.plans.findOne.mockResolvedValueOnce({ _id: 'plan1' });  // discipline check finds a plan needing migration
+    cols.plans.updateMany.mockResolvedValue({ modifiedCount: 1 });
+
+    await runStartupMigration();
+
+    expect(cols.plans.updateMany).toHaveBeenCalledWith(
+      { 'phases.weeks.days': { $elemMatch: { discipline: { $exists: false }, type: { $ne: 'rest' } } } },
+      { $set: { 'phases.$[].weeks.$[].days.$[day].discipline': 'run' } },
+      { arrayFilters: [{ 'day.discipline': { $exists: false }, 'day.type': { $ne: 'rest' } }] }
+    );
+  });
+
+  it('skips discipline backfill when all runs and plans already have discipline', async () => {
+    const cols = makeMockDb({ orphanedPlans: 0, orphanedRuns: 0, orphanedMessages: 0 });
+    cols.runs.countDocuments.mockResolvedValue(0);  // all runs have discipline
+    cols.plans.findOne.mockResolvedValue(null);       // no plans need discipline
+
+    await runStartupMigration();
+
+    // updateMany must NOT be called for discipline (it was not called for userId either)
+    expect(cols.runs.updateMany).not.toHaveBeenCalledWith(
+      { discipline: { $exists: false } },
+      expect.anything()
+    );
+    expect(cols.plans.updateMany).not.toHaveBeenCalledWith(
+      expect.objectContaining({ 'phases.weeks.days': expect.anything() }),
+      expect.anything(),
+      expect.anything()
+    );
+  });
+});
