@@ -47,7 +47,7 @@
 
 ### v3.0 Multi-Discipline Training Coach
 
-- [ ] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline
+- [x] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline (completed 2026-04-29)
 - [ ] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration
 - [ ] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
@@ -74,12 +74,12 @@
   3. `POST /api/runs` and `GET /api/runs` accept and return the `discipline` field without errors
   4. Plan day create and update endpoints accept `discipline` on the day payload
   5. The coach system prompt instructs Claude to tag plan days with their discipline and understand gym/cycle day types
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 13-01-PLAN.md — TypeScript Discipline type + startup migration backfill (runs + plan days)
-- [ ] 13-02-PLAN.md — API handler discipline field acceptance (POST/PATCH runs, POST/PATCH plan days)
-- [ ] 13-03-PLAN.md — System prompt: training coach identity + discipline coaching instructions
+- [x] 13-02-PLAN.md — API handler discipline field acceptance (POST/PATCH runs, POST/PATCH plan days)
+- [x] 13-03-PLAN.md — System prompt: training coach identity + discipline coaching instructions
 
 ### Phase 14: Gym Support
 **Goal**: Users can log gym sessions with exercises, view gym plan days with an interactive exercise checklist, and the coach can generate and discuss gym workouts
@@ -143,7 +143,7 @@ Plans:
 | 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
-| 13. Discipline Foundation | 1/3 | In Progress|  |
+| 13. Discipline Foundation | 3/3 | Complete   | 2026-04-29 |
 | 14. Gym Support | 0/? | Not started | — |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
