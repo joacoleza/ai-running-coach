@@ -1,5 +1,7 @@
 import { ObjectId } from 'mongodb';
 
+export type Discipline = 'run' | 'gym' | 'cycle';
+
 export interface ChatMessage {
   _id?: ObjectId;
   planId: string;
@@ -41,6 +43,7 @@ export interface PlanDay {
   guidelines: string;
   completed: boolean;
   skipped: boolean;
+  discipline?: Discipline;   // optional — absent on pre-v3.0 documents until migration
 }
 
 export interface PlanWeek {
@@ -82,6 +85,7 @@ export interface Run {
   weekNumber?: number;     // linked week number (if linked)
   dayLabel?: string;       // linked day label A-G (if linked)
   insight?: string;        // coaching insight text (set after feedback)
+  discipline?: Discipline;   // optional — absent on pre-v3.0 documents until migration
   userId?: ObjectId;
   createdAt: Date;
   updatedAt: Date;

@@ -59,7 +59,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
 - [ ] App renamed to ai-training-coach throughout (repo, package.json, HTML title, README)
-- [ ] Each session and plan day is tagged with a discipline (Run / Gym / Cycle)
+- ✓ Discipline type (run/gym/cycle) added to TypeScript interfaces; existing documents backfilled via startup migration; four API endpoints accept discipline field; AI coach identity updated to "training coach" with discipline coaching instructions — Phase 13
 - [ ] User can log a gym session (duration, type, notes)
 - [ ] Gym plan days include an exercise checklist (name, sets, reps, weight) user can mark done or skip
 - [ ] Coach generates gym plan days with exercise lists
@@ -83,8 +83,9 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
-- **Test coverage:** 344 API tests, 507 web unit tests, 45 E2E tests — all green as of v2.1
+- **Test coverage:** 357 API tests, 507 web unit tests, 45 E2E tests — all green as of Phase 13
 - **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
+- **Discipline:** `Discipline` type (`'run' | 'gym' | 'cycle'`) added to `types.ts`; optional on `Run` and `PlanDay` interfaces; startup migration backfills pre-Phase-13 documents; `createRun`, `patchRun`, `addDay`, `patchDay` all accept discipline via body; AI system prompt updated to "training coach" with `## Disciplines` coaching section
 - **Agent protocol:** 11 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:delete-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Usage tracking:** `usage_events` MongoDB collection captures raw token counts per chat call; `pricing.ts` computes USD cost at query time from `MODEL_PRICING`; `GET /api/usage/me` for users, `GET /api/users/usage-summary` for admins
 - **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request; responsive mobile + desktop layout; `lastLoginAt` updated on every token refresh

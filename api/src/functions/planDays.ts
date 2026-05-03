@@ -32,6 +32,7 @@ app.http('patchDay', {
       completed?: string;
       skipped?: string;
       type?: string;
+      discipline?: string;
     };
 
     try {
@@ -57,6 +58,9 @@ app.http('patchDay', {
     }
     if (body.type !== undefined) {
       $set['phases.$[].weeks.$[week].days.$[day].type'] = body.type;
+    }
+    if (body.discipline !== undefined) {
+      $set['phases.$[].weeks.$[week].days.$[day].discipline'] = body.discipline;
     }
     if (body.completed === 'true' || (body.completed as unknown) === true) {
       $set['phases.$[].weeks.$[week].days.$[day].completed'] = true;
@@ -186,6 +190,7 @@ app.http('addDay', {
       completed?: string | boolean;
       skipped?: string | boolean;
       phaseName?: string;
+      discipline?: string;
     };
 
     try {
@@ -227,6 +232,7 @@ app.http('addDay', {
         unit: body.objective_unit,
       };
     }
+    if (body.discipline !== undefined) newDay['discipline'] = body.discipline;
 
     try {
       const db = await getDb();
