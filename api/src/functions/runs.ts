@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { ObjectId } from 'mongodb';
 import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import type { Plan, Run, Discipline } from '../shared/types.js';
+import type { Plan, Run, Discipline, Exercise } from '../shared/types.js';
 
 /**
  * Compute pace (minutes per distance unit) from distance and duration string.
@@ -41,6 +41,8 @@ app.http('createRun', {
       weekNumber?: number;
       dayLabel?: string;
       discipline?: string;
+      type?: string;
+      exercises?: Array<{ name: string; sets: number; reps: number; weight?: number; unit?: string; completed?: boolean; skipped?: boolean }>;
     };
 
     try {
@@ -50,11 +52,15 @@ app.http('createRun', {
     }
 
     const { date, distance, duration } = body;
-    if (!date || distance === undefined || !duration) {
-      return { status: 400, jsonBody: { error: 'date, distance, and duration are required' } };
+    const isGym = body.discipline === 'gym';
+    if (!date || !duration) {
+      return { status: 400, jsonBody: { error: 'date and duration are required' } };
+    }
+    if (!isGym && (distance === undefined || distance === null)) {
+      return { status: 400, jsonBody: { error: 'distance is required for run and cycle sessions' } };
     }
 
-    const pace = computePace(distance, duration);
+    const pace = (distance !== undefined && distance > 0) ? computePace(distance, duration) : 0;
     const now = new Date();
 
     try {
@@ -62,7 +68,7 @@ app.http('createRun', {
 
       const newRun: Omit<Run, '_id'> = {
         date,
-        distance,
+        distance: distance ?? 0,
         duration,
         pace,
         createdAt: now,
@@ -73,6 +79,15 @@ app.http('createRun', {
       if (body.avgHR !== undefined) newRun.avgHR = body.avgHR;
       if (body.notes !== undefined) newRun.notes = body.notes;
       if (body.discipline !== undefined) newRun.discipline = body.discipline as Discipline;
+      if (body.type !== undefined) newRun.type = body.type;
+      if (body.exercises !== undefined && Array.isArray(body.exercises)) {
+        const validExercises = body.exercises
+          .filter(ex => ex.name && typeof ex.sets === 'number' && ex.sets >= 1 && typeof ex.reps === 'number' && ex.reps >= 1)
+          .slice(0, 20); // max 20 exercises
+        if (validExercises.length > 0) {
+          newRun.exercises = validExercises as Exercise[];
+        }
+      }
 
       // If weekNumber AND dayLabel provided, link to plan day
       if (body.weekNumber !== undefined && body.dayLabel !== undefined) {
@@ -172,6 +187,11 @@ app.http('listRuns', {
         filter['planId'] = { $exists: false };
       }
 
+      const disciplineParam = params.get('discipline');
+      if (disciplineParam) {
+        filter['discipline'] = disciplineParam;
+      }
+
       const db = await getDb();
       const col = db.collection<Run>('runs');
 
@@ -245,6 +265,8 @@ app.http('updateRun', {
       notes?: string;
       insight?: string;
       discipline?: string;
+      type?: string;
+      exercises?: Array<{ name: string; sets: number; reps: number; weight?: number; unit?: string; completed?: boolean; skipped?: boolean }>;
     };
 
     try {
@@ -267,6 +289,8 @@ app.http('updateRun', {
       if (body.notes !== undefined) $set['notes'] = body.notes;
       if (body.insight !== undefined) $set['insight'] = body.insight;
       if (body.discipline !== undefined) $set['discipline'] = body.discipline as Discipline;
+      if (body.type !== undefined) $set['type'] = body.type;
+      if (body.exercises !== undefined) $set['exercises'] = body.exercises;
 
       // Recompute pace if distance or duration changed
       const newDistance = body.distance ?? existing.distance;

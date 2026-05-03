@@ -223,6 +223,36 @@ describe('POST /api/runs - createRun', () => {
     expect(result.status).toBe(201);
     expect(result.jsonBody.pace).toBe(5.0);
   });
+
+  it('creates a gym session without distance (discipline=gym)', async () => {
+    const handler = handlers.get('createRun')!;
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-05-01',
+      duration: '45:00',
+      discipline: 'gym',
+      type: 'upper body',
+      exercises: [{ name: 'Bench Press', sets: 3, reps: 8, weight: 185, unit: 'lbs' }],
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(201);
+    const body = res.jsonBody as any;
+    expect(body.discipline).toBe('gym');
+    expect(body.type).toBe('upper body');
+    expect(body.exercises).toHaveLength(1);
+    expect(body.exercises[0].name).toBe('Bench Press');
+    expect(body.pace).toBe(0);
+  });
+
+  it('rejects run session without distance', async () => {
+    const handler = handlers.get('createRun')!;
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-05-01',
+      duration: '45:00',
+      discipline: 'run',
+    });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(400);
+  });
 });
 
 // ── GET /api/runs - listRuns ───────────────────────────────────────────────
@@ -393,6 +423,21 @@ describe('PATCH /api/runs/:id - updateRun', () => {
     const result = await handlers.get('updateRun')!(req, ctx);
     expect(result.status).toBe(200);
     expect(result.jsonBody.insight).toBe('Great tempo effort today');
+  });
+
+  it('saves exercises and type fields on PATCH', async () => {
+    const runInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01', distance: 0, duration: '45:00', pace: 0, discipline: 'gym' }));
+    const runId = runInsert.insertedId.toHexString();
+    const req = new HttpRequest({ method: 'PATCH', url: `http://localhost/api/runs/${runId}`, headers: { 'x-app-password': 'test-pw' }, params: { id: runId } });
+    vi.spyOn(req, 'json').mockResolvedValue({
+      type: 'lower body',
+      exercises: [{ name: 'Squat', sets: 4, reps: 6, weight: 225, unit: 'lbs' }],
+    });
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.type).toBe('lower body');
+    expect(result.jsonBody.exercises).toHaveLength(1);
+    expect(result.jsonBody.exercises[0].name).toBe('Squat');
   });
 });
 
@@ -731,6 +776,26 @@ describe('POST /api/runs/:id/unlink - unlinkRun', () => {
     const run = await mongoClient.db('running-coach').collection('runs').findOne({ _id: runInsert.insertedId });
     expect(run).not.toBeNull();
     expect(run?.date).toBe('2026-04-01');
+  });
+});
+
+// ── GET /api/runs?discipline= - discipline filter ─────────────────────────
+
+describe('GET /api/runs?discipline= - discipline filter', () => {
+  it('filters by discipline when discipline query param provided', async () => {
+    const db = mongoClient.db('running-coach');
+    const TEST_USER_OID = new ObjectId(TEST_USER_ID);
+    await db.collection('runs').insertMany([
+      { date: '2026-05-01', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', userId: TEST_USER_OID, createdAt: new Date(), updatedAt: new Date() },
+      { date: '2026-05-02', distance: 5, duration: '25:00', pace: 5.0, discipline: 'run', userId: TEST_USER_OID, createdAt: new Date(), updatedAt: new Date() },
+    ]);
+    const handler = handlers.get('listRuns')!;
+    const req = makeGetReqWithQuery('http://localhost/api/runs', { discipline: 'gym' });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(200);
+    const data = res.jsonBody as any;
+    expect(data.runs.every((r: any) => r.discipline === 'gym')).toBe(true);
+    expect(data.runs).toHaveLength(1);
   });
 });
 
