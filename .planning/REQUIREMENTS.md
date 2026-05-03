@@ -14,8 +14,8 @@
 
 ### DISC — Discipline Infrastructure
 
-- [ ] **DISC-01**: Every session has a `discipline` field ('run' | 'gym' | 'cycle'); existing run sessions migrated to `discipline: 'run'`
-- [ ] **DISC-02**: Every training plan day has a `discipline` field ('run' | 'gym' | 'cycle'); existing plan days migrated to `discipline: 'run'`
+- [x] **DISC-01**: Every session has a `discipline` field ('run' | 'gym' | 'cycle'); existing run sessions migrated to `discipline: 'run'`
+- [x] **DISC-02**: Every training plan day has a `discipline` field ('run' | 'gym' | 'cycle'); existing plan days migrated to `discipline: 'run'`
 - [ ] **DISC-03**: Session log entry form adapts displayed fields based on selected discipline (gym: no distance; cycle: distance+speed; run: distance+pace)
 - [ ] **DISC-04**: Runs list shows a discipline badge/icon per session
 - [ ] **DISC-05**: User can filter the Runs list by discipline
@@ -66,8 +66,8 @@
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
 | RENAME-01 | Phase 17 | Pending |
-| DISC-01 | Phase 13 | Pending |
-| DISC-02 | Phase 13 | Pending |
+| DISC-01 | Phase 13 | Complete |
+| DISC-02 | Phase 13 | Complete |
 | DISC-03 | Phase 14 | Pending |
 | DISC-04 | Phase 14 | Pending |
 | DISC-05 | Phase 14 | Pending |

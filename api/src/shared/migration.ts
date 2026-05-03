@@ -24,62 +24,90 @@ export async function runStartupMigration(): Promise<void> {
 
   if (totalOrphans === 0) {
     console.log('[migration] No orphaned documents found — skipping backfill.');
-    return;
-  }
-
-  console.log(
-    `[migration] Found ${totalOrphans} orphaned documents ` +
-      `(plans:${orphanedPlans}, runs:${orphanedRuns}, messages:${orphanedMessages}). ` +
-      'Looking for admin user...'
-  );
-
-  // Find the seed admin user
-  const adminUser = await db.collection('users').findOne({ isAdmin: true });
-
-  if (!adminUser) {
-    console.warn(
-      '[migration] WARNING: No admin user found (isAdmin: true). ' +
-        'Cannot backfill orphaned documents. ' +
-        'Create an admin user and restart the API to complete migration.'
+  } else {
+    console.log(
+      `[migration] Found ${totalOrphans} orphaned documents ` +
+        `(plans:${orphanedPlans}, runs:${orphanedRuns}, messages:${orphanedMessages}). ` +
+        'Looking for admin user...'
     );
-    return;
-  }
 
-  const adminId = adminUser._id as ObjectId;
-  const filter = { userId: { $exists: false } };
+    // Find the seed admin user
+    const adminUser = await db.collection('users').findOne({ isAdmin: true });
 
-  // Check if admin already has an active plan — if so, orphaned active plans must be
-  // archived to avoid multiple active plans for the same user (non-deterministic getPlan).
-  const adminHasActivePlan = !!(await db
-    .collection('plans')
-    .findOne({ userId: adminId, status: 'active' }));
-
-  if (adminHasActivePlan) {
-    const conflictResult = await db
-      .collection('plans')
-      .updateMany(
-        { userId: { $exists: false }, status: 'active' },
-        { $set: { userId: adminId, status: 'archived' } }
+    if (!adminUser) {
+      console.warn(
+        '[migration] WARNING: No admin user found (isAdmin: true). ' +
+          'Cannot backfill orphaned documents. ' +
+          'Create an admin user and restart the API to complete migration.'
       );
-    if (conflictResult.modifiedCount > 0) {
+    } else {
+      const adminId = adminUser._id as ObjectId;
+      const filter = { userId: { $exists: false } };
+
+      // Check if admin already has an active plan — if so, orphaned active plans must be
+      // archived to avoid multiple active plans for the same user (non-deterministic getPlan).
+      const adminHasActivePlan = !!(await db
+        .collection('plans')
+        .findOne({ userId: adminId, status: 'active' }));
+
+      if (adminHasActivePlan) {
+        const conflictResult = await db
+          .collection('plans')
+          .updateMany(
+            { userId: { $exists: false }, status: 'active' },
+            { $set: { userId: adminId, status: 'archived' } }
+          );
+        if (conflictResult.modifiedCount > 0) {
+          console.log(
+            `[migration] Conflict guard: archived ${conflictResult.modifiedCount} orphaned active plan(s) ` +
+              '— admin already has an active plan.'
+          );
+        }
+      }
+
+      // Assign all remaining orphaned documents (non-active plans, runs, messages) to admin
+      const [plansResult, runsResult, messagesResult] = await Promise.all([
+        db.collection('plans').updateMany(filter, { $set: { userId: adminId } }),
+        db.collection('runs').updateMany(filter, { $set: { userId: adminId } }),
+        db.collection('messages').updateMany(filter, { $set: { userId: adminId } }),
+      ]);
+
       console.log(
-        `[migration] Conflict guard: archived ${conflictResult.modifiedCount} orphaned active plan(s) ` +
-          '— admin already has an active plan.'
+        `[migration] Backfill complete. Updated: ` +
+          `plans=${plansResult.modifiedCount}, ` +
+          `runs=${runsResult.modifiedCount}, ` +
+          `messages=${messagesResult.modifiedCount}`
       );
     }
   }
 
-  // Assign all remaining orphaned documents (non-active plans, runs, messages) to admin
-  const [plansResult, runsResult, messagesResult] = await Promise.all([
-    db.collection('plans').updateMany(filter, { $set: { userId: adminId } }),
-    db.collection('runs').updateMany(filter, { $set: { userId: adminId } }),
-    db.collection('messages').updateMany(filter, { $set: { userId: adminId } }),
-  ]);
+  // ── Discipline backfill (Phase 13) ─────────────────────────────────────────
+  // Set discipline: 'run' on all existing runs and non-rest plan day subdocuments
+  // that were created before Phase 13. Idempotent: { $exists: false } filter means
+  // already-migrated documents are skipped on subsequent cold starts.
+  // IMPORTANT: Runs independently of the userId orphan guard above — must execute
+  // on every cold start until all documents are migrated.
 
-  console.log(
-    `[migration] Backfill complete. Updated: ` +
-      `plans=${plansResult.modifiedCount}, ` +
-      `runs=${runsResult.modifiedCount}, ` +
-      `messages=${messagesResult.modifiedCount}`
-  );
+  const runsNeedingDiscipline = await db.collection('runs')
+    .countDocuments({ discipline: { $exists: false } });
+
+  if (runsNeedingDiscipline > 0) {
+    const disciplineRunsResult = await db.collection('runs').updateMany(
+      { discipline: { $exists: false } },
+      { $set: { discipline: 'run' } }
+    );
+    console.log(`[migration] Discipline backfill runs: ${disciplineRunsResult.modifiedCount} runs updated`);
+  }
+
+  const plansNeedingDiscipline = await db.collection('plans')
+    .findOne({ 'phases.weeks.days': { $elemMatch: { discipline: { $exists: false }, type: { $ne: 'rest' } } } });
+
+  if (plansNeedingDiscipline) {
+    const disciplinePlansResult = await db.collection('plans').updateMany(
+      { 'phases.weeks.days': { $elemMatch: { discipline: { $exists: false }, type: { $ne: 'rest' } } } },
+      { $set: { 'phases.$[].weeks.$[].days.$[day].discipline': 'run' } },
+      { arrayFilters: [{ 'day.discipline': { $exists: false }, 'day.type': { $ne: 'rest' } }] }
+    );
+    console.log(`[migration] Discipline backfill plans: ${disciplinePlansResult.modifiedCount} plans updated`);
+  }
 }

@@ -47,7 +47,7 @@
 
 ### v3.0 Multi-Discipline Training Coach
 
-- [ ] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline
+- [x] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline (completed 2026-04-29)
 - [ ] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration
 - [ ] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
@@ -74,12 +74,12 @@
   3. `POST /api/runs` and `GET /api/runs` accept and return the `discipline` field without errors
   4. Plan day create and update endpoints accept `discipline` on the day payload
   5. The coach system prompt instructs Claude to tag plan days with their discipline and understand gym/cycle day types
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 13-01-PLAN.md — TypeScript Discipline type + startup migration backfill (runs + plan days)
-- [ ] 13-02-PLAN.md — API handler discipline field acceptance (POST/PATCH runs, POST/PATCH plan days)
-- [ ] 13-03-PLAN.md — System prompt: training coach identity + discipline coaching instructions
+- [x] 13-01-PLAN.md — TypeScript Discipline type + startup migration backfill (runs + plan days)
+- [x] 13-02-PLAN.md — API handler discipline field acceptance (POST/PATCH runs, POST/PATCH plan days)
+- [x] 13-03-PLAN.md — System prompt: training coach identity + discipline coaching instructions
 
 ### Phase 14: Gym Support
 **Goal**: Users can log gym sessions with exercises, view gym plan days with an interactive exercise checklist, and the coach can generate and discuss gym workouts
@@ -93,8 +93,14 @@ Plans:
   5. Each session in the Runs list shows a discipline badge (Run / Gym / Cycle)
   6. User can filter the Runs list to show only Gym sessions
   7. The coach receives gym session history (including exercise log) and can reference it in feedback
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 5 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Exercise interface, gym-aware API (POST/PATCH/GET runs), discipline-gated RunEntryForm
+- [ ] 14-02-PLAN.md — RunBadge component + discipline filter tabs on Runs page
+- [ ] 14-03-PLAN.md — ExerciseForm + ExerciseList + RunDetailModal gym exercises section
+- [ ] 14-04-PLAN.md — ExerciseChecklistItem + DayRow gym rendering + patchDay exercises support
+- [ ] 14-05-PLAN.md — Coach system prompt gym exercises instructions + chat.ts exercise log context
 
 ### Phase 15: Cycling Support
 **Goal**: Users can log cycling sessions, view cycling plan days, and the coach can generate and discuss cycling workouts
@@ -143,8 +149,8 @@ Plans:
 | 10. Login Rate Limiting | 3/3 | ✅ Complete | 2026-04-22 |
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
-| 13. Discipline Foundation | 0/3 | Not started | — |
-| 14. Gym Support | 0/? | Not started | — |
+| 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
+| 14. Gym Support | 0/5 | Not started | — |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
