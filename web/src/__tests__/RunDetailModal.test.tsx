@@ -4,6 +4,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
 import type { Run } from '../hooks/useRuns';
 
+vi.mock('../components/runs/ExerciseList', () => ({
+  ExerciseList: ({ runId }: { runId: string }) => (
+    <div data-testid="exercise-list">ExerciseList for {runId}</div>
+  ),
+}));
+
 vi.mock('../contexts/ChatContext', () => ({
   useChatContext: vi.fn(() => ({
     sendMessage: vi.fn().mockResolvedValue('Great run feedback'),
@@ -196,6 +202,27 @@ describe('RunDetailModal', () => {
     const [prompt] = mockSendMessage.mock.calls[0] as [string];
     expect(prompt).toContain('Edited notes');
     expect(prompt).not.toContain('Original notes');
+  });
+
+  it('shows Session Exercises section for gym sessions', () => {
+    const gymRun = { ...mockRun, discipline: 'gym', type: 'upper body' };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Session Exercises')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-list')).toBeInTheDocument();
+  });
+
+  it('does not show Session Exercises section for run sessions', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.queryByText('Session Exercises')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-list')).not.toBeInTheDocument();
   });
 });
 

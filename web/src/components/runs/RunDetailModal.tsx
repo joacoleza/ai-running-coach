@@ -5,6 +5,7 @@ import { updateRun, deleteRun, unlinkRun } from '../../hooks/useRuns';
 import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
 import { DateInput } from './DateInput';
+import { ExerciseList } from './ExerciseList';
 
 interface RunDetailModalProps {
   run: Run;
@@ -292,6 +293,18 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                 <ReactMarkdown>{run.insight}</ReactMarkdown>
               </div>
             </div>
+          )}
+
+          {/* Exercise log — only for gym sessions */}
+          {run.discipline === 'gym' && (
+            <section className="pt-3 border-t border-gray-100">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Session Exercises</h3>
+              <ExerciseList
+                exercises={run.exercises ?? []}
+                runId={run._id}
+                onUpdate={onUpdated}
+              />
+            </section>
           )}
 
           {error && <p className="text-sm text-red-600">{error}</p>}

@@ -90,7 +90,7 @@ export async function fetchUnlinkedRuns(limit = 100): Promise<Run[]> {
 
 export async function updateRun(
   id: string,
-  updates: Partial<Pick<Run, 'date' | 'distance' | 'duration' | 'avgHR' | 'notes' | 'insight'>>
+  updates: Partial<Pick<Run, 'date' | 'distance' | 'duration' | 'avgHR' | 'notes' | 'insight' | 'exercises'>>
 ): Promise<Run> {
   const res = await fetch(`/api/runs/${id}`, {
     method: 'PATCH',
