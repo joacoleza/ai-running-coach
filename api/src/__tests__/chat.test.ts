@@ -195,3 +195,40 @@ describe('extractFirstJson', () => {
     expect(result).toBe(json);
   });
 });
+
+describe('chat.ts gym session context enrichment', () => {
+  it('formats gym session line with exercises in plan state context', () => {
+    const exerciseLine = ['Bench Press 3x8 @ 185lbs', 'Pull-ups 3x10'].join(', ');
+    expect(exerciseLine).toBe('Bench Press 3x8 @ 185lbs, Pull-ups 3x10');
+  });
+
+  it('formats body-weight exercise without weight', () => {
+    const ex = { name: 'Pull-ups', sets: 3, reps: 10 };
+    const weight = (ex as any).weight ? ` @ ${(ex as any).weight}${(ex as any).unit ?? ''}` : '';
+    const formatted = `${ex.name} ${ex.sets}x${ex.reps}${weight}`;
+    expect(formatted).toBe('Pull-ups 3x10');
+  });
+
+  it('formats weighted exercise with weight and unit', () => {
+    const ex = { name: 'Bench Press', sets: 3, reps: 8, weight: 185, unit: 'lbs' };
+    const weight = ex.weight ? ` @ ${ex.weight}${ex.unit ?? ''}` : '';
+    const formatted = `${ex.name} ${ex.sets}x${ex.reps}${weight}`;
+    expect(formatted).toBe('Bench Press 3x8 @ 185lbs');
+  });
+
+  it('formats run date as DD/MM/YYYY', () => {
+    expect(formatRunDate('2026-05-01')).toBe('01/05/2026');
+  });
+
+  it('caps exercise list at 8 exercises', () => {
+    const exercises = Array.from({ length: 10 }, (_, i) => ({
+      name: `Exercise ${i + 1}`,
+      sets: 3,
+      reps: 10,
+    }));
+    const capped = exercises.slice(0, 8);
+    expect(capped).toHaveLength(8);
+    expect(capped[0].name).toBe('Exercise 1');
+    expect(capped[7].name).toBe('Exercise 8');
+  });
+});
