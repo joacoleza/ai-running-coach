@@ -150,7 +150,7 @@ Plans:
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
-| 14. Gym Support | 5/5 | Complete   | 2026-05-04 |
+| 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
