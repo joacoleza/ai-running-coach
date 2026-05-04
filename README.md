@@ -24,7 +24,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 - **AI coaching chat** — Onboarding conversation generates a personalized training plan; ongoing chat adapts it as your runs progress
 - **Training plan** — Phases → weeks → days; mark days complete/skipped, edit objectives inline, add or remove phases and weeks, set a target race date
-- **Run logging** — Log runs manually or via chat; each run links to its plan day and stores coaching feedback
+- **Multi-discipline session logging** — Log runs, gym sessions (with per-exercise tracking), and cycling sessions; filter by discipline; each session links to its plan day and stores coaching feedback
 - **Dashboard** — Stats (distance, time, adherence), weekly volume and pace charts, with filters by plan or date range
 - **Plan archive** — Close finished plans and browse their history with read-only coaching chat replay
 - **Admin** — Create accounts, reset passwords, deactivate users; IP-based login rate limiting with progressive lockout
