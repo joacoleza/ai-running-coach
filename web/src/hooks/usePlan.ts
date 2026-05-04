@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Run } from './useRuns';
 import { useAuth } from '../contexts/AuthContext';
 
+export interface Exercise {
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  unit?: 'lbs' | 'kg';
+  completed?: boolean;
+  skipped?: boolean;
+}
+
 export interface PlanDay {
   label: string;         // "A"-"G" for non-rest days, "" for rest days
   type: 'run' | 'rest' | 'cross-train';
@@ -9,6 +19,8 @@ export interface PlanDay {
   guidelines: string;
   completed: boolean;
   skipped: boolean;
+  discipline?: string;
+  exercises?: Exercise[];
 }
 
 export interface PlanWeek {
