@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-04T00:50:30.801Z"
+last_updated: "2026-05-04T01:00:00.000Z"
 last_activity: 2026-05-04
 progress:
   total_phases: 6
@@ -118,6 +118,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 13-03]: Fixed contradictory test assertion: not.toContain scoped to plan:add examples so Disciplines warning text coexists with type='gym' validation
 - [Phase 14-gym-support]: ExerciseList buffers exercise changes locally, flushes to API on Done click
 - [Phase 14-gym-support]: RunDetailModal shows Session Exercises section only for run.discipline === 'gym'
+- [Phase 14-gym-support]: Exercises array sent as JSON-encoded string in patchDay body for simplicity and consistency with existing body type patterns
+- [Phase 14-gym-support]: Optimistic UI update for exercise checkbox toggle: update local state immediately, then PATCH, revert on error
 
 ### Quick Tasks Completed
 

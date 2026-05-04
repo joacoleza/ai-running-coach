@@ -33,6 +33,7 @@ app.http('patchDay', {
       skipped?: string;
       type?: string;
       discipline?: string;
+      exercises?: string;
     };
 
     try {
@@ -61,6 +62,18 @@ app.http('patchDay', {
     }
     if (body.discipline !== undefined) {
       $set['phases.$[].weeks.$[week].days.$[day].discipline'] = body.discipline;
+    }
+    if (body.exercises !== undefined) {
+      try {
+        const parsedExercises = JSON.parse(body.exercises);
+        if (Array.isArray(parsedExercises)) {
+          $set['phases.$[].weeks.$[week].days.$[day].exercises'] = parsedExercises;
+        } else {
+          return { status: 400, jsonBody: { error: 'exercises must be a valid JSON array' } };
+        }
+      } catch {
+        return { status: 400, jsonBody: { error: 'exercises must be a valid JSON array' } };
+      }
     }
     if (body.completed === 'true' || (body.completed as unknown) === true) {
       $set['phases.$[].weeks.$[week].days.$[day].completed'] = true;

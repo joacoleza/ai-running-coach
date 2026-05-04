@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import type { PlanDay } from '../../hooks/usePlan';
+import { useState, useEffect } from 'react';
+import type { PlanDay, Exercise } from '../../hooks/usePlan';
 import type { Run } from '../../hooks/useRuns';
 import { RunEntryForm } from '../runs/RunEntryForm';
+import { ExerciseChecklistItem } from './ExerciseChecklistItem';
 
 interface DayRowProps {
   day: PlanDay;
@@ -30,6 +31,12 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [completingRun, setCompletingRun] = useState(false);
+  const [exercisesExpanded, setExercisesExpanded] = useState(false);
+  const [localExercises, setLocalExercises] = useState<Exercise[]>(day.exercises ?? []);
+
+  useEffect(() => {
+    setLocalExercises(day.exercises ?? []);
+  }, [day.exercises]);
 
   const isReadOnly = readonly || day.completed || day.skipped;
   const isEditing = editingField !== null;
@@ -55,6 +62,20 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Delete failed');
       setIsSaving(false);
+    }
+  };
+
+  const handleExerciseToggle = async (idx: number, completed: boolean) => {
+    const updated = localExercises.map((ex, i) =>
+      i === idx ? { ...ex, completed } : ex
+    );
+    setLocalExercises(updated); // optimistic update
+    try {
+      await onUpdate(weekNumber, day.label, { exercises: JSON.stringify(updated) });
+    } catch (err) {
+      // Revert on error
+      setLocalExercises(day.exercises ?? []);
+      setError(err instanceof Error ? err.message : 'Failed to update exercise');
     }
   };
 
@@ -199,6 +220,31 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
 
             {day.skipped && <span className="ml-1 text-xs text-gray-400">(skipped)</span>}
           </span>
+
+          {/* Exercise checklist — only for gym plan days with exercises */}
+          {day.discipline === 'gym' && localExercises.length > 0 && (
+            <div className="mt-1">
+              <button
+                onClick={() => setExercisesExpanded(prev => !prev)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+              >
+                <span>{exercisesExpanded ? '▼' : '▶'}</span>
+                <span>Exercises ({localExercises.length})</span>
+              </button>
+              {exercisesExpanded && (
+                <div className="pl-4 mt-1 space-y-0">
+                  {localExercises.map((ex, idx) => (
+                    <ExerciseChecklistItem
+                      key={idx}
+                      exercise={ex}
+                      index={idx}
+                      onToggle={handleExerciseToggle}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Undo — inline with guidelines, always next to the text */}
           {!isEditing && !isSaving && (day.completed || day.skipped) && !readonly && (
