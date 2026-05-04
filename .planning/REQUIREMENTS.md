@@ -16,13 +16,13 @@
 
 - [x] **DISC-01**: Every session has a `discipline` field ('run' | 'gym' | 'cycle'); existing run sessions migrated to `discipline: 'run'`
 - [x] **DISC-02**: Every training plan day has a `discipline` field ('run' | 'gym' | 'cycle'); existing plan days migrated to `discipline: 'run'`
-- [ ] **DISC-03**: Session log entry form adapts displayed fields based on selected discipline (gym: no distance; cycle: distance+speed; run: distance+pace)
-- [ ] **DISC-04**: Runs list shows a discipline badge/icon per session
-- [ ] **DISC-05**: User can filter the Runs list by discipline
+- [x] **DISC-03**: Session log entry form adapts displayed fields based on selected discipline (gym: no distance; cycle: distance+speed; run: distance+pace)
+- [x] **DISC-04**: Runs list shows a discipline badge/icon per session
+- [x] **DISC-05**: User can filter the Runs list by discipline
 
 ### GYM — Gym Workouts
 
-- [ ] **GYM-01**: User can log a gym session with date, type (upper body / lower body / full body / other), duration, and optional notes
+- [x] **GYM-01**: User can log a gym session with date, type (upper body / lower body / full body / other), duration, and optional notes
 
 - [x] **GYM-02**: Logged gym session includes an exercise log: a list of exercises performed with name, sets, reps, and weight
 - [x] **GYM-03**: Training plan gym days display a structured exercise target list (exercise name, target sets, reps, optional weight)
@@ -69,11 +69,10 @@
 | RENAME-01 | Phase 17 | Pending |
 | DISC-01 | Phase 13 | Complete |
 | DISC-02 | Phase 13 | Complete |
-| DISC-03 | Phase 14 | Pending |
-| DISC-04 | Phase 14 | Pending |
-| DISC-05 | Phase 14 | Pending |
-| GYM-01 | Phase 14 | Pending |
-
+| DISC-03 | Phase 14 | Complete |
+| DISC-04 | Phase 14 | Complete |
+| DISC-05 | Phase 14 | Complete |
+| GYM-01 | Phase 14 | Complete |
 | GYM-02 | Phase 14 | Complete |
 | GYM-03 | Phase 14 | Complete |
 | GYM-04 | Phase 14 | Complete |
