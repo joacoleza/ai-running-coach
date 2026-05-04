@@ -157,7 +157,7 @@ describe('DayRow', () => {
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
     const logRunBtn = screen.getByTitle('Log run data');
     fireEvent.click(logRunBtn);
-    expect(await screen.findByText('Save run')).toBeInTheDocument();
+    expect(await screen.findByText('Save Session')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
