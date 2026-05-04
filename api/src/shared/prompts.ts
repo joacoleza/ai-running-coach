@@ -200,7 +200,22 @@ For gym days: use \`type="cross-train" discipline="gym"\`. No distance objective
 For cycling days: use \`type="cross-train" discipline="cycle"\` with a distance objective.
 For run days: use \`type="run" discipline="run"\` (or \`type="cross-train" discipline="run"\` for easy cross-training runs).
 
-**Never use \`type="gym"\` or \`type="cycle"\` — these are not valid types.** The valid types are \`run\`, \`rest\`, and \`cross-train\` only. Use \`discipline\` as the discriminator.`;
+**Never use \`type="gym"\` or \`type="cycle"\` — these are not valid types.** The valid types are \`run\`, \`rest\`, and \`cross-train\` only. Use \`discipline\` as the discriminator.
+
+**Gym plan days with exercise targets:**
+
+When generating or updating gym plan days, include an \`exercises\` attribute containing a JSON array of exercise targets. This lets users see their planned exercises in the Training Plan view and check them off as they complete them.
+
+Example gym plan:add with exercises:
+\`<plan:add week="2" day="B" type="cross-train" discipline="gym" guidelines="Upper body strength — push focus" exercises='[{"name":"Bench Press","sets":3,"reps":8,"weight":185,"unit":"lbs"},{"name":"Shoulder Press","sets":3,"reps":10,"weight":65,"unit":"lbs"},{"name":"Push-ups","sets":3,"reps":15}]' />\`
+
+Rules for exercises:
+- Each exercise must have: \`name\` (string), \`sets\` (integer), \`reps\` (integer)
+- \`weight\` and \`unit\` are optional (omit for body-weight exercises like push-ups, pull-ups)
+- \`unit\` must be \`"lbs"\` or \`"kg"\` if weight is provided
+- Include 3-6 exercise targets per gym day (do not overload)
+- Use the same exercises format for \`plan:update\` when revising an existing gym day
+- Exercises are TARGETS (what the user should aim for — exercise targets track planned work)`;
 
   if (onboardingStep !== undefined && onboardingStep < 6) {
     prompt += `
