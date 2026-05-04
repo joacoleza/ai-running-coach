@@ -1,3 +1,13 @@
+export interface Exercise {
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  unit?: 'lbs' | 'kg';
+  completed?: boolean;
+  skipped?: boolean;
+}
+
 export interface Run {
   _id: string;
   date: string;          // ISO YYYY-MM-DD
@@ -10,6 +20,9 @@ export interface Run {
   weekNumber?: number;
   dayLabel?: string;
   insight?: string;
+  discipline?: string;
+  type?: string;
+  exercises?: Exercise[];
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +35,8 @@ export interface CreateRunInput {
   notes?: string;
   weekNumber?: number;    // provide to link to plan day
   dayLabel?: string;      // provide to link to plan day
+  discipline?: string;
+  type?: string;
 }
 
 function authHeaders(): Record<string, string> {

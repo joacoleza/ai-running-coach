@@ -74,7 +74,7 @@ describe('RunEntryForm', () => {
     renderForm();
 
     // Save button should be disabled when form is incomplete (no distance or duration)
-    const saveBtn = screen.getByRole('button', { name: /save run/i });
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
     expect(saveBtn).toBeDisabled();
   });
 
@@ -84,7 +84,7 @@ describe('RunEntryForm', () => {
     fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
     fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '25:00' } });
 
-    const saveBtn = screen.getByRole('button', { name: /save run/i });
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
     expect(saveBtn).not.toBeDisabled();
 
     await act(async () => {
@@ -108,7 +108,7 @@ describe('RunEntryForm', () => {
     fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '40:00' } });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /save run/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save session/i }));
     });
 
     expect(mockCreateRun).toHaveBeenCalledWith(
@@ -128,7 +128,7 @@ describe('RunEntryForm', () => {
     fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '25:00' } });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /save run/i }));
+      fireEvent.click(screen.getByRole('button', { name: /save session/i }));
     });
 
     expect(onSave).toHaveBeenCalledWith(mockRun);
@@ -152,7 +152,7 @@ describe('RunEntryForm', () => {
     fireEvent.change(durationInput, { target: { value: '25:00' } });
     fireEvent.change(dateInput, { target: { value: '' } });
 
-    expect(screen.getByRole('button', { name: /save run/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /save session/i })).toBeDisabled();
   });
 
   it('date input has type=date with min and max attributes', () => {
@@ -161,5 +161,62 @@ describe('RunEntryForm', () => {
     expect(dateInput).toBeInTheDocument();
     expect(dateInput.min).toBe('2000-01-01');
     expect(dateInput.max).toMatch(/^\d{4}-\d{2}-\d{2}$/); // today's date
+  });
+
+  it('renders discipline selector defaulting to Run', () => {
+    renderForm();
+    const select = screen.getByRole('combobox', { name: /discipline/i });
+    expect(select).toBeInTheDocument();
+    expect((select as HTMLSelectElement).value).toBe('run');
+  });
+
+  it('shows distance field for Run discipline and hides Session Type', () => {
+    renderForm();
+    expect(screen.getByPlaceholderText('5.0')).toBeInTheDocument();
+    expect(screen.queryByText('Session Type')).not.toBeInTheDocument();
+  });
+
+  it('hides distance field and shows Session Type when Gym is selected', async () => {
+    renderForm();
+    const select = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(select, { target: { value: 'gym' } });
+    expect(screen.queryByPlaceholderText('5.0')).not.toBeInTheDocument();
+    expect(screen.getByText('Session Type')).toBeInTheDocument();
+  });
+
+  it('submits gym session without distance when type selected', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    const typeSelect = screen.getByRole('combobox', { name: /session type/i });
+    fireEvent.change(typeSelect, { target: { value: 'upper body' } });
+
+    // Fill required fields
+    const durationInput = screen.getByPlaceholderText('45:30');
+    fireEvent.change(durationInput, { target: { value: '45:00' } });
+
+    // Submit
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    await act(async () => { fireEvent.click(saveBtn); });
+
+    expect(mockCreateRun).toHaveBeenCalledWith(expect.objectContaining({
+      discipline: 'gym',
+      type: 'upper body',
+      duration: '45:00',
+    }));
+  });
+
+  it('shows save button disabled when gym discipline selected but no type chosen', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    const durationInput = screen.getByPlaceholderText('45:30');
+    fireEvent.change(durationInput, { target: { value: '45:00' } });
+
+    // isValid should be false (no gymType) — button is disabled
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    expect(saveBtn).toBeDisabled();
   });
 });
