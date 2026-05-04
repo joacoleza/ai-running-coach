@@ -23,7 +23,7 @@
 ### GYM — Gym Workouts
 
 - [ ] **GYM-01**: User can log a gym session with date, type (upper body / lower body / full body / other), duration, and optional notes
-- [ ] **GYM-02**: Logged gym session includes an exercise log: a list of exercises performed with name, sets, reps, and weight
+- [x] **GYM-02**: Logged gym session includes an exercise log: a list of exercises performed with name, sets, reps, and weight
 - [ ] **GYM-03**: Training plan gym days display a structured exercise target list (exercise name, target sets, reps, optional weight)
 - [ ] **GYM-04**: User can mark individual exercises on a gym plan day as done or skipped from the plan view
 - [ ] **GYM-05**: Coach can generate gym plan days with exercise target lists via plan XML tags (`<plan:add>` / `<plan:update>`)
@@ -72,7 +72,7 @@
 | DISC-04 | Phase 14 | Pending |
 | DISC-05 | Phase 14 | Pending |
 | GYM-01 | Phase 14 | Pending |
-| GYM-02 | Phase 14 | Pending |
+| GYM-02 | Phase 14 | Complete |
 | GYM-03 | Phase 14 | Pending |
 | GYM-04 | Phase 14 | Pending |
 | GYM-05 | Phase 14 | Pending |

@@ -93,12 +93,12 @@ Plans:
   5. Each session in the Runs list shows a discipline badge (Run / Gym / Cycle)
   6. User can filter the Runs list to show only Gym sessions
   7. The coach receives gym session history (including exercise log) and can reference it in feedback
-**Plans:** 5 plans
+**Plans:** 3/5 plans executed
 
 Plans:
-- [ ] 14-01-PLAN.md — Exercise interface, gym-aware API (POST/PATCH/GET runs), discipline-gated RunEntryForm
-- [ ] 14-02-PLAN.md — RunBadge component + discipline filter tabs on Runs page
-- [ ] 14-03-PLAN.md — ExerciseForm + ExerciseList + RunDetailModal gym exercises section
+- [x] 14-01-PLAN.md — Exercise interface, gym-aware API (POST/PATCH/GET runs), discipline-gated RunEntryForm
+- [x] 14-02-PLAN.md — RunBadge component + discipline filter tabs on Runs page
+- [x] 14-03-PLAN.md — ExerciseForm + ExerciseList + RunDetailModal gym exercises section
 - [ ] 14-04-PLAN.md — ExerciseChecklistItem + DayRow gym rendering + patchDay exercises support
 - [ ] 14-05-PLAN.md — Coach system prompt gym exercises instructions + chat.ts exercise log context
 
@@ -150,7 +150,7 @@ Plans:
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
-| 14. Gym Support | 0/5 | Not started | — |
+| 14. Gym Support | 3/5 | In Progress|  |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |

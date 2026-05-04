@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-03T19:24:28.325Z"
-last_activity: 2026-05-03 -- Phase 14 execution started
+last_updated: "2026-05-04T00:50:30.801Z"
+last_activity: 2026-05-04
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 8
-  completed_plans: 3
+  completed_plans: 6
   percent: 0
 ---
 
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 ## Current Position
 
 Phase: 14 (gym-support) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 14
-Last activity: 2026-05-03 -- Phase 14 execution started
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-05-04
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 
@@ -116,6 +116,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 13]: userId orphan guard restructured from early-return to if/else so discipline migration always runs on cold start independently
 - [Phase 13-discipline-foundation]: No default discipline injection in addDay/patchDay
 - [Phase 13-03]: Fixed contradictory test assertion: not.toContain scoped to plan:add examples so Disciplines warning text coexists with type='gym' validation
+- [Phase 14-gym-support]: ExerciseList buffers exercise changes locally, flushes to API on Done click
+- [Phase 14-gym-support]: RunDetailModal shows Session Exercises section only for run.discipline === 'gym'
 
 ### Quick Tasks Completed
 
