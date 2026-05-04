@@ -48,7 +48,7 @@
 ### v3.0 Multi-Discipline Training Coach
 
 - [x] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline (completed 2026-04-29)
-- [ ] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration
+- [x] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration (completed 2026-05-04)
 - [ ] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
@@ -93,14 +93,14 @@ Plans:
   5. Each session in the Runs list shows a discipline badge (Run / Gym / Cycle)
   6. User can filter the Runs list to show only Gym sessions
   7. The coach receives gym session history (including exercise log) and can reference it in feedback
-**Plans:** 3/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 14-01-PLAN.md — Exercise interface, gym-aware API (POST/PATCH/GET runs), discipline-gated RunEntryForm
 - [x] 14-02-PLAN.md — RunBadge component + discipline filter tabs on Runs page
 - [x] 14-03-PLAN.md — ExerciseForm + ExerciseList + RunDetailModal gym exercises section
-- [ ] 14-04-PLAN.md — ExerciseChecklistItem + DayRow gym rendering + patchDay exercises support
-- [ ] 14-05-PLAN.md — Coach system prompt gym exercises instructions + chat.ts exercise log context
+- [x] 14-04-PLAN.md — ExerciseChecklistItem + DayRow gym rendering + patchDay exercises support
+- [x] 14-05-PLAN.md — Coach system prompt gym exercises instructions + chat.ts exercise log context
 
 ### Phase 15: Cycling Support
 **Goal**: Users can log cycling sessions, view cycling plan days, and the coach can generate and discuss cycling workouts
@@ -150,7 +150,7 @@ Plans:
 | 11. Usage Tracking | 3/3 | ✅ Complete | 2026-04-27 |
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
-| 14. Gym Support | 3/5 | In Progress|  |
+| 14. Gym Support | 5/5 | Complete   | 2026-05-04 |
 | 15. Cycling Support | 0/? | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |

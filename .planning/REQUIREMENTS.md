@@ -27,8 +27,8 @@
 - [x] **GYM-02**: Logged gym session includes an exercise log: a list of exercises performed with name, sets, reps, and weight
 - [x] **GYM-03**: Training plan gym days display a structured exercise target list (exercise name, target sets, reps, optional weight)
 - [x] **GYM-04**: User can mark individual exercises on a gym plan day as done or skipped from the plan view
-- [ ] **GYM-05**: Coach can generate gym plan days with exercise target lists via plan XML tags (`<plan:add>` / `<plan:update>`)
-- [ ] **GYM-06**: Coach receives gym session history (including exercise log) in chat context and provides coaching feedback
+- [x] **GYM-05**: Coach can generate gym plan days with exercise target lists via plan XML tags (`<plan:add>` / `<plan:update>`)
+- [x] **GYM-06**: Coach receives gym session history (including exercise log) in chat context and provides coaching feedback
 
 ### CYCLE — Cycling
 
@@ -77,8 +77,8 @@
 | GYM-02 | Phase 14 | Complete |
 | GYM-03 | Phase 14 | Complete |
 | GYM-04 | Phase 14 | Complete |
-| GYM-05 | Phase 14 | Pending |
-| GYM-06 | Phase 14 | Pending |
+| GYM-05 | Phase 14 | Complete |
+| GYM-06 | Phase 14 | Complete |
 | CYCLE-01 | Phase 15 | Pending |
 | CYCLE-02 | Phase 15 | Pending |
 | CYCLE-03 | Phase 15 | Pending |

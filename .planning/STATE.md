@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-04T01:00:00.000Z"
+last_updated: "2026-05-04T01:08:52.825Z"
 last_activity: 2026-05-04
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 8
   percent: 0
 ---
 
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 ## Current Position
 
 Phase: 14 (gym-support) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-05-04
 
@@ -120,6 +120,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 14-gym-support]: RunDetailModal shows Session Exercises section only for run.discipline === 'gym'
 - [Phase 14-gym-support]: Exercises array sent as JSON-encoded string in patchDay body for simplicity and consistency with existing body type patterns
 - [Phase 14-gym-support]: Optimistic UI update for exercise checkbox toggle: update local state immediately, then PATCH, revert on error
+- [Phase 14-gym-support]: Gym session context uses discipline-aware format: 'Gym session DD/MM/YYYY | Exercises: ...' vs 'Ran: ...' for runs
 
 ### Quick Tasks Completed
 
