@@ -20,7 +20,7 @@ function isValidDate(dateStr: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
   const d = new Date(dateStr + 'T12:00:00');
   if (isNaN(d.getTime()) || d.getFullYear() < 2000) return false;
-  return dateStr <= todayISO(); // no future runs
+  return dateStr <= todayISO();
 }
 
 function computePaceDisplay(distStr: string, durStr: string): string {
@@ -37,7 +37,11 @@ function computePaceDisplay(distStr: string, durStr: string): string {
   return `${m}:${String(s).padStart(2, '0')}/km`;
 }
 
+type Discipline = 'run' | 'gym' | 'cycle';
+
 export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCancel }: RunEntryFormProps) {
+  const [discipline, setDiscipline] = useState<Discipline>('run');
+  const [gymType, setGymType] = useState('');
   const [date, setDate] = useState(todayISO);
   const [distance, setDistance] = useState('');
   const [duration, setDuration] = useState('');
@@ -46,22 +50,31 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const pace = computePaceDisplay(distance, duration);
+  const isGym = discipline === 'gym';
+  const pace = isGym ? '' : computePaceDisplay(distance, duration);
+  const durationValid = !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
+  const isValid = isValidDate(date) && durationValid &&
+    (isGym ? !!gymType : (!!parseFloat(distance) && parseFloat(distance) > 0));
 
   const handleSubmit = async () => {
     if (isSaving) return;
-    const dist = parseFloat(distance);
-    if (!isValidDate(date) || !dist || dist <= 0 || !duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-      setError('Please fill in a valid date, distance, and duration (MM:SS).');
+    if (!isValid) {
+      if (!isValidDate(date)) setError('Please enter a valid date (not in the future).');
+      else if (!durationValid) setError('Duration required (format: MM:SS or HH:MM:SS).');
+      else if (isGym && !gymType) setError('Please select a session type.');
+      else setError('Please fill in all required fields.');
       return;
     }
     setIsSaving(true);
     setError(null);
     try {
+      const dist = isGym ? undefined : parseFloat(distance);
       const run = await createRun({
         date,
-        distance: dist,
+        distance: dist as number,  // API will handle undefined for gym
         duration,
+        discipline,
+        type: isGym ? gymType : undefined,
         avgHR: avgHR ? parseInt(avgHR, 10) : undefined,
         notes: notes || undefined,
         weekNumber,
@@ -69,12 +82,10 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
       });
       onSave(run);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save run');
+      setError(err instanceof Error ? err.message : 'Failed to save session');
       setIsSaving(false);
     }
   };
-
-  const isValid = isValidDate(date) && !!parseFloat(distance) && parseFloat(distance) > 0 && !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
 
   return (
     <div className="space-y-3">
@@ -84,8 +95,23 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
         </p>
       )}
 
+      {/* Discipline Selector */}
+      <div>
+        <label htmlFor="discipline-select" className="block text-xs font-medium text-gray-700 mb-1">Discipline</label>
+        <select
+          id="discipline-select"
+          value={discipline}
+          onChange={(e) => { setDiscipline(e.target.value as Discipline); setGymType(''); setDistance(''); }}
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 cursor-pointer"
+        >
+          <option value="run">Run</option>
+          <option value="gym">Gym</option>
+          <option value="cycle">Cycling</option>
+        </select>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
-        {/* Date */}
+        {/* Date — always shown */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
           <DateInput
@@ -97,24 +123,45 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           />
         </div>
 
-        {/* Distance */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Distance</label>
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={distance}
-              onChange={(e) => setDistance(e.target.value)}
-              placeholder="5.0"
-              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
-            />
-            <span className="text-xs text-gray-500 whitespace-nowrap">km</span>
+        {/* Distance — only for run/cycle (conditional render, NOT display:none) */}
+        {!isGym && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Distance</label>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+                placeholder="5.0"
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400"
+              />
+              <span className="text-xs text-gray-500 whitespace-nowrap">km</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Duration */}
+        {/* Session Type — only for gym (conditional render) */}
+        {isGym && (
+          <div>
+            <label htmlFor="session-type-select" className="block text-xs font-medium text-gray-700 mb-1">Session Type</label>
+            <select
+              id="session-type-select"
+              value={gymType}
+              onChange={(e) => setGymType(e.target.value)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 cursor-pointer"
+            >
+              <option value="">Select type</option>
+              <option value="upper body">Upper Body</option>
+              <option value="lower body">Lower Body</option>
+              <option value="full body">Full Body</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        )}
+
+        {/* Duration — always shown */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">Duration</label>
           <input
@@ -127,7 +174,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           <p className="text-xs text-gray-400 mt-0.5">MM:SS or HH:MM:SS</p>
         </div>
 
-        {/* Avg HR (optional) */}
+        {/* Avg HR — always shown */}
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Avg HR <span className="text-gray-400 font-normal">(optional)</span>
@@ -146,16 +193,18 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           </div>
         </div>
 
-        {/* Pace (computed, read-only) */}
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
-          <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 min-h-[2rem]">
-            {pace || <span className="text-gray-400">—</span>}
+        {/* Pace — only for run/cycle */}
+        {!isGym && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
+            <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 min-h-[2rem]">
+              {pace || <span className="text-gray-400">—</span>}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Notes (optional) */}
+      {/* Notes — always shown */}
       <div>
         <label className="block text-xs font-medium text-gray-700 mb-1">
           Notes <span className="text-gray-400 font-normal">(optional)</span>
@@ -177,7 +226,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           disabled={isSaving || !isValid}
           className="flex-1 bg-green-600 text-white text-sm font-medium py-1.5 px-3 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isSaving ? 'Saving…' : 'Save run'}
+          {isSaving ? 'Saving…' : 'Save Session'}
         </button>
         <button
           onClick={onCancel}

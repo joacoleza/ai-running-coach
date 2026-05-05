@@ -1,7 +1,22 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { DayRow } from '../components/plan/DayRow';
 import type { PlanDay } from '../hooks/usePlan';
+
+// Mock ExerciseChecklistItem to avoid deep rendering
+vi.mock('../components/plan/ExerciseChecklistItem', () => ({
+  ExerciseChecklistItem: ({ exercise, index, onToggle }: any) => (
+    <div data-testid={`exercise-item-${index}`}>
+      <input
+        type="checkbox"
+        checked={exercise.completed ?? false}
+        onChange={() => onToggle(index, !exercise.completed)}
+        data-testid={`exercise-checkbox-${index}`}
+      />
+      {exercise.name}
+    </div>
+  ),
+}));
 
 function makeRunDay(overrides: Partial<PlanDay> = {}): PlanDay {
   return {
@@ -157,7 +172,7 @@ describe('DayRow', () => {
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
     const logRunBtn = screen.getByTitle('Log run data');
     fireEvent.click(logRunBtn);
-    expect(await screen.findByText('Save run')).toBeInTheDocument();
+    expect(await screen.findByText('Save Session')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
 
@@ -319,5 +334,98 @@ describe('DayRow — hide actions while editing', () => {
     // Delete button still visible since confirm was cancelled
     expect(screen.getByTitle('Delete day')).toBeInTheDocument();
     vi.restoreAllMocks();
+  });
+});
+
+describe('DayRow — gym plan day exercise checklist', () => {
+  const gymDay: PlanDay = {
+    label: 'B',
+    type: 'cross-train',
+    discipline: 'gym',
+    guidelines: 'Upper body strength',
+    completed: false,
+    skipped: false,
+    exercises: [
+      { name: 'Bench Press', sets: 3, reps: 8, weight: 185, unit: 'lbs', completed: false },
+      { name: 'Pull-ups', sets: 3, reps: 10, completed: false },
+    ],
+  };
+
+  it('renders Exercises expand button for gym plan day with exercises', () => {
+    render(
+      <DayRow
+        day={gymDay}
+        weekNumber={1}
+        onUpdate={vi.fn().mockResolvedValue(undefined)}
+        onDelete={vi.fn().mockResolvedValue(undefined)}
+      />
+    );
+    expect(screen.getByText('Exercises (2)')).toBeInTheDocument();
+  });
+
+  it('expands exercise list when Exercises button clicked', async () => {
+    render(
+      <DayRow
+        day={gymDay}
+        weekNumber={1}
+        onUpdate={vi.fn().mockResolvedValue(undefined)}
+        onDelete={vi.fn().mockResolvedValue(undefined)}
+      />
+    );
+    fireEvent.click(screen.getByText('Exercises (2)'));
+    expect(screen.getByTestId('exercise-item-0')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-item-1')).toBeInTheDocument();
+  });
+
+  it('calls onUpdate with exercises JSON when exercise checkbox toggled', async () => {
+    const onUpdate = vi.fn().mockResolvedValue(undefined);
+    render(
+      <DayRow
+        day={gymDay}
+        weekNumber={1}
+        onUpdate={onUpdate}
+        onDelete={vi.fn().mockResolvedValue(undefined)}
+      />
+    );
+    fireEvent.click(screen.getByText('Exercises (2)'));
+    fireEvent.click(screen.getByTestId('exercise-checkbox-0'));
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith(
+        1,
+        'B',
+        expect.objectContaining({ exercises: expect.any(String) })
+      );
+      const call = onUpdate.mock.calls[0];
+      const exercisesArg = JSON.parse(call[2].exercises);
+      expect(exercisesArg[0].completed).toBe(true);
+    });
+  });
+
+  it('does not show exercise section for run days (no discipline)', () => {
+    render(
+      <DayRow
+        day={makeRunDay()}
+        weekNumber={1}
+        onUpdate={noop}
+        onDelete={noop}
+      />
+    );
+    expect(screen.queryByText(/Exercises/)).not.toBeInTheDocument();
+  });
+
+  it('does not show exercise section for gym day with no exercises', () => {
+    const gymDayNoExercises: PlanDay = {
+      ...gymDay,
+      exercises: [],
+    };
+    render(
+      <DayRow
+        day={gymDayNoExercises}
+        weekNumber={1}
+        onUpdate={noop}
+        onDelete={noop}
+      />
+    );
+    expect(screen.queryByText(/Exercises/)).not.toBeInTheDocument();
   });
 });

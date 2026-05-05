@@ -54,6 +54,12 @@ vi.mock('../components/runs/RunEntryForm', () => ({
   ),
 }));
 
+vi.mock('../components/runs/RunBadge', () => ({
+  RunBadge: ({ discipline }: { discipline: string }) => (
+    <span data-testid="run-badge">{discipline}</span>
+  ),
+}));
+
 import { fetchRuns } from '../hooks/useRuns';
 
 const mockFetchRuns = vi.mocked(fetchRuns);
@@ -270,6 +276,38 @@ describe('Runs page', () => {
     });
     await waitFor(() => {
       expect(mockFetchRuns).toHaveBeenCalledWith(expect.objectContaining({ dateFrom: '2026-01-01' }));
+    });
+  });
+
+  it('renders discipline filter tabs (All / Runs / Gym / Cycling)', async () => {
+    await act(async () => {
+      render(<Runs />);
+    });
+    expect(screen.getByRole('button', { name: 'All' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Runs' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gym' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cycling' })).toBeInTheDocument();
+  });
+
+  it('clicking Gym tab triggers fetchRuns with discipline=gym', async () => {
+    await act(async () => {
+      render(<Runs />);
+    });
+    await waitFor(() => expect(mockFetchRuns).toHaveBeenCalled());
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Gym' }));
+    });
+    await waitFor(() => {
+      expect(mockFetchRuns).toHaveBeenCalledWith(expect.objectContaining({ discipline: 'gym' }));
+    });
+  });
+
+  it('shows RunBadge for each run in the list', async () => {
+    await act(async () => {
+      render(<Runs />);
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('run-badge')).toBeInTheDocument();
     });
   });
 });

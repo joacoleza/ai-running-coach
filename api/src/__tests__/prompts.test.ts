@@ -264,3 +264,30 @@ describe('buildSystemPrompt — discipline instructions', () => {
     expect(prompt).toContain('Never use `type="gym"` or `type="cycle"`');
   });
 });
+
+describe('buildSystemPrompt — gym exercises instructions', () => {
+  it('includes exercises format instructions for gym plan days', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('exercises');
+    expect(prompt).toContain('"name"');
+    expect(prompt).toContain('"sets"');
+    expect(prompt).toContain('"reps"');
+  });
+
+  it('includes gym exercises example in plan:add tag', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('Bench Press');
+    expect(prompt).toContain('discipline="gym"');
+    expect(prompt).toContain("exercises='[{");
+  });
+
+  it('includes instruction that exercises are targets not completion records', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('exercise targets');
+  });
+
+  it('includes rule about optional weight and unit fields', () => {
+    const prompt = buildSystemPrompt();
+    expect(prompt).toContain('body-weight');
+  });
+});

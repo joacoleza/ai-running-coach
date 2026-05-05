@@ -144,20 +144,45 @@ app.http('chat', {
             const run = runsByKey.get(`${d.weekNumber}-${d.label}`);
             if (run) {
               const runDate = formatRunDate(run.date);
-              const runPace = run.pace > 0 ? ` @ ${formatPace(run.pace)}/km` : '';
-              line += ` | Ran: ${runDate}, ${run.distance}km${runPace}`;
+              const isGymSession = run.discipline === 'gym';
+
+              if (isGymSession) {
+                // Gym session context: show exercises if available
+                line += ` | Gym session ${runDate}`;
+
+                if (run.exercises && run.exercises.length > 0) {
+                  const exerciseList = run.exercises
+                    .slice(0, 8) // cap at 8 to avoid token explosion
+                    .map(ex => {
+                      const weight = ex.weight ? ` @ ${ex.weight}${ex.unit ?? ''}` : '';
+                      return `${ex.name} ${ex.sets}x${ex.reps}${weight}`;
+                    })
+                    .join(', ');
+                  line += ` | Exercises: ${exerciseList}`;
+                }
+              } else {
+                // Run/cycle session context: distance + pace format
+                const runPace = run.pace > 0 ? ` @ ${formatPace(run.pace)}/km` : '';
+                line += ` | Ran: ${runDate}, ${run.distance}km${runPace}`;
+              }
+
+              // Notes — all disciplines
               if (run.notes) {
                 const truncatedNotes = run.notes.length > 500
                   ? run.notes.slice(0, 500) + '...'
                   : run.notes;
                 line += ` | Notes: ${truncatedNotes}`;
               }
+
+              // Insight — all disciplines
               if (run.insight) {
                 const truncatedInsight = run.insight.length > 150
                   ? run.insight.slice(0, 150) + '...'
                   : run.insight;
                 line += ` | Insight: ${truncatedInsight}`;
               }
+
+              // RunId — all disciplines (used by coach for run:update-insight)
               if ((run as any)._id) {
                 line += ` | RunId: ${(run as any)._id.toString()}`;
               }

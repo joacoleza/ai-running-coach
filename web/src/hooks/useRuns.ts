@@ -1,3 +1,13 @@
+export interface Exercise {
+  name: string;
+  sets: number;
+  reps: number;
+  weight?: number;
+  unit?: 'lbs' | 'kg';
+  completed?: boolean;
+  skipped?: boolean;
+}
+
 export interface Run {
   _id: string;
   date: string;          // ISO YYYY-MM-DD
@@ -10,6 +20,9 @@ export interface Run {
   weekNumber?: number;
   dayLabel?: string;
   insight?: string;
+  discipline?: string;
+  type?: string;
+  exercises?: Exercise[];
   createdAt: string;
   updatedAt: string;
 }
@@ -22,6 +35,8 @@ export interface CreateRunInput {
   notes?: string;
   weekNumber?: number;    // provide to link to plan day
   dayLabel?: string;      // provide to link to plan day
+  discipline?: string;
+  type?: string;
 }
 
 function authHeaders(): Record<string, string> {
@@ -51,6 +66,7 @@ export async function fetchRuns(params?: {
   dateTo?: string;
   distanceMin?: number;
   distanceMax?: number;
+  discipline?: string;
 }): Promise<{ runs: Run[]; total: number; totalAll: number }> {
   const query = new URLSearchParams();
   if (params?.limit !== undefined) query.set('limit', String(params.limit));
@@ -59,6 +75,7 @@ export async function fetchRuns(params?: {
   if (params?.dateTo) query.set('dateTo', params.dateTo);
   if (params?.distanceMin !== undefined) query.set('distanceMin', String(params.distanceMin));
   if (params?.distanceMax !== undefined) query.set('distanceMax', String(params.distanceMax));
+  if (params?.discipline) query.set('discipline', params.discipline);
   const res = await fetch(`/api/runs?${query}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('Failed to fetch runs');
   return res.json() as Promise<{ runs: Run[]; total: number; totalAll: number }>;
@@ -73,7 +90,7 @@ export async function fetchUnlinkedRuns(limit = 100): Promise<Run[]> {
 
 export async function updateRun(
   id: string,
-  updates: Partial<Pick<Run, 'date' | 'distance' | 'duration' | 'avgHR' | 'notes' | 'insight'>>
+  updates: Partial<Pick<Run, 'date' | 'distance' | 'duration' | 'avgHR' | 'notes' | 'insight' | 'exercises'>>
 ): Promise<Run> {
   const res = await fetch(`/api/runs/${id}`, {
     method: 'PATCH',

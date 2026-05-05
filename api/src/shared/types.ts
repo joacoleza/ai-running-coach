@@ -32,6 +32,16 @@ export interface PlanSession {
   completed: boolean;
 }
 
+export interface Exercise {
+  name: string;         // "Bench Press", "Squat", etc.
+  sets: number;         // 3
+  reps: number;         // 8
+  weight?: number;      // 185 (optional — body-weight exercises have no weight)
+  unit?: 'lbs' | 'kg'; // weight unit (only if weight present)
+  completed?: boolean;  // for plan day exercises: user marked as done
+  skipped?: boolean;    // for plan day exercises: user marked as skipped
+}
+
 export interface PlanDay {
   label: string;          // "A"-"G" for non-rest days, "" for rest days
   type: 'run' | 'rest' | 'cross-train';
@@ -44,6 +54,7 @@ export interface PlanDay {
   completed: boolean;
   skipped: boolean;
   discipline?: Discipline;   // optional — absent on pre-v3.0 documents until migration
+  exercises?: Exercise[];    // optional — only on gym plan days
 }
 
 export interface PlanWeek {
@@ -86,6 +97,8 @@ export interface Run {
   dayLabel?: string;       // linked day label A-G (if linked)
   insight?: string;        // coaching insight text (set after feedback)
   discipline?: Discipline;   // optional — absent on pre-v3.0 documents until migration
+  type?: string;             // optional — gym session type: 'upper body' | 'lower body' | 'full body' | 'other'
+  exercises?: Exercise[];    // optional — only on gym sessions
   userId?: ObjectId;
   createdAt: Date;
   updatedAt: Date;

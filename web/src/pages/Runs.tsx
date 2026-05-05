@@ -4,6 +4,7 @@ import type { Run } from '../hooks/useRuns';
 import { usePlan } from '../hooks/usePlan';
 import { RunEntryForm } from '../components/runs/RunEntryForm';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
+import { RunBadge } from '../components/runs/RunBadge';
 import { DateInput } from '../components/runs/DateInput';
 
 const PAGE_SIZE = 20;
@@ -29,6 +30,11 @@ interface RunRowProps {
 }
 
 function RunRow({ run, activePlanId, onClick }: RunRowProps) {
+  const isGym = (run.discipline ?? 'run') === 'gym';
+  const subtitle = isGym
+    ? `${run.type || 'Gym session'} · ${run.duration}`
+    : `${run.distance}km · ${run.duration} · ${formatPace(run.pace)}${run.avgHR ? ` · ${run.avgHR}bpm` : ''}`;
+
   return (
     <button
       onClick={onClick}
@@ -36,16 +42,16 @@ function RunRow({ run, activePlanId, onClick }: RunRowProps) {
     >
       <div>
         <div className="font-medium text-gray-900">{formatRunDate(run.date)}</div>
-        <div className="text-sm text-gray-500">
-          {run.distance}km &middot; {run.duration} &middot; {formatPace(run.pace)}
-          {run.avgHR ? ` · ${run.avgHR}bpm` : ''}
-        </div>
+        <div className="text-sm text-gray-500">{subtitle}</div>
       </div>
-      {run.weekNumber && (
-        <span className={`text-xs px-2 py-1 rounded-full ml-2 whitespace-nowrap ${run.planId === activePlanId ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-          Week {run.weekNumber} &middot; Day {run.dayLabel}
-        </span>
-      )}
+      <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+        <RunBadge discipline={(run.discipline ?? 'run') as 'run' | 'gym' | 'cycle'} />
+        {run.weekNumber && (
+          <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${run.planId === activePlanId ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+            Week {run.weekNumber} &middot; Day {run.dayLabel}
+          </span>
+        )}
+      </div>
     </button>
   );
 }
@@ -147,6 +153,10 @@ export function Runs() {
   const [dateTo, setDateTo] = useState('');
   const [distanceMin, setDistanceMin] = useState('');
   const [distanceMax, setDistanceMax] = useState('');
+  const [disciplineFilter, setDisciplineFilter] = useState<'all' | 'run' | 'gym' | 'cycle'>(() => {
+    const stored = localStorage.getItem('runs_discipline_filter');
+    return (stored === 'run' || stored === 'gym' || stored === 'cycle') ? stored : 'all';
+  });
 
   // Use refs for offset and total to avoid stale closures in IntersectionObserver
   const offsetRef = useRef(0);
@@ -157,7 +167,7 @@ export function Runs() {
 
   // loadRuns accepts filters as params and reads offset from ref — no stale closure issues
   const loadRuns = useCallback(
-    async (reset: boolean, filters: { dateFrom?: string; dateTo?: string; distanceMin?: number; distanceMax?: number }) => {
+    async (reset: boolean, filters: { dateFrom?: string; dateTo?: string; distanceMin?: number; distanceMax?: number; discipline?: string }) => {
       if (loadingRef.current) return; // prevent concurrent loads (race between reset and observer)
       loadingRef.current = true;
       const currentOffset = reset ? 0 : offsetRef.current;
@@ -194,7 +204,8 @@ export function Runs() {
     dateTo: dateTo || undefined,
     distanceMin: distanceMin ? parseFloat(distanceMin) : undefined,
     distanceMax: distanceMax ? parseFloat(distanceMax) : undefined,
-  }), [dateFrom, dateTo, distanceMin, distanceMax]);
+    discipline: disciplineFilter !== 'all' ? disciplineFilter : undefined,
+  }), [dateFrom, dateTo, distanceMin, distanceMax, disciplineFilter]);
 
   // Load on mount and filter changes
   useEffect(() => {
@@ -221,6 +232,11 @@ export function Runs() {
     setDistanceMax('');
   };
 
+  const handleDisciplineFilter = (d: 'all' | 'run' | 'gym' | 'cycle') => {
+    localStorage.setItem('runs_discipline_filter', d);
+    setDisciplineFilter(d);
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto">
       {/* Header */}
@@ -244,6 +260,28 @@ export function Runs() {
             Log a run
           </button>
         </div>
+      </div>
+
+      {/* Discipline filter tabs */}
+      <div className="flex gap-1 border-b border-gray-200 mb-4">
+        {(['all', 'run', 'gym', 'cycle'] as const).map((tab) => {
+          const label = tab === 'all' ? 'All' : tab === 'run' ? 'Runs' : tab === 'gym' ? 'Gym' : 'Cycling';
+          const isActive = disciplineFilter === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => handleDisciplineFilter(tab)}
+              className={`px-3 py-2 text-sm cursor-pointer transition-colors border-b-2 ${
+                isActive
+                  ? 'font-medium text-blue-600 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900 border-transparent'
+              }`}
+              aria-current={isActive ? 'true' : undefined}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Filter panel */}

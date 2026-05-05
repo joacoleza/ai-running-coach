@@ -197,6 +197,63 @@ describe('PATCH /api/plan/days/:week/:day', () => {
     const dayA = week1.days.find((d: any) => d.label === 'A');
     expect(dayA.discipline).toBe('cycle');
   });
+
+  it('PATCH /plan/days/:week/:day accepts exercises JSON string and saves to plan day', async () => {
+    const handler = handlers.get('patchDay')!;
+    const exercises = [{ name: 'Squat', sets: 3, reps: 5, completed: false }];
+    // Insert test plan with gym day that has exercises
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      status: 'active',
+      userId: TEST_USER_OID,
+      phases: [{
+        name: 'Phase 1',
+        description: '',
+        weeks: [{
+          weekNumber: 1,
+          days: [{
+            label: 'A',
+            type: 'cross-train',
+            discipline: 'gym',
+            guidelines: 'Upper body',
+            completed: false,
+            skipped: false,
+            exercises,
+          }],
+        }],
+      }],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeReq(
+      'PATCH',
+      { week: '1', day: 'A' },
+      { exercises: JSON.stringify([{ name: 'Squat', sets: 3, reps: 5, completed: true }]) }
+    );
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(200);
+    const updated = (res.jsonBody as any).plan;
+    const day = updated.phases[0].weeks[0].days.find((d: any) => d.label === 'A');
+    expect(day.exercises[0].completed).toBe(true);
+  });
+
+  it('returns 400 for invalid exercises JSON', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const handler = handlers.get('patchDay')!;
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { exercises: 'not-json' });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(400);
+    expect(res.jsonBody.error).toContain('exercises must be a valid JSON array');
+  });
+
+  it('returns 400 when exercises is a JSON object (not array)', async () => {
+    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const handler = handlers.get('patchDay')!;
+    const req = makeReq('PATCH', { week: '1', day: 'A' }, { exercises: '{"name":"Squat"}' });
+    const res = await handler(req, ctx);
+    expect(res.status).toBe(400);
+    expect(res.jsonBody.error).toContain('exercises must be a valid JSON array');
+  });
 });
 
 describe('DELETE /api/plan/days/:week/:day', () => {

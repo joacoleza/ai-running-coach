@@ -7,10 +7,10 @@
 ![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-88.8%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-357%2F357-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-507%2F507-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-88%2F88-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-88.2%25-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-373%2F373-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-540%2F540-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-91%2F91-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -24,7 +24,7 @@ A personal web app that acts as an AI running coach. Set a goal, get a training 
 
 - **AI coaching chat** — Onboarding conversation generates a personalized training plan; ongoing chat adapts it as your runs progress
 - **Training plan** — Phases → weeks → days; mark days complete/skipped, edit objectives inline, add or remove phases and weeks, set a target race date
-- **Run logging** — Log runs manually or via chat; each run links to its plan day and stores coaching feedback
+- **Multi-discipline session logging** — Log runs, gym sessions (with per-exercise tracking), and cycling sessions; filter by discipline; each session links to its plan day and stores coaching feedback
 - **Dashboard** — Stats (distance, time, adherence), weekly volume and pace charts, with filters by plan or date range
 - **Plan archive** — Close finished plans and browse their history with read-only coaching chat replay
 - **Admin** — Create accounts, reset passwords, deactivate users; IP-based login rate limiting with progressive lockout

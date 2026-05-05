@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: verifying
-last_updated: "2026-04-29T23:56:56.179Z"
-last_activity: 2026-04-29
+status: executing
+last_updated: "2026-05-05T20:19:46.301Z"
+last_activity: 2026-05-05
 progress:
   total_phases: 6
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
   percent: 0
 ---
 
@@ -20,14 +20,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 13 — discipline-foundation
+**Current focus:** Phase 14 — gym-support
 
 ## Current Position
 
 Phase: 999.1
 Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-29
+Status: Ready to execute
+Last activity: 2026-05-05
 
 Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
 
@@ -116,6 +116,11 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 13]: userId orphan guard restructured from early-return to if/else so discipline migration always runs on cold start independently
 - [Phase 13-discipline-foundation]: No default discipline injection in addDay/patchDay
 - [Phase 13-03]: Fixed contradictory test assertion: not.toContain scoped to plan:add examples so Disciplines warning text coexists with type='gym' validation
+- [Phase 14-gym-support]: ExerciseList buffers exercise changes locally, flushes to API on Done click
+- [Phase 14-gym-support]: RunDetailModal shows Session Exercises section only for run.discipline === 'gym'
+- [Phase 14-gym-support]: Exercises array sent as JSON-encoded string in patchDay body for simplicity and consistency with existing body type patterns
+- [Phase 14-gym-support]: Optimistic UI update for exercise checkbox toggle: update local state immediately, then PATCH, revert on error
+- [Phase 14-gym-support]: Gym session context uses discipline-aware format: 'Gym session DD/MM/YYYY | Exercises: ...' vs 'Ran: ...' for runs
 
 ### Quick Tasks Completed
 

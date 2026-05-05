@@ -164,7 +164,7 @@ test.describe('Run Logging', () => {
     await page.getByPlaceholder('45:30').fill('25:00')
 
     // Click Save run
-    await page.getByRole('button', { name: /save run/i }).click()
+    await page.getByRole('button', { name: /save session/i }).click()
 
     // Form should close (POST /api/runs was called)
     await expect(async () => {
@@ -212,7 +212,7 @@ test.describe('Run Logging', () => {
     // Fill form and save
     await page.getByPlaceholder('5.0').fill('6')
     await page.getByPlaceholder('45:30').fill('30:00')
-    await page.getByRole('button', { name: /save run/i }).click()
+    await page.getByRole('button', { name: /save session/i }).click()
 
     // Modal closes and run appears in list (no plan badge since unlinked)
     await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
@@ -347,6 +347,173 @@ test.describe('Run Logging', () => {
     // Verify the PATCH was sent with the correct insight text
     await expect(async () => {
       expect(patchBody?.insight).toBe(coachReply)
+    }).toPass({ timeout: 5_000 })
+  })
+})
+
+test.describe('Gym Session Features', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('log a gym session: discipline selector hides distance, requires session type', async ({ page }) => {
+    await loginWithPlan(page)
+
+    let postBody: any = null
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        postBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            _id: 'gym-001', date: '2026-05-01', distance: 0, duration: '60:00', pace: 0,
+            discipline: 'gym', type: 'upper body',
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+          }),
+        })
+      } else {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }),
+        })
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: /log a run/i }).click()
+    await expect(page.getByRole('heading', { name: /log a run/i })).toBeVisible({ timeout: 5_000 })
+
+    // Change discipline to Gym
+    await page.getByLabel('Discipline').selectOption('gym')
+
+    // Distance field disappears, session type appears
+    await expect(page.getByPlaceholder('5.0')).not.toBeVisible()
+    await expect(page.getByLabel(/session type/i)).toBeVisible()
+
+    // Fill form
+    await page.getByLabel(/session type/i).selectOption('upper body')
+    await page.getByPlaceholder('45:30').fill('60:00')
+
+    await page.getByRole('button', { name: /save session/i }).click()
+
+    // Modal closes and POST had correct discipline
+    await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(async () => {
+      expect(postBody?.discipline).toBe('gym')
+      expect(postBody?.type).toBe('upper body')
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('discipline filter tabs: Gym tab filters to gym sessions only', async ({ page }) => {
+    const gymRun = {
+      _id: 'gym-filter-001', date: '2026-05-01', distance: 0, duration: '60:00', pace: 0,
+      discipline: 'gym', type: 'upper body',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+    const runSession = {
+      _id: 'run-filter-001', date: '2026-05-02', distance: 5, duration: '25:00', pace: 5.0,
+      discipline: 'run',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() !== 'GET') { await route.continue(); return }
+      const url = new URL(route.request().url())
+      const discipline = url.searchParams.get('discipline')
+      if (discipline === 'gym') {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [gymRun], total: 1, totalAll: 1 }) })
+      } else if (discipline === 'run') {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [runSession], total: 1, totalAll: 1 }) })
+      } else {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [gymRun, runSession], total: 2, totalAll: 2 }) })
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // All tab — both visible
+    await expect(page.getByText(/upper body/i)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).toBeVisible()
+
+    // Click Gym tab
+    await page.getByRole('button', { name: 'Gym', exact: true }).click()
+    await expect(page.getByText(/upper body/i)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).not.toBeVisible({ timeout: 3_000 })
+
+    // Click All tab — both back
+    await page.getByRole('button', { name: 'All', exact: true }).click()
+    await expect(page.getByText(/upper body/i)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('gym session RunDetailModal: add exercise and save via Done button', async ({ page }) => {
+    const gymRun = {
+      _id: 'gym-exercises-001',
+      date: '2026-05-01', distance: 0, duration: '60:00', pace: 0,
+      discipline: 'gym', type: 'upper body', exercises: [],
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [gymRun], total: 1, totalAll: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    let patchBody: any = null
+    await page.route('**/api/runs/gym-exercises-001', async (route: any) => {
+      if (route.request().method() === 'PATCH') {
+        patchBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ ...gymRun, exercises: patchBody.exercises ?? [] }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // Open modal by clicking the gym session row
+    await page.getByText(/upper body/i).first().click()
+    await expect(page.getByText('Session Exercises')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('No exercises logged yet.')).toBeVisible()
+
+    // Add an exercise
+    await page.getByText('+ Add Exercise').click()
+    await page.getByPlaceholder('e.g. Bench Press').fill('Bench Press')
+    await page.locator('input[placeholder="3"]').fill('3')
+    await page.locator('input[placeholder="8"]').fill('8')
+    await page.getByRole('button', { name: 'Save Exercise' }).click()
+
+    // Exercise appears in list
+    await expect(page.getByText('Bench Press 3x8')).toBeVisible({ timeout: 5_000 })
+
+    // Click Done to persist exercises via PATCH
+    await page.getByRole('button', { name: 'Done' }).click()
+
+    await expect(async () => {
+      expect(patchBody?.exercises).toHaveLength(1)
+      expect(patchBody?.exercises[0].name).toBe('Bench Press')
+      expect(patchBody?.exercises[0].sets).toBe(3)
+      expect(patchBody?.exercises[0].reps).toBe(8)
     }).toPass({ timeout: 5_000 })
   })
 })
