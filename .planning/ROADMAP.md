@@ -111,10 +111,10 @@ Plans:
   2. Cycling sessions display speed (km/h) wherever pace (min/km) appears for run sessions — in the session log form, runs list, session detail, and dashboard
   3. Coach can generate cycling plan days with distance and duration targets via `<plan:add>` / `<plan:update>` XML tags
   4. The coach receives cycling session history in chat context and provides discipline-appropriate feedback
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
-- [ ] 15-01-PLAN.md — Speed display across RunEntryForm, RunRow, RunDetailModal, LinkRunModal
+- [x] 15-01-PLAN.md — Speed display across RunEntryForm, RunRow, RunDetailModal, LinkRunModal
 - [ ] 15-02-PLAN.md — chat.ts cycling context format (Cycled:) + formatSpeed helper + prompts.ts verification
 
 ### Phase 16: Multi-Discipline Dashboard
@@ -154,6 +154,6 @@ Plans:
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
-| 15. Cycling Support | 0/2 | Not started | — |
+| 15. Cycling Support | 1/2 | In Progress|  |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
