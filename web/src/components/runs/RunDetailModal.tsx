@@ -45,6 +45,16 @@ function computePace(distance: number, duration: string): number | null {
   return totalMinutes / distance;
 }
 
+function computeSpeed(distance: number, duration: string): string | null {
+  if (!distance || distance <= 0) return null;
+  const parts = duration.split(':').map(Number);
+  let totalMinutes = 0;
+  if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
+  else if (parts.length === 3) totalMinutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0) + (parts[2] ?? 0) / 60;
+  if (!totalMinutes || totalMinutes <= 0) return null;
+  return `${((distance / totalMinutes) * 60).toFixed(1)} km/h`;
+}
+
 function openCoachPanel() {
   window.dispatchEvent(new CustomEvent('open-coach-panel'));
 }
@@ -74,6 +84,8 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
 
   const editDistNum = parseFloat(editDistance);
   const editPace = computePace(editDistNum, editDuration);
+  const isCycle = (run.discipline ?? 'run') === 'cycle';
+  const editSpeed = isCycle ? computeSpeed(editDistNum, editDuration) : null;
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -107,7 +119,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
 
     const dateStr = formatRunDate(run.date);
     const distStr = `${run.distance}km`;
-    const paceStr = formatPace(run.pace);
+    const isCycleSession = (run.discipline ?? 'run') === 'cycle';
+    const paceStr = isCycleSession
+      ? computeSpeed(run.distance, run.duration) ?? '--'
+      : formatPace(run.pace);
     const hrStr = run.avgHR ? `, avg HR ${run.avgHR}bpm` : '';
     const notesStr = editNotes ? `, notes: "${editNotes}"` : '';
     const planStr = run.weekNumber
@@ -115,8 +130,8 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
       : '\nThis was a standalone run (not linked to my training plan).';
 
     const message =
-      `Please give me coaching feedback on my run:\n` +
-      `Date: ${dateStr}\nDistance: ${distStr}\nPace: ${paceStr}${hrStr}${notesStr}${planStr}\n` +
+      `Please give me coaching feedback on my ${isCycleSession ? 'cycling session' : 'run'}:\n` +
+      `Date: ${dateStr}\nDistance: ${distStr}\n${isCycleSession ? 'Speed' : 'Pace'}: ${paceStr}${hrStr}${notesStr}${planStr}\n` +
       `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant. Do not emit any plan update commands — only provide text feedback.`;
 
     openCoachPanel();
@@ -263,11 +278,15 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                 </div>
               </div>
 
-              {/* Pace (read-only, computed) */}
+              {/* Pace / Speed (read-only, computed) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Pace</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  {isCycle ? 'Speed (km/h)' : 'Pace'}
+                </label>
                 <p className="text-sm text-gray-700 px-3 py-2 bg-gray-50 rounded-lg">
-                  {editPace !== null ? formatPace(editPace) : formatPace(run.pace)}
+                  {isCycle
+                    ? (editSpeed ?? computeSpeed(run.distance, run.duration) ?? '--')
+                    : (editPace !== null ? formatPace(editPace) : formatPace(run.pace))}
                 </p>
               </div>
             </div>

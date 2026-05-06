@@ -23,6 +23,16 @@ function formatPace(pace: number): string {
   return `${m}:${String(s).padStart(2, '0')}/km`;
 }
 
+function formatSpeed(distance: number, duration: string): string {
+  if (!distance || distance <= 0) return '--';
+  const parts = duration.split(':').map(Number);
+  let totalMinutes = 0;
+  if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
+  else if (parts.length === 3) totalMinutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0) + (parts[2] ?? 0) / 60;
+  if (!totalMinutes || totalMinutes <= 0) return '--';
+  return `${((distance / totalMinutes) * 60).toFixed(1)} km/h`;
+}
+
 interface RunRowProps {
   run: Run;
   activePlanId?: string;
@@ -31,8 +41,11 @@ interface RunRowProps {
 
 function RunRow({ run, activePlanId, onClick }: RunRowProps) {
   const isGym = (run.discipline ?? 'run') === 'gym';
+  const isCycle = (run.discipline ?? 'run') === 'cycle';
   const subtitle = isGym
     ? `${run.type || 'Gym session'} · ${run.duration}`
+    : isCycle
+    ? `${run.distance}km · ${run.duration} · ${formatSpeed(run.distance, run.duration)}${run.avgHR ? ` · ${run.avgHR}bpm` : ''}`
     : `${run.distance}km · ${run.duration} · ${formatPace(run.pace)}${run.avgHR ? ` · ${run.avgHR}bpm` : ''}`;
 
   return (
