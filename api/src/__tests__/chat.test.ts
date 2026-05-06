@@ -23,7 +23,7 @@ vi.mock('../shared/db.js', () => ({ getDb: vi.fn() }));
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { extractFirstJson, formatPace, formatRunDate } from '../functions/chat.js';
+import { extractFirstJson, formatPace, formatRunDate, formatSpeed } from '../functions/chat.js';
 
 type Msg = { planId: string; role: 'user' | 'assistant'; content: string; timestamp: Date };
 
@@ -193,6 +193,31 @@ describe('extractFirstJson', () => {
     const json = '{"phases":[]}';
     const result = extractFirstJson('some preamble ' + json);
     expect(result).toBe(json);
+  });
+});
+
+describe('formatSpeed', () => {
+  it('computes speed from distance and MM:SS duration', () => {
+    // 30km in 60:00 = 30 km/h
+    expect(formatSpeed(30, '60:00')).toBe('30.0 km/h');
+  });
+
+  it('computes speed from distance and HH:MM:SS duration', () => {
+    // 40km in 1:30:00 (90 min) = 26.666... → 26.7 km/h
+    expect(formatSpeed(40, '1:30:00')).toBe('26.7 km/h');
+  });
+
+  it('returns null for zero distance', () => {
+    expect(formatSpeed(0, '60:00')).toBeNull();
+  });
+
+  it('returns null for invalid duration', () => {
+    expect(formatSpeed(30, '')).toBeNull();
+  });
+
+  it('formats to one decimal place', () => {
+    // 25km in 55:00 = 27.272... → 27.3 km/h
+    expect(formatSpeed(25, '55:00')).toBe('27.3 km/h');
   });
 });
 
