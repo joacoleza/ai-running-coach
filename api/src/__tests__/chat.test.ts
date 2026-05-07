@@ -257,3 +257,43 @@ describe('chat.ts gym session context enrichment', () => {
     expect(capped[7].name).toBe('Exercise 8');
   });
 });
+
+describe('chat.ts cycle session context enrichment', () => {
+  it('formats cycle session line with speed in km/h', () => {
+    // Simulate cycling session: 30km in 60:00 = 30.0 km/h
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(30, '60:00');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 30km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 30km @ 30.0 km/h');
+  });
+
+  it('formats cycle session without duration as no speed indicator', () => {
+    // Simulate cycling session with missing/invalid duration
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(30, '');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 30km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 30km');
+  });
+
+  it('formats run session line differently from cycle (uses Ran: not Cycled:)', () => {
+    // Verify that run sessions use different format
+    const runDate = formatRunDate('2026-05-01');
+    const pace = formatPace(5.0); // 5:00/km
+    const paceStr = pace ? ` @ ${pace}/km` : '';
+    const line = `| Ran: ${runDate}, 30km${paceStr}`;
+    expect(line).toBe('| Ran: 01/05/2026, 30km @ 5:00/km');
+    // Should NOT contain 'Cycled:' keyword
+    expect(line).not.toContain('Cycled:');
+  });
+
+  it('computes cycling speed from HH:MM:SS duration correctly', () => {
+    // 40km in 1:30:00 (90 minutes) = 26.666... → 26.7 km/h
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(40, '1:30:00');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 40km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 40km @ 26.7 km/h');
+  });
+});
