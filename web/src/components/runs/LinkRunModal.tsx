@@ -26,6 +26,16 @@ function formatPace(pace: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}/km`;
 }
 
+function formatSpeed(distance: number, duration: string): string {
+  if (!distance || distance <= 0) return '--';
+  const parts = duration.split(':').map(Number);
+  let totalMinutes = 0;
+  if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
+  else if (parts.length === 3) totalMinutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0) + (parts[2] ?? 0) / 60;
+  if (!totalMinutes || totalMinutes <= 0) return '--';
+  return `${((distance / totalMinutes) * 60).toFixed(1)} km/h`;
+}
+
 export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, onClose }: LinkRunModalProps) {
   const [runs, setRuns] = useState<Run[]>([]);
   const [search, setSearch] = useState('');
@@ -123,7 +133,11 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
                       className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
                     >
                       <span className="text-sm text-gray-700">
-                        {formatRunDate(run.date)} &middot; {run.distance}km &middot; {formatPace(run.pace)}
+                        {formatRunDate(run.date)} &middot; {run.distance}km &middot; {
+                          (run.discipline ?? 'run') === 'cycle'
+                            ? formatSpeed(run.distance, run.duration)
+                            : formatPace(run.pace)
+                        }
                       </span>
                       <button
                         onClick={() => { void handleLink(run); }}

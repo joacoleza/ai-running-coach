@@ -37,6 +37,17 @@ function computePaceDisplay(distStr: string, durStr: string): string {
   return `${m}:${String(s).padStart(2, '0')}/km`;
 }
 
+function computeSpeedDisplay(distStr: string, durStr: string): string {
+  const dist = parseFloat(distStr);
+  if (!dist || dist <= 0) return '';
+  const parts = durStr.split(':').map(Number);
+  let totalMinutes = 0;
+  if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
+  else if (parts.length === 3) totalMinutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0) + (parts[2] ?? 0) / 60;
+  if (!totalMinutes || totalMinutes <= 0) return '';
+  return `${((dist / totalMinutes) * 60).toFixed(1)} km/h`;
+}
+
 type Discipline = 'run' | 'gym' | 'cycle';
 
 export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCancel }: RunEntryFormProps) {
@@ -51,7 +62,10 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
   const [error, setError] = useState<string | null>(null);
 
   const isGym = discipline === 'gym';
-  const pace = isGym ? '' : computePaceDisplay(distance, duration);
+  const isCycle = discipline === 'cycle';
+  const pace = isGym ? '' : isCycle
+    ? computeSpeedDisplay(distance, duration)
+    : computePaceDisplay(distance, duration);
   const durationValid = !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
   const isValid = isValidDate(date) && durationValid &&
     (isGym ? !!gymType : (!!parseFloat(distance) && parseFloat(distance) > 0));
@@ -193,12 +207,14 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCa
           </div>
         </div>
 
-        {/* Pace — only for run/cycle */}
+        {/* Pace / Speed — only for run/cycle */}
         {!isGym && (
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Pace</label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              {isCycle ? 'Speed' : 'Pace'}
+            </label>
             <div className="px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-sm text-gray-600 min-h-[2rem]">
-              {pace || <span className="text-gray-400">—</span>}
+              {pace || <span className="text-gray-400">--</span>}
             </div>
           </div>
         )}

@@ -32,10 +32,10 @@
 
 ### CYCLE — Cycling
 
-- [ ] **CYCLE-01**: User can log a cycling session with date, distance, duration, optional HR, and optional notes
-- [ ] **CYCLE-02**: Cycling sessions display speed (km/h) instead of pace (min/km) throughout the UI (log form, runs list, run detail, dashboard)
-- [ ] **CYCLE-03**: Coach can generate cycling plan days with distance and duration targets via plan XML tags
-- [ ] **CYCLE-04**: Coach receives cycling session history in chat context and provides coaching feedback
+- [x] **CYCLE-01**: User can log a cycling session with date, distance, duration, optional HR, and optional notes
+- [x] **CYCLE-02**: Cycling sessions display speed (km/h) instead of pace (min/km) throughout the UI (log form, runs list, run detail, dashboard)
+- [x] **CYCLE-03**: Coach can generate cycling plan days with distance and duration targets via plan XML tags
+- [x] **CYCLE-04**: Coach receives cycling session history in chat context and provides coaching feedback
 
 ### DASH — Dashboard Multi-Discipline
 
@@ -78,10 +78,10 @@
 | GYM-04 | Phase 14 | Complete |
 | GYM-05 | Phase 14 | Complete |
 | GYM-06 | Phase 14 | Complete |
-| CYCLE-01 | Phase 15 | Pending |
-| CYCLE-02 | Phase 15 | Pending |
-| CYCLE-03 | Phase 15 | Pending |
-| CYCLE-04 | Phase 15 | Pending |
+| CYCLE-01 | Phase 15 | Complete |
+| CYCLE-02 | Phase 15 | Complete |
+| CYCLE-03 | Phase 15 | Complete |
+| CYCLE-04 | Phase 15 | Complete |
 | DASH-01 | Phase 16 | Pending |
 | DASH-02 | Phase 16 | Pending |
 | DASH-03 | Phase 16 | Pending |

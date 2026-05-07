@@ -220,3 +220,77 @@ describe('RunEntryForm', () => {
     expect(saveBtn).toBeDisabled();
   });
 });
+
+describe('RunEntryForm — cycling discipline', () => {
+  it('shows Speed label (not Pace) when cycling discipline is selected', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+
+    // Speed label should appear for cycling
+    await waitFor(() => {
+      expect(screen.getByText('Speed')).toBeInTheDocument();
+    });
+    // Pace label should NOT appear
+    expect(screen.queryByText('Pace')).not.toBeInTheDocument();
+  });
+
+  it('displays computed speed (km/h) when distance and duration entered for cycling', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+
+    const distanceInput = screen.getByPlaceholderText('5.0');
+    const durationInput = screen.getByPlaceholderText('45:30');
+
+    fireEvent.change(distanceInput, { target: { value: '30' } });
+    fireEvent.change(durationInput, { target: { value: '60:00' } });
+
+    // Speed should display: 30km in 60:00 (60 minutes) = 30.0 km/h
+    await waitFor(() => {
+      expect(screen.getByText('30.0 km/h')).toBeInTheDocument();
+    });
+  });
+
+  it('hides Session Type when cycling discipline is selected', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+
+    // Session Type should not appear for cycling
+    expect(screen.queryByText('Session Type')).not.toBeInTheDocument();
+  });
+
+  it('shows distance field when cycling discipline is selected', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+
+    // Distance field should be present for cycling
+    expect(screen.getByPlaceholderText('5.0')).toBeInTheDocument();
+  });
+
+  it('submits cycling session with correct speed computation', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '40' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '90:00' } });
+
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    expect(saveBtn).not.toBeDisabled();
+
+    await act(async () => {
+      fireEvent.click(saveBtn);
+    });
+
+    expect(mockCreateRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        discipline: 'cycle',
+        distance: 40,
+        duration: '90:00',
+      })
+    );
+  });
+});

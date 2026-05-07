@@ -518,6 +518,141 @@ test.describe('Gym Session Features', () => {
   })
 })
 
+test.describe('Cycling Session Features', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('log a cycling session: Speed label shown, no Session Type, POST has discipline cycle', async ({ page }) => {
+    await loginWithPlan(page)
+
+    let postBody: any = null
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'POST') {
+        postBody = JSON.parse(route.request().postData() ?? '{}')
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            _id: 'cycle-001', date: '2026-05-01', distance: 30, duration: '60:00', pace: 0,
+            discipline: 'cycle',
+            createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+          }),
+        })
+      } else {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [], total: 0, totalAll: 0 }),
+        })
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: /log a run/i }).click()
+    await expect(page.getByRole('heading', { name: /log a run/i })).toBeVisible({ timeout: 5_000 })
+
+    // Change discipline to Cycling
+    await page.getByLabel('Discipline').selectOption('cycle')
+
+    // Distance field visible, Session Type absent, Speed label present
+    await expect(page.getByPlaceholder('5.0')).toBeVisible()
+    await expect(page.getByLabel(/session type/i)).not.toBeVisible()
+    await expect(page.getByText('Speed')).toBeVisible()
+
+    // Fill form and submit (date defaults to today — no need to fill)
+    await page.getByPlaceholder('5.0').fill('30')
+    await page.getByPlaceholder('45:30').fill('60:00')
+
+    await page.getByRole('button', { name: /save session/i }).click()
+
+    await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(async () => {
+      expect(postBody?.discipline).toBe('cycle')
+      expect(postBody?.distance).toBe(30)
+    }).toPass({ timeout: 5_000 })
+  })
+
+  test('discipline filter tabs: Cycling tab filters to cycling sessions only', async ({ page }) => {
+    const cycleSession = {
+      _id: 'cycle-filter-001', date: '2026-05-01', distance: 30, duration: '60:00', pace: 0,
+      discipline: 'cycle',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+    const runSession = {
+      _id: 'run-filter-002', date: '2026-05-02', distance: 5, duration: '25:00', pace: 5.0,
+      discipline: 'run',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() !== 'GET') { await route.continue(); return }
+      const url = new URL(route.request().url())
+      const discipline = url.searchParams.get('discipline')
+      if (discipline === 'cycle') {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [cycleSession], total: 1, totalAll: 1 }) })
+      } else if (discipline === 'run') {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [runSession], total: 1, totalAll: 1 }) })
+      } else {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: [cycleSession, runSession], total: 2, totalAll: 2 }) })
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // All tab — both visible
+    await expect(page.getByText(/30km/)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).toBeVisible()
+
+    // Click Cycling tab
+    await page.getByRole('button', { name: 'Cycling', exact: true }).click()
+    await expect(page.getByText(/30km/)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).not.toBeVisible({ timeout: 3_000 })
+
+    // Click All tab — both back
+    await page.getByRole('button', { name: 'All', exact: true }).click()
+    await expect(page.getByText(/30km/)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/5km/)).toBeVisible({ timeout: 5_000 })
+  })
+
+  test('cycling session RunDetailModal: shows Speed (km/h) label not Pace', async ({ page }) => {
+    const cycleRun = {
+      _id: 'cycle-modal-001',
+      date: '2026-05-01', distance: 30, duration: '60:00', pace: 0,
+      discipline: 'cycle',
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    }
+
+    await loginWithPlan(page)
+
+    await page.route('**/api/runs**', async (route: any) => {
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [cycleRun], total: 1, totalAll: 1 }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+
+    await page.getByRole('link', { name: 'Runs' }).click()
+    await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
+
+    // Open modal by clicking the cycling session row
+    await page.getByText(/30km/).first().click()
+    await expect(page.getByText('Speed (km/h)')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText('30.0 km/h', { exact: true })).toBeVisible({ timeout: 5_000 })
+    // Pace label must not appear
+    await expect(page.getByText('Pace', { exact: true })).not.toBeVisible()
+  })
+})
+
 test.describe('Run delete and unlink flows', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')

@@ -18,6 +18,20 @@ export function formatPace(paceDecimal: number): string {
 }
 
 /**
+ * Compute speed in km/h from distance (km) and duration string (MM:SS or HH:MM:SS).
+ * Returns null if inputs are invalid.
+ */
+export function formatSpeed(distanceKm: number, duration: string): string | null {
+  if (!distanceKm || distanceKm <= 0) return null;
+  const parts = duration.split(':').map(Number);
+  let totalMinutes = 0;
+  if (parts.length === 2) totalMinutes = (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
+  else if (parts.length === 3) totalMinutes = (parts[0] ?? 0) * 60 + (parts[1] ?? 0) + (parts[2] ?? 0) / 60;
+  if (!totalMinutes || totalMinutes <= 0) return null;
+  return `${((distanceKm / totalMinutes) * 60).toFixed(1)} km/h`;
+}
+
+/**
  * Format an ISO date string (YYYY-MM-DD) as DD/MM/YYYY
  */
 export function formatRunDate(isoDate: string): string {
@@ -160,8 +174,13 @@ app.http('chat', {
                     .join(', ');
                   line += ` | Exercises: ${exerciseList}`;
                 }
+              } else if (run.discipline === 'cycle') {
+                // Cycling session context: distance + speed
+                const speed = formatSpeed(run.distance, run.duration);
+                const speedStr = speed ? ` @ ${speed}` : '';
+                line += ` | Cycled: ${runDate}, ${run.distance}km${speedStr}`;
               } else {
-                // Run/cycle session context: distance + pace format
+                // Run session context: distance + pace format
                 const runPace = run.pace > 0 ? ` @ ${formatPace(run.pace)}/km` : '';
                 line += ` | Ran: ${runDate}, ${run.distance}km${runPace}`;
               }

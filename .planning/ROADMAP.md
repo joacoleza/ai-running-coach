@@ -49,7 +49,7 @@
 
 - [x] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline (completed 2026-04-29)
 - [x] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration (completed 2026-05-04)
-- [ ] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration
+- [x] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration (completed 2026-05-07)
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
 
@@ -111,8 +111,11 @@ Plans:
   2. Cycling sessions display speed (km/h) wherever pace (min/km) appears for run sessions — in the session log form, runs list, session detail, and dashboard
   3. Coach can generate cycling plan days with distance and duration targets via `<plan:add>` / `<plan:update>` XML tags
   4. The coach receives cycling session history in chat context and provides discipline-appropriate feedback
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 2/2 plans complete
+
+Plans:
+- [x] 15-01-PLAN.md — Speed display across RunEntryForm, RunRow, RunDetailModal, LinkRunModal
+- [x] 15-02-PLAN.md — chat.ts cycling context format (Cycled:) + formatSpeed helper + prompts.ts verification
 
 ### Phase 16: Multi-Discipline Dashboard
 **Goal**: The dashboard shows training data across all disciplines with a filter and adapted stats, including a weight progression chart for gym exercises
@@ -151,6 +154,6 @@ Plans:
 | 12. Delete Last Empty Week | 2/2 | ✅ Complete | 2026-04-27 |
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
-| 15. Cycling Support | 0/? | Not started | — |
+| 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |

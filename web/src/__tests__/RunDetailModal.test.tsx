@@ -224,6 +224,43 @@ describe('RunDetailModal', () => {
     expect(screen.queryByText('Session Exercises')).not.toBeInTheDocument();
     expect(screen.queryByTestId('exercise-list')).not.toBeInTheDocument();
   });
+
+  it('shows Speed (km/h) label for cycling sessions', () => {
+    const cyclingRun: Run = {
+      ...mockRun,
+      _id: 'cycle-001',
+      distance: 30,
+      duration: '60:00',
+      discipline: 'cycle',
+      pace: 0,
+    };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={cyclingRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Speed (km/h)')).toBeInTheDocument();
+    // Pace label should NOT appear for cycling
+    expect(screen.queryByText(/^Pace$/)).not.toBeInTheDocument();
+  });
+
+  it('displays computed speed value for cycling sessions', () => {
+    const cyclingRun: Run = {
+      ...mockRun,
+      _id: 'cycle-002',
+      distance: 30,
+      duration: '60:00',
+      discipline: 'cycle',
+      pace: 0,
+    };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={cyclingRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // 30km in 60:00 = 30.0 km/h
+    expect(screen.getByText('30.0 km/h')).toBeInTheDocument();
+  });
 });
 
 describe('RunDetailModal — delete run', () => {

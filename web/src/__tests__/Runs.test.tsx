@@ -310,4 +310,28 @@ describe('Runs page', () => {
       expect(screen.getByTestId('run-badge')).toBeInTheDocument();
     });
   });
+
+  it('displays cycling run subtitle with speed (km/h) instead of pace', async () => {
+    const cyclingRun = {
+      ...baseRun,
+      _id: 'cycle-1',
+      date: '2026-04-15',
+      distance: 30,
+      duration: '60:00',
+      pace: 0,
+      discipline: 'cycle',
+    };
+    mockFetchRuns.mockResolvedValue({ runs: [cyclingRun], total: 1, totalAll: 1 });
+
+    await act(async () => {
+      render(<Runs />);
+    });
+
+    // Should show: 30km · 60:00 · 30.0 km/h
+    expect(screen.getByText(/30km/)).toBeInTheDocument();
+    expect(screen.getByText(/60:00/)).toBeInTheDocument();
+    expect(screen.getByText(/30.0 km\/h/)).toBeInTheDocument();
+    // Should NOT show pace format (M:SS/km)
+    expect(screen.queryByText(/\d+:\d{2}\/km/)).not.toBeInTheDocument();
+  });
 });

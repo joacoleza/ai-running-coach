@@ -23,7 +23,7 @@ vi.mock('../shared/db.js', () => ({ getDb: vi.fn() }));
 import { buildContextMessages, maybeSummarize } from '../shared/context.js';
 import { buildSystemPrompt } from '../shared/prompts.js';
 import Anthropic from '@anthropic-ai/sdk';
-import { extractFirstJson, formatPace, formatRunDate } from '../functions/chat.js';
+import { extractFirstJson, formatPace, formatRunDate, formatSpeed } from '../functions/chat.js';
 
 type Msg = { planId: string; role: 'user' | 'assistant'; content: string; timestamp: Date };
 
@@ -196,6 +196,31 @@ describe('extractFirstJson', () => {
   });
 });
 
+describe('formatSpeed', () => {
+  it('computes speed from distance and MM:SS duration', () => {
+    // 30km in 60:00 = 30 km/h
+    expect(formatSpeed(30, '60:00')).toBe('30.0 km/h');
+  });
+
+  it('computes speed from distance and HH:MM:SS duration', () => {
+    // 40km in 1:30:00 (90 min) = 26.666... → 26.7 km/h
+    expect(formatSpeed(40, '1:30:00')).toBe('26.7 km/h');
+  });
+
+  it('returns null for zero distance', () => {
+    expect(formatSpeed(0, '60:00')).toBeNull();
+  });
+
+  it('returns null for invalid duration', () => {
+    expect(formatSpeed(30, '')).toBeNull();
+  });
+
+  it('formats to one decimal place', () => {
+    // 25km in 55:00 = 27.272... → 27.3 km/h
+    expect(formatSpeed(25, '55:00')).toBe('27.3 km/h');
+  });
+});
+
 describe('chat.ts gym session context enrichment', () => {
   it('formats gym session line with exercises in plan state context', () => {
     const exerciseLine = ['Bench Press 3x8 @ 185lbs', 'Pull-ups 3x10'].join(', ');
@@ -230,5 +255,45 @@ describe('chat.ts gym session context enrichment', () => {
     expect(capped).toHaveLength(8);
     expect(capped[0].name).toBe('Exercise 1');
     expect(capped[7].name).toBe('Exercise 8');
+  });
+});
+
+describe('chat.ts cycle session context enrichment', () => {
+  it('formats cycle session line with speed in km/h', () => {
+    // Simulate cycling session: 30km in 60:00 = 30.0 km/h
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(30, '60:00');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 30km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 30km @ 30.0 km/h');
+  });
+
+  it('formats cycle session without duration as no speed indicator', () => {
+    // Simulate cycling session with missing/invalid duration
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(30, '');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 30km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 30km');
+  });
+
+  it('formats run session line differently from cycle (uses Ran: not Cycled:)', () => {
+    // Verify that run sessions use different format
+    const runDate = formatRunDate('2026-05-01');
+    const pace = formatPace(5.0); // 5:00/km
+    const paceStr = pace ? ` @ ${pace}/km` : '';
+    const line = `| Ran: ${runDate}, 30km${paceStr}`;
+    expect(line).toBe('| Ran: 01/05/2026, 30km @ 5:00/km');
+    // Should NOT contain 'Cycled:' keyword
+    expect(line).not.toContain('Cycled:');
+  });
+
+  it('computes cycling speed from HH:MM:SS duration correctly', () => {
+    // 40km in 1:30:00 (90 minutes) = 26.666... → 26.7 km/h
+    const runDate = formatRunDate('2026-05-01');
+    const speed = formatSpeed(40, '1:30:00');
+    const speedStr = speed ? ` @ ${speed}` : '';
+    const line = `| Cycled: ${runDate}, 40km${speedStr}`;
+    expect(line).toBe('| Cycled: 01/05/2026, 40km @ 26.7 km/h');
   });
 });

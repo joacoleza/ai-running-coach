@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-05T20:19:46.301Z"
-last_activity: 2026-05-05
+last_updated: "2026-05-07T20:37:06.426Z"
+last_activity: 2026-05-07
 progress:
   total_phases: 6
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 0
+  completed_phases: 3
+  total_plans: 10
+  completed_plans: 10
+  percent: 40
 ---
 
 # State
@@ -20,16 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 14 — gym-support
+**Current focus:** Phase 15 — cycling-support
 
 ## Current Position
 
 Phase: 999.1
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-05
+Status: Executing
+Last activity: 2026-05-07
+Last session: 2026-05-07T01:38:18Z — Completed 15-02-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (0/5 phases complete)
+Progress: [████░░░░░░] 40% (2/5 phases complete)
 
 ## Milestone
 
@@ -121,6 +122,9 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 14-gym-support]: Exercises array sent as JSON-encoded string in patchDay body for simplicity and consistency with existing body type patterns
 - [Phase 14-gym-support]: Optimistic UI update for exercise checkbox toggle: update local state immediately, then PATCH, revert on error
 - [Phase 14-gym-support]: Gym session context uses discipline-aware format: 'Gym session DD/MM/YYYY | Exercises: ...' vs 'Ran: ...' for runs
+- [Phase 15-cycling-support]: Speed formula: (distance_km / totalMinutes) * 60 formatted to 1 decimal + km/h; isCycle pattern mirrors isGym for consistency
+- [Phase 15-cycling-support]: Speed computed at context-emission time (not stored in DB) — formatSpeed(distanceKm, duration) returns null for invalid inputs
+- [Phase 15-cycling-support]: Discipline context block uses three-branch pattern: isGymSession -> cycle -> else run; prompts.ts cycling plan:add example was already present from Phase 13
 
 ### Quick Tasks Completed
 

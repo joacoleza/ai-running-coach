@@ -182,4 +182,26 @@ describe('LinkRunModal', () => {
       expect(screen.getByText(/showing \d+ of \d+ runs/i)).toBeInTheDocument();
     });
   });
+
+  it('displays cycling run with speed (km/h) instead of pace in list item', async () => {
+    const cyclingRun = {
+      ...baseRun,
+      _id: 'cycle-1',
+      date: '2026-04-01',
+      distance: 30,
+      duration: '60:00',
+      pace: 0,
+      discipline: 'cycle',
+    };
+    mockFetchUnlinkedRuns.mockResolvedValue([cyclingRun]);
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} />);
+    });
+
+    // Should show: date · distance · speed
+    expect(screen.getByText(/30km/)).toBeInTheDocument();
+    expect(screen.getByText(/30.0 km\/h/)).toBeInTheDocument();
+    // Should NOT show pace format (M:SS/km)
+    expect(screen.queryByText(/\d+:\d{2}\/km/)).not.toBeInTheDocument();
+  });
 });
