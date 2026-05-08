@@ -176,6 +176,6 @@ Plans:
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
 | 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
-| 15.1. Multi-Discipline UI Polish | 4/4 | Complete   | 2026-05-08 |
+| 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
