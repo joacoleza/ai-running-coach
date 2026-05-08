@@ -146,7 +146,7 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /log a session/i }));
     expect(screen.getByTestId('run-entry-form')).toBeInTheDocument();
   });
 
@@ -154,7 +154,7 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /log a session/i }));
     expect(screen.getByTestId('run-entry-form')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
     expect(screen.queryByTestId('run-entry-form')).not.toBeInTheDocument();
@@ -164,7 +164,7 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /log a session/i }));
     expect(screen.getByTestId('run-entry-form')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
     expect(screen.queryByTestId('run-entry-form')).not.toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /log a session/i }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /save run/i }));
     });
@@ -187,7 +187,7 @@ describe('Runs page', () => {
     await act(async () => {
       render(<Runs />);
     });
-    fireEvent.click(screen.getByRole('button', { name: /log a run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /log a session/i }));
     expect(screen.getByTestId('run-entry-form')).toBeInTheDocument();
     const backdrop = document.querySelector('.fixed.inset-0.bg-black\\/50') as HTMLElement;
     fireEvent.click(backdrop);
