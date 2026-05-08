@@ -53,6 +53,8 @@
 - [x] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering (completed 2026-05-08)
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
+- [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
+- [ ] **Phase 19: User Unit Preferences** — Settings panel for distance (km/miles) and weight (kg/lbs) units; persisted per user, coach-aware, entries stored with creation-time units, dashboards convert on display
 
 ## Backlog
 
@@ -162,6 +164,31 @@ Plans:
   4. README, system prompt, and HTML `<title>` contain no references to "running coach"
 **Plans**: TBD
 
+### Phase 18: Gym Session Exercises in Plan
+**Goal**: Planned gym days can include a list of exercises (created by the coach), rendered as a checklist in the plan view so the user can mark each exercise done during the session
+**Depends on**: Phase 17
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Coach can generate gym plan days that include an exercises list (sets, reps, optional weight)
+  2. Gym plan days in PlanView show an expandable exercises checklist
+  3. User can check/uncheck individual exercises; state is persisted to the plan day
+  4. Completing the session (marking the day done) is still possible regardless of exercise completion state
+**Plans**: TBD
+
+### Phase 19: User Unit Preferences
+**Goal**: Users can set preferred units (distance: km/miles, weight: kg/lbs) in a Settings panel accessible from the sidebar user menu (alongside Logout and Usage). The coach is aware of these preferences and uses them in responses. Entries are stored with the unit used at creation time; changing preferences only affects new entries. Dashboards normalize units when displaying aggregated data.
+**Depends on**: Phase 18
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Settings panel is accessible from the sidebar user menu (same submenu as Logout and Usage)
+  2. Settings has two fields: distance unit (km / miles) and weight unit (kg / lbs)
+  3. Preferences are persisted per user (MongoDB) and survive logout/login
+  4. Coach system prompt includes the user's unit preferences so responses use the correct units
+  5. When logging a run or gym session, the entry form defaults to the user's preferred units
+  6. The unit is stored alongside each entry at creation time; changing preferences does not alter historical entries
+  7. Dashboard stat cards and charts convert all stored values to the user's current preferred unit before display
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -179,3 +206,5 @@ Plans:
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
+| 18. Gym Session Exercises in Plan | 0/? | Not started | — |
+| 19. User Unit Preferences | 0/? | Not started | — |
