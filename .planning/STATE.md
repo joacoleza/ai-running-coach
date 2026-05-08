@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-08T00:37:13.807Z"
+last_updated: "2026-05-08T00:49:38.542Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 14
-  completed_plans: 11
+  completed_plans: 13
   percent: 40
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 ## Current Position
 
 Phase: 15.1 (multi-discipline-ui-polish) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-05-08
-Last session: 2026-05-08T00:37:13.799Z
+Last session: 2026-05-08T00:49:38.537Z
 
 Progress: [████░░░░░░] 40% (2/5 phases complete)
 
@@ -127,6 +127,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15-cycling-support]: Discipline context block uses three-branch pattern: isGymSession -> cycle -> else run; prompts.ts cycling plan:add example was already present from Phase 13
 - [Phase 15.1]: Sidebar label changed to Activities (path /runs unchanged) to avoid route refactor
 - [Phase 15.1]: fetchUnlinkedRuns discipline param uses encodeURIComponent; defaultDiscipline prop pattern established for RunEntryForm pre-selection
+- [Phase 15.1-03]: RunBadge shown for all disciplines in DayRow; dayDiscipline optional in LinkRunModal for backward compat
 
 ### Quick Tasks Completed
 
