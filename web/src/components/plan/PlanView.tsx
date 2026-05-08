@@ -137,7 +137,7 @@ interface PlanViewProps {
 
 export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay, onUpdatePhase, onDeletePhase, onAddPhase, onAddWeek, onDeleteLastWeek, readonly, lastCompletedDayRef, dayRefsMap }: PlanViewProps) {
   const [addingDayTo, setAddingDayTo] = useState<{ phaseName: string; weekNumber: number } | null>(null);
-  const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string } | null>(null);
+  const [linkingDay, setLinkingDay] = useState<{ weekNumber: number; label: string; guidelines: string; discipline?: string } | null>(null);
 
   // Compute the key of the last completed non-rest day across all phases/weeks
   const lastCompletedKey = (() => {
@@ -213,7 +213,7 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
                             linkedRun={linkedRuns.get(dayKey) ?? null}
                             onRunLinked={
                               !readonly && !day.skipped && (!day.completed || (day.completed && !linkedRuns.get(dayKey)))
-                                ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines })
+                                ? () => setLinkingDay({ weekNumber: week.weekNumber, label: day.label, guidelines: day.guidelines, discipline: day.discipline })
                                 : undefined
                             }
                           />
@@ -298,6 +298,7 @@ export function PlanView({ plan, linkedRuns, onUpdateDay, onDeleteDay, onAddDay,
           weekNumber={linkingDay.weekNumber}
           dayLabel={linkingDay.label}
           dayGuidelines={linkingDay.guidelines}
+          dayDiscipline={linkingDay.discipline}
           onLinked={() => {
             setLinkingDay(null);
             // Dispatch plan-updated so usePlan refreshes (which re-fetches linkedRuns)

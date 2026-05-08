@@ -257,7 +257,7 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await expect(page.getByText(/8.*km|8km/i)).toBeVisible({ timeout: 5_000 })
   })
 
-  test('completed day without linked run shows Log run button', async ({ page }) => {
+  test('completed day without linked run shows Log session button', async ({ page }) => {
     const planWithCompletedUnlinked = {
       ...mockActivePlan,
       phases: [{
@@ -284,8 +284,8 @@ test.describe('Training Plan view (Phase 2.1)', () => {
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
-    // Completed day without linked run: "Log run" button should be visible in action area
-    await expect(page.getByTitle('Log run data')).toBeVisible({ timeout: 5_000 })
+    // Completed day without linked run: "Log session" button should be visible in action area
+    await expect(page.getByTitle('Log session data for this completed day')).toBeVisible({ timeout: 5_000 })
   })
 })
 
@@ -635,7 +635,7 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
     await page.evaluate(() => localStorage.clear())
   })
 
-  test('sidebar shows nav items in order: Dashboard, Training Plan, Runs, Archive', async ({ page }) => {
+  test('sidebar shows nav items in order: Dashboard, Training Plan, Activities, Archive', async ({ page }) => {
     await loginWithPlan(page)
 
     const sidebar = page.getByTestId('sidebar')
@@ -649,7 +649,7 @@ test.describe('Sidebar navigation order (Phase 2.1)', () => {
     }
     // Each nav item includes icon + label text (e.g. "📅Training Plan")
     // Verify the four items appear in the correct order
-    const knownOrder = ['Dashboard', 'Training Plan', 'Runs', 'Archive']
+    const knownOrder = ['Dashboard', 'Training Plan', 'Activities', 'Archive']
     const indices = knownOrder.map(label => navTexts.findIndex(t => t.includes(label)))
     expect(indices.every(i => i !== -1)).toBe(true)
     // Indices must be strictly increasing (correct order)

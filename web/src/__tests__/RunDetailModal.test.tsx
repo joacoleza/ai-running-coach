@@ -76,13 +76,13 @@ describe('RunDetailModal', () => {
     expect(screen.getByText(/wednesday 01\/04\/2026/i)).toBeInTheDocument();
   });
 
-  it('shows Add feedback to run button', () => {
+  it('shows Get coaching feedback button', () => {
     render(
       <MemoryRouter>
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
       </MemoryRouter>
     );
-    expect(screen.getByRole('button', { name: /add feedback to run/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /get coaching feedback/i })).toBeInTheDocument();
   });
 
   it('saves insight from sendMessage return value, not from messages array', async () => {
@@ -95,7 +95,7 @@ describe('RunDetailModal', () => {
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /get coaching feedback/i }));
     await waitFor(() => expect(updateRun).toHaveBeenCalledWith(mockRun._id, { insight: 'Great run feedback' }));
   });
 
@@ -111,7 +111,7 @@ describe('RunDetailModal', () => {
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /get coaching feedback/i }));
     await waitFor(() =>
       expect(updateRun).toHaveBeenCalledWith(
         mockRun._id,
@@ -129,7 +129,7 @@ describe('RunDetailModal', () => {
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /get coaching feedback/i }));
     await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
     expect(updateRun).not.toHaveBeenCalled();
   });
@@ -174,11 +174,11 @@ describe('RunDetailModal', () => {
       </MemoryRouter>
     );
 
-    const btn = screen.getByRole('button', { name: /add feedback to run/i });
+    const btn = screen.getByRole('button', { name: /get coaching feedback/i });
     fireEvent.click(btn);
 
     // After the async operation finishes, button should be re-enabled (not stuck in requesting state)
-    await waitFor(() => expect(screen.getByRole('button', { name: /add feedback to run/i })).not.toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: /get coaching feedback/i })).not.toBeDisabled());
   });
 
   it('uses editNotes (live state) not run.notes (stale prop) when building insight prompt', async () => {
@@ -196,7 +196,7 @@ describe('RunDetailModal', () => {
     const notesArea = screen.getByPlaceholderText(/how did it feel/i);
     fireEvent.change(notesArea, { target: { value: 'Edited notes' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /add feedback to run/i }));
+    fireEvent.click(screen.getByRole('button', { name: /get coaching feedback/i }));
 
     await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
     const [prompt] = mockSendMessage.mock.calls[0] as [string];
@@ -263,7 +263,7 @@ describe('RunDetailModal', () => {
   });
 });
 
-describe('RunDetailModal — delete run', () => {
+describe('RunDetailModal — delete session', () => {
   const onDeleted = vi.fn();
 
   beforeEach(() => {
@@ -272,14 +272,14 @@ describe('RunDetailModal — delete run', () => {
     vi.mocked(deleteRun).mockResolvedValue(undefined as any);
   });
 
-  it('clicking Delete run shows browser confirm dialog', () => {
+  it('clicking Delete session shows browser confirm dialog', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(
       <MemoryRouter>
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^delete session$/i }));
     expect(window.confirm).toHaveBeenCalledWith('Delete this run? This cannot be undone.');
     vi.restoreAllMocks();
   });
@@ -291,7 +291,7 @@ describe('RunDetailModal — delete run', () => {
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^delete session$/i }));
     await waitFor(() => expect(deleteRun).toHaveBeenCalledWith('run-001'));
     await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('run-001'));
     vi.restoreAllMocks();
@@ -304,7 +304,7 @@ describe('RunDetailModal — delete run', () => {
         <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={onDeleted} />
       </MemoryRouter>
     );
-    fireEvent.click(screen.getByRole('button', { name: /^delete run$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^delete session$/i }));
     expect(deleteRun).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });

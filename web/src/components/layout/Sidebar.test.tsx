@@ -21,7 +21,7 @@ describe('Sidebar', () => {
     )
     expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Training Plan')).toBeInTheDocument()
-    expect(screen.getByText('Runs')).toBeInTheDocument()
+    expect(screen.getByText('Activities')).toBeInTheDocument()
     expect(screen.queryByText('Coach Chat')).not.toBeInTheDocument()
   })
 

@@ -136,7 +136,7 @@ describe('DayRow — UX-DAY-01: "Log run" button on completed days without linke
       />
     );
 
-    const logRunBtn = screen.getByTitle('Log run data for this completed day');
+    const logRunBtn = screen.getByTitle('Log session data for this completed day');
     expect(logRunBtn).toBeInTheDocument();
   });
 
@@ -151,10 +151,10 @@ describe('DayRow — UX-DAY-01: "Log run" button on completed days without linke
       />
     );
 
-    // Active days show "Log run" in the action bar, but this is from the main action set
+    // Active days show "Log session" in the action bar, but this is from the main action set
     // The requirement is specifically about completed days without linked runs
-    // The main action set always shows "Log run" for active days
-    const logRunBtns = screen.getAllByTitle('Log run data');
+    // The main action set always shows "Log session" for active days
+    const logRunBtns = screen.getAllByTitle('Log session data');
     // There should be at least one (from the main action set)
     expect(logRunBtns.length).toBeGreaterThan(0);
   });
@@ -191,7 +191,7 @@ describe('DayRow — UX-DAY-01: "Log run" button on completed days without linke
     );
 
     // No action buttons should be visible in readonly
-    const logRunBtns = screen.queryAllByTitle('Log run data');
+    const logRunBtns = screen.queryAllByTitle('Log session data');
     expect(logRunBtns).toHaveLength(0);
   });
 });

@@ -18,17 +18,17 @@ describe('ExerciseForm', () => {
     expect(screen.getByPlaceholderText('8')).toBeInTheDocument();
   });
 
-  it('Save Exercise button is disabled when fields empty', () => {
+  it('Add button is disabled when fields empty', () => {
     render(<ExerciseForm onSave={onSave} onCancel={onCancel} />);
-    expect(screen.getByRole('button', { name: /save exercise/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeDisabled();
   });
 
-  it('Save Exercise button enabled when name, sets, reps filled', () => {
+  it('Add button enabled when name, sets, reps filled', () => {
     render(<ExerciseForm onSave={onSave} onCancel={onCancel} />);
     fireEvent.change(screen.getByPlaceholderText('e.g. Bench Press'), { target: { value: 'Squat' } });
     fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '3' } });
     fireEvent.change(screen.getByPlaceholderText('8'), { target: { value: '8' } });
-    expect(screen.getByRole('button', { name: /save exercise/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /^add$/i })).not.toBeDisabled();
   });
 
   it('calls onSave with correct Exercise object when submitted', () => {
@@ -40,7 +40,7 @@ describe('ExerciseForm', () => {
     // Unit select appears after weight entered
     const unitSelect = screen.getByRole('combobox');
     fireEvent.change(unitSelect, { target: { value: 'lbs' } });
-    fireEvent.click(screen.getByRole('button', { name: /save exercise/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     expect(onSave).toHaveBeenCalledWith({
       name: 'Bench Press',
       sets: 3,
@@ -55,7 +55,7 @@ describe('ExerciseForm', () => {
     fireEvent.change(screen.getByPlaceholderText('e.g. Bench Press'), { target: { value: 'Pull-ups' } });
     fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '3' } });
     fireEvent.change(screen.getByPlaceholderText('8'), { target: { value: '10' } });
-    fireEvent.click(screen.getByRole('button', { name: /save exercise/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
     expect(onSave).toHaveBeenCalledWith({ name: 'Pull-ups', sets: 3, reps: 10 });
     expect(onSave.mock.calls[0][0]).not.toHaveProperty('weight');
   });

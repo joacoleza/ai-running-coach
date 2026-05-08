@@ -6,7 +6,7 @@ import { clearDashboardCache } from "../../hooks/useDashboard";
 const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: "📊" },
   { path: "/plan", label: "Training Plan", icon: "📅" },
-  { path: "/runs", label: "Runs", icon: "🏃" },
+  { path: "/runs", label: "Activities", icon: "🏃" },
   { path: "/archive", label: "Archive", icon: "🗄️" },
 ];
 

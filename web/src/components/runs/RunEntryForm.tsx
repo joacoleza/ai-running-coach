@@ -7,6 +7,7 @@ interface RunEntryFormProps {
   weekNumber?: number;    // if provided, run will be linked to plan day on save
   dayLabel?: string;      // if provided, run will be linked to plan day on save
   dayGuidelines?: string; // shown as "Target: X" hint when completing a plan day
+  defaultDiscipline?: 'run' | 'gym' | 'cycle';
   onSave: (run: Run) => void;
   onCancel: () => void;
 }
@@ -50,8 +51,8 @@ function computeSpeedDisplay(distStr: string, durStr: string): string {
 
 type Discipline = 'run' | 'gym' | 'cycle';
 
-export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, onSave, onCancel }: RunEntryFormProps) {
-  const [discipline, setDiscipline] = useState<Discipline>('run');
+export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDiscipline, onSave, onCancel }: RunEntryFormProps) {
+  const [discipline, setDiscipline] = useState<Discipline>(defaultDiscipline ?? 'run');
   const [gymType, setGymType] = useState('');
   const [date, setDate] = useState(todayISO);
   const [distance, setDistance] = useState('');

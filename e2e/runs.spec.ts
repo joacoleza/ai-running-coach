@@ -152,8 +152,8 @@ test.describe('Run Logging', () => {
       }
     })
 
-    // Click "Log run" on Day A (opens RunEntryForm inline)
-    await page.getByTitle('Log run data').click()
+    // Click "Log session" on Day A (opens RunEntryForm inline)
+    await page.getByTitle('Log session data').click()
 
     // RunEntryForm should appear (look for distance placeholder)
     await expect(page.getByPlaceholder('5.0')).toBeVisible({ timeout: 5_000 })
@@ -199,8 +199,8 @@ test.describe('Run Logging', () => {
       }
     })
 
-    // Navigate to /runs
-    await page.getByRole('link', { name: 'Runs' }).click()
+    // Navigate to /runs (sidebar now says Activities)
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Click "Log a run"
@@ -252,11 +252,11 @@ test.describe('Run Logging', () => {
     await page.getByRole('link', { name: 'Plan' }).click()
     await expect(page.getByText('Easy Zone 2 run')).toBeVisible({ timeout: 10_000 })
 
-    // Click "Link run" on Day A
-    await page.getByText('Link run').click()
+    // Click "Link session" on Day A
+    await page.getByText('Link session').click()
 
     // LinkRunModal should appear showing the unlinked run
-    await expect(page.getByText(/Link a run to Week 1 Day A/)).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/Link a session to Week 1 Day A/)).toBeVisible({ timeout: 5_000 })
     await expect(page.getByText(/6km/)).toBeVisible({ timeout: 5_000 })
 
     // Click "Link" to link the run
@@ -329,8 +329,8 @@ test.describe('Run Logging', () => {
       }
     })
 
-    // Navigate to Runs page
-    await page.getByRole('link', { name: 'Runs' }).click()
+    // Navigate to Runs page (sidebar now says Activities)
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Click on the run row to open RunDetailModal
@@ -338,8 +338,8 @@ test.describe('Run Logging', () => {
     // Wait for the modal to open — look for the modal content
     await expect(page.getByPlaceholder(/45:30/)).toBeVisible({ timeout: 5_000 })
 
-    // Click "Add feedback to run" button
-    await page.getByRole('button', { name: /Add feedback to run/i }).click()
+    // Click "Get coaching feedback" button
+    await page.getByRole('button', { name: /get coaching feedback/i }).click()
 
     // Wait for coach response to appear in the modal
     await expect(page.getByText(coachReply)).toBeVisible({ timeout: 15_000 })
@@ -381,7 +381,7 @@ test.describe('Gym Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByRole('button', { name: /log a run/i }).click()
@@ -435,7 +435,7 @@ test.describe('Gym Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // All tab — both visible
@@ -488,7 +488,7 @@ test.describe('Gym Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Open modal by clicking the gym session row
@@ -501,13 +501,13 @@ test.describe('Gym Session Features', () => {
     await page.getByPlaceholder('e.g. Bench Press').fill('Bench Press')
     await page.locator('input[placeholder="3"]').fill('3')
     await page.locator('input[placeholder="8"]').fill('8')
-    await page.getByRole('button', { name: 'Save Exercise' }).click()
+    await page.getByRole('button', { name: 'Add', exact: true }).click()
 
     // Exercise appears in list
     await expect(page.getByText('Bench Press 3x8')).toBeVisible({ timeout: 5_000 })
 
-    // Click Done to persist exercises via PATCH
-    await page.getByRole('button', { name: 'Done' }).click()
+    // Click "Save exercises" to persist exercises via PATCH
+    await page.getByRole('button', { name: 'Save exercises' }).click()
 
     await expect(async () => {
       expect(patchBody?.exercises).toHaveLength(1)
@@ -548,7 +548,7 @@ test.describe('Cycling Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByRole('button', { name: /log a run/i }).click()
@@ -602,7 +602,7 @@ test.describe('Cycling Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // All tab — both visible
@@ -641,7 +641,7 @@ test.describe('Cycling Session Features', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Open modal by clicking the cycling session row
@@ -687,25 +687,25 @@ test.describe('Run delete and unlink flows', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Open RunDetailModal by clicking the run row
     await page.getByText(/6km/).click()
-    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('button', { name: /delete session/i })).toBeVisible({ timeout: 5_000 })
 
-    // Accept the confirm dialog and click Delete run
+    // Accept the confirm dialog and click Delete session
     page.once('dialog', dialog => {
       expect(dialog.message()).toContain('Delete this run')
       dialog.accept()
     })
-    await page.getByRole('button', { name: /delete run/i }).click()
+    await page.getByRole('button', { name: /delete session/i }).click()
 
     // Modal closes and DELETE was called
     await expect(async () => {
       expect(deleteWasCalled).toBe(true)
     }).toPass({ timeout: 5_000 })
-    await expect(page.getByRole('button', { name: /delete run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('button', { name: /delete session/i })).not.toBeVisible({ timeout: 5_000 })
   })
 
   test('delete run cancelled: dismiss dialog does not call DELETE', async ({ page }) => {
@@ -732,20 +732,20 @@ test.describe('Run delete and unlink flows', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByText(/6km/).click()
-    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('button', { name: /delete session/i })).toBeVisible({ timeout: 5_000 })
 
     // Dismiss the confirm dialog
     page.once('dialog', dialog => dialog.dismiss())
-    await page.getByRole('button', { name: /delete run/i }).click()
+    await page.getByRole('button', { name: /delete session/i }).click()
 
     // Modal stays open and DELETE was not called
     await page.waitForTimeout(500)
     expect(deleteWasCalled).toBe(false)
-    await expect(page.getByRole('button', { name: /delete run/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /delete session/i })).toBeVisible()
   })
 
   test('unlink linked run: confirm dialog triggers POST /unlink and hides unlink button', async ({ page }) => {
@@ -791,7 +791,7 @@ test.describe('Run delete and unlink flows', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     // Open modal by clicking the linked run row
@@ -847,7 +847,7 @@ test.describe('Run delete and unlink flows', () => {
       }
     })
 
-    await page.getByRole('link', { name: 'Runs' }).click()
+    await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
     await page.getByText(/9km/).click()

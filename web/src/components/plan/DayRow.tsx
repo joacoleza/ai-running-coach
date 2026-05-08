@@ -3,6 +3,7 @@ import type { PlanDay, Exercise } from '../../hooks/usePlan';
 import type { Run } from '../../hooks/useRuns';
 import { RunEntryForm } from '../runs/RunEntryForm';
 import { ExerciseChecklistItem } from './ExerciseChecklistItem';
+import { RunBadge } from '../runs/RunBadge';
 
 interface DayRowProps {
   day: PlanDay;
@@ -122,11 +123,12 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
             className="bg-white rounded-xl shadow-xl w-full max-w-md p-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="font-semibold text-gray-900 mb-3">Log a run</h2>
+            <h2 className="font-semibold text-gray-900 mb-3">Log session</h2>
             <RunEntryForm
               weekNumber={weekNumber}
               dayLabel={day.label}
               dayGuidelines={day.guidelines}
+              defaultDiscipline={(day.discipline ?? 'run') as 'run' | 'gym' | 'cycle'}
               onSave={() => {
                 setCompletingRun(false);
                 window.dispatchEvent(new Event('plan-updated'));
@@ -153,6 +155,9 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
             <span className="font-semibold text-gray-700 mr-1">
               Day {day.label}
             </span>
+            {day.discipline && (
+              <RunBadge discipline={(day.discipline ?? 'run') as 'run' | 'gym' | 'cycle'} />
+            )}{' '}
 
             {day.objective && (
               <>
@@ -287,9 +292,9 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                 <button
                   onClick={() => setCompletingRun(true)}
                   className="text-xs text-gray-500 hover:text-green-600 cursor-pointer"
-                  title="Log run data for this completed day"
+                  title="Log session data for this completed day"
                 >
-                  Log run
+                  Log session
                 </button>
               )}
 
@@ -307,9 +312,9 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                   <button
                     onClick={() => setCompletingRun(true)}
                     className="text-xs text-gray-500 hover:text-green-600 cursor-pointer"
-                    title="Log run data"
+                    title="Log session data"
                   >
-                    Log run
+                    Log session
                   </button>
                   <button
                     onClick={() => { void update({ skipped: 'true' }); }}
@@ -326,7 +331,7 @@ export function DayRow({ day, weekNumber, onUpdate, onDelete, readonly, linkedRu
                   onClick={() => onRunLinked()}
                   className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
                 >
-                  Link run
+                  Link session
                 </button>
               )}
 

@@ -81,8 +81,9 @@ export async function fetchRuns(params?: {
   return res.json() as Promise<{ runs: Run[]; total: number; totalAll: number }>;
 }
 
-export async function fetchUnlinkedRuns(limit = 100): Promise<Run[]> {
-  const res = await fetch(`/api/runs?unlinked=true&limit=${limit}`, { headers: authHeaders() });
+export async function fetchUnlinkedRuns(limit = 100, discipline?: string): Promise<Run[]> {
+  const disciplineParam = discipline ? `&discipline=${encodeURIComponent(discipline)}` : '';
+  const res = await fetch(`/api/runs?unlinked=true&limit=${limit}${disciplineParam}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('Failed to fetch unlinked runs');
   const data = await res.json() as { runs: Run[]; total: number };
   return data.runs;
