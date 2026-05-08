@@ -203,11 +203,11 @@ test.describe('Run Logging', () => {
     await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
-    // Click "Log a run"
-    await page.getByRole('button', { name: /log a run/i }).click()
+    // Click "Log a session"
+    await page.getByRole('button', { name: /log a session/i }).click()
 
     // Form modal should appear
-    await expect(page.getByRole('heading', { name: /log a run/i })).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('heading', { name: /log a session/i })).toBeVisible({ timeout: 5_000 })
 
     // Fill form and save
     await page.getByPlaceholder('5.0').fill('6')
@@ -215,7 +215,7 @@ test.describe('Run Logging', () => {
     await page.getByRole('button', { name: /save session/i }).click()
 
     // Modal closes and run appears in list (no plan badge since unlinked)
-    await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('heading', { name: /log a session/i })).not.toBeVisible({ timeout: 5_000 })
 
     // A run row with 6km should appear in the list
     await expect(page.getByText(/6km/)).toBeVisible({ timeout: 5_000 })
@@ -384,8 +384,8 @@ test.describe('Gym Session Features', () => {
     await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
-    await page.getByRole('button', { name: /log a run/i }).click()
-    await expect(page.getByRole('heading', { name: /log a run/i })).toBeVisible({ timeout: 5_000 })
+    await page.getByRole('button', { name: /log a session/i }).click()
+    await expect(page.getByRole('heading', { name: /log a session/i })).toBeVisible({ timeout: 5_000 })
 
     // Change discipline to Gym
     await page.getByLabel('Discipline').selectOption('gym')
@@ -401,7 +401,7 @@ test.describe('Gym Session Features', () => {
     await page.getByRole('button', { name: /save session/i }).click()
 
     // Modal closes and POST had correct discipline
-    await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('heading', { name: /log a session/i })).not.toBeVisible({ timeout: 5_000 })
     await expect(async () => {
       expect(postBody?.discipline).toBe('gym')
       expect(postBody?.type).toBe('upper body')
@@ -453,7 +453,7 @@ test.describe('Gym Session Features', () => {
     await expect(page.getByText(/5km/)).toBeVisible({ timeout: 5_000 })
   })
 
-  test('gym session RunDetailModal: add exercise and save via Done button', async ({ page }) => {
+  test('gym session RunDetailModal: add exercise and save via unified Save changes button', async ({ page }) => {
     const gymRun = {
       _id: 'gym-exercises-001',
       date: '2026-05-01', distance: 0, duration: '60:00', pace: 0,
@@ -506,8 +506,8 @@ test.describe('Gym Session Features', () => {
     // Exercise appears in list
     await expect(page.getByText('Bench Press 3x8')).toBeVisible({ timeout: 5_000 })
 
-    // Click "Save exercises" to persist exercises via PATCH
-    await page.getByRole('button', { name: 'Save exercises' }).click()
+    // Save changes button appears (exercises made the form dirty) — click to PATCH
+    await page.getByRole('button', { name: 'Save changes' }).click()
 
     await expect(async () => {
       expect(patchBody?.exercises).toHaveLength(1)
@@ -551,8 +551,8 @@ test.describe('Cycling Session Features', () => {
     await page.getByRole('link', { name: 'Activities' }).click()
     await expect(page.getByRole('heading', { name: 'Runs' })).toBeVisible({ timeout: 10_000 })
 
-    await page.getByRole('button', { name: /log a run/i }).click()
-    await expect(page.getByRole('heading', { name: /log a run/i })).toBeVisible({ timeout: 5_000 })
+    await page.getByRole('button', { name: /log a session/i }).click()
+    await expect(page.getByRole('heading', { name: /log a session/i })).toBeVisible({ timeout: 5_000 })
 
     // Change discipline to Cycling
     await page.getByLabel('Discipline').selectOption('cycle')
@@ -568,7 +568,7 @@ test.describe('Cycling Session Features', () => {
 
     await page.getByRole('button', { name: /save session/i }).click()
 
-    await expect(page.getByRole('heading', { name: /log a run/i })).not.toBeVisible({ timeout: 5_000 })
+    await expect(page.getByRole('heading', { name: /log a session/i })).not.toBeVisible({ timeout: 5_000 })
     await expect(async () => {
       expect(postBody?.discipline).toBe('cycle')
       expect(postBody?.distance).toBe(30)

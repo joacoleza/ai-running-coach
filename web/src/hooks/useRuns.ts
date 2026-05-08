@@ -37,6 +37,7 @@ export interface CreateRunInput {
   dayLabel?: string;      // provide to link to plan day
   discipline?: string;
   type?: string;
+  exercises?: Exercise[];
 }
 
 function authHeaders(): Record<string, string> {

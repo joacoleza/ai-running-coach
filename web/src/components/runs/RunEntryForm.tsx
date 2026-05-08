@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { createRun } from '../../hooks/useRuns';
-import type { Run } from '../../hooks/useRuns';
+import type { Run, Exercise } from '../../hooks/useRuns';
 import { DateInput } from './DateInput';
+import { ExerciseForm } from './ExerciseForm';
 
 interface RunEntryFormProps {
   weekNumber?: number;    // if provided, run will be linked to plan day on save
@@ -49,6 +50,11 @@ function computeSpeedDisplay(distStr: string, durStr: string): string {
   return `${((dist / totalMinutes) * 60).toFixed(1)} km/h`;
 }
 
+function formatExercise(ex: Exercise): string {
+  const weight = ex.weight ? ` @ ${ex.weight}${ex.unit ?? ''}` : '';
+  return `${ex.name} ${ex.sets}x${ex.reps}${weight}`;
+}
+
 type Discipline = 'run' | 'gym' | 'cycle';
 
 export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDiscipline, onSave, onCancel }: RunEntryFormProps) {
@@ -59,6 +65,8 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDisci
   const [duration, setDuration] = useState('');
   const [avgHR, setAvgHR] = useState('');
   const [notes, setNotes] = useState('');
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [showExerciseForm, setShowExerciseForm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,9 +75,22 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDisci
   const pace = isGym ? '' : isCycle
     ? computeSpeedDisplay(distance, duration)
     : computePaceDisplay(distance, duration);
-  const durationValid = !!duration.match(/^\d{1,2}:\d{2}(:\d{2})?$/);
+
+  // Strict duration validation: MM:SS or HH:MM:SS only (no trailing junk)
+  const durationValid = /^\d{1,2}:\d{2}$/.test(duration) || /^\d{1,3}:\d{2}:\d{2}$/.test(duration);
+
   const isValid = isValidDate(date) && durationValid &&
     (isGym ? !!gymType : (!!parseFloat(distance) && parseFloat(distance) > 0));
+
+  const handleAddExercise = (ex: Exercise) => {
+    setExercises(prev => [...prev, ex]);
+    setShowExerciseForm(false);
+  };
+
+  const handleRemoveExercise = (idx: number) => {
+    if (!window.confirm('Remove Exercise: This will remove the exercise from the logged session.')) return;
+    setExercises(prev => prev.filter((_, i) => i !== idx));
+  };
 
   const handleSubmit = async () => {
     if (isSaving) return;
@@ -90,6 +111,7 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDisci
         duration,
         discipline,
         type: isGym ? gymType : undefined,
+        exercises: isGym && exercises.length > 0 ? exercises : undefined,
         avgHR: avgHR ? parseInt(avgHR, 10) : undefined,
         notes: notes || undefined,
         weekNumber,
@@ -116,7 +138,13 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDisci
         <select
           id="discipline-select"
           value={discipline}
-          onChange={(e) => { setDiscipline(e.target.value as Discipline); setGymType(''); setDistance(''); }}
+          onChange={(e) => {
+            setDiscipline(e.target.value as Discipline);
+            setGymType('');
+            setDistance('');
+            setExercises([]);
+            setShowExerciseForm(false);
+          }}
           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 cursor-pointer"
         >
           <option value="run">Run</option>
@@ -234,6 +262,40 @@ export function RunEntryForm({ weekNumber, dayLabel, dayGuidelines, defaultDisci
           className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-blue-400 resize-none"
         />
       </div>
+
+      {/* Exercises — only for gym sessions */}
+      {isGym && (
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-2">
+            Exercises <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+
+          {exercises.map((ex, idx) => (
+            <div key={idx} className="flex items-center justify-between py-1 border-b border-gray-100 mb-1">
+              <span className="text-sm text-gray-800">{formatExercise(ex)}</span>
+              <button
+                onClick={() => handleRemoveExercise(idx)}
+                className="text-xs text-red-600 hover:text-red-800 cursor-pointer ml-2"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+
+          {showExerciseForm ? (
+            <ExerciseForm onSave={handleAddExercise} onCancel={() => setShowExerciseForm(false)} />
+          ) : (
+            exercises.length < 20 && (
+              <button
+                onClick={() => setShowExerciseForm(true)}
+                className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
+              >
+                + Add Exercise
+              </button>
+            )
+          )}
+        </div>
+      )}
 
       {error && <p className="text-red-500 text-xs">{error}</p>}
 

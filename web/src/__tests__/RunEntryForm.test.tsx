@@ -221,6 +221,152 @@ describe('RunEntryForm', () => {
   });
 });
 
+describe('RunEntryForm — gym discipline exercise entry', () => {
+  it('shows Exercises section when gym discipline is selected', () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    // The label has two text nodes: "Exercises" and "(optional)" — check for the label element
+    const labels = screen.getAllByText(/exercises/i);
+    expect(labels.some(el => el.tagName === 'LABEL' || el.closest('label'))).toBe(true);
+  });
+
+  it('does not show Exercises section for run discipline', () => {
+    renderForm();
+    // No "Exercises" label for run discipline
+    const labels = screen.queryAllByText(/^exercises$/i);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('does not show Exercises section for cycle discipline', () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'cycle' } });
+    const labels = screen.queryAllByText(/^exercises$/i);
+    expect(labels).toHaveLength(0);
+  });
+
+  it('gym session can be saved without exercises (exercises optional)', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    const typeSelect = screen.getByRole('combobox', { name: /session type/i });
+    fireEvent.change(typeSelect, { target: { value: 'upper body' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '45:00' } });
+
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    await act(async () => { fireEvent.click(saveBtn); });
+
+    // exercises key absent or undefined when no exercises added
+    const call = mockCreateRun.mock.calls[0]?.[0];
+    expect(call?.exercises === undefined || (Array.isArray(call?.exercises) && call.exercises.length === 0)).toBe(true);
+  });
+
+  it('exercises added inline are included in createRun payload', async () => {
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    const typeSelect = screen.getByRole('combobox', { name: /session type/i });
+    fireEvent.change(typeSelect, { target: { value: 'upper body' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '45:00' } });
+
+    // Add an exercise via the inline form
+    fireEvent.click(screen.getByRole('button', { name: /\+ add exercise/i }));
+
+    // Fill exercise form
+    fireEvent.change(screen.getByPlaceholderText(/bench press/i), { target: { value: 'Push ups' } });
+    fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '3' } });
+    fireEvent.change(screen.getByPlaceholderText('8'), { target: { value: '10' } });
+
+    // Save the exercise
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    // Exercise should appear in list
+    expect(screen.getByText(/push ups 3x10/i)).toBeInTheDocument();
+
+    // Submit the form
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    await act(async () => { fireEvent.click(saveBtn); });
+
+    expect(mockCreateRun).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exercises: expect.arrayContaining([
+          expect.objectContaining({ name: 'Push ups', sets: 3, reps: 10 }),
+        ]),
+      })
+    );
+  });
+
+  it('can remove an exercise from the inline list', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    renderForm();
+    const disciplineSelect = screen.getByRole('combobox', { name: /discipline/i });
+    fireEvent.change(disciplineSelect, { target: { value: 'gym' } });
+
+    // Add an exercise
+    fireEvent.click(screen.getByRole('button', { name: /\+ add exercise/i }));
+    fireEvent.change(screen.getByPlaceholderText(/bench press/i), { target: { value: 'Squat' } });
+    fireEvent.change(screen.getByPlaceholderText('3'), { target: { value: '4' } });
+    fireEvent.change(screen.getByPlaceholderText('8'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    expect(screen.getByText(/squat 4x12/i)).toBeInTheDocument();
+
+    // Remove it
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
+    expect(screen.queryByText(/squat 4x12/i)).not.toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+});
+
+describe('RunEntryForm — duration validation', () => {
+  it('accepts valid MM:SS format "45:30"', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '45:30' } });
+    expect(screen.getByRole('button', { name: /save session/i })).not.toBeDisabled();
+  });
+
+  it('accepts valid HH:MM:SS format "1:45:30"', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '1:45:30' } });
+    expect(screen.getByRole('button', { name: /save session/i })).not.toBeDisabled();
+  });
+
+  it('rejects "12:0011" (extra digits after seconds)', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '12:0011' } });
+    expect(screen.getByRole('button', { name: /save session/i })).toBeDisabled();
+  });
+
+  it('rejects "1:00asdasda" (non-numeric characters)', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '1:00asdasda' } });
+    expect(screen.getByRole('button', { name: /save session/i })).toBeDisabled();
+  });
+
+  it('rejects "9:5" (seconds must be exactly 2 digits)', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '9:5' } });
+    expect(screen.getByRole('button', { name: /save session/i })).toBeDisabled();
+  });
+
+  it('rejects "145:30" (3-digit minutes in MM:SS form is invalid — must use HH:MM:SS)', () => {
+    renderForm();
+    fireEvent.change(screen.getByPlaceholderText('5.0'), { target: { value: '5' } });
+    fireEvent.change(screen.getByPlaceholderText('45:30'), { target: { value: '145:30' } });
+    // 145:30 has 3-digit first segment with only 2 parts — should fail strict validation
+    expect(screen.getByRole('button', { name: /save session/i })).toBeDisabled();
+  });
+});
+
 describe('RunEntryForm — cycling discipline', () => {
   it('shows Speed label (not Pace) when cycling discipline is selected', async () => {
     renderForm();

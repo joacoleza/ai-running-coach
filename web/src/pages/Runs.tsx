@@ -270,7 +270,7 @@ export function Runs() {
             onClick={() => setShowLogForm(true)}
             className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
           >
-            Log a run
+            Log a session
           </button>
         </div>
       </div>
@@ -360,7 +360,7 @@ export function Runs() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setShowLogForm(false)}>
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 my-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-gray-900">Log a run</h2>
+              <h2 className="font-semibold text-gray-900">Log a session</h2>
               <button
                 onClick={() => setShowLogForm(false)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"

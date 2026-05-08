@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-08T01:20:30.884Z"
-last_activity: 2026-05-08
+last_updated: "2026-05-08T22:57:37.823Z"
+last_activity: "2026-05-09 - Completed quick task 260509-003: Phase 15 bug fixes (gym exercises in log form, unified save, duration validation, link modal gym display, log button label)"
 progress:
   total_phases: 7
   completed_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 Phase: 999.1
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-05-08
+Last activity: 2026-05-09 - Completed quick task 260509-003: Phase 15 bug fixes (gym exercises in log form, unified save, duration validation, link modal gym display, log button label)
 Last session: 2026-05-08T01:15:39.796Z
 
 Progress: [████░░░░░░] 40% (2/5 phases complete)
@@ -137,3 +137,4 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 | 260423-u59 | Fix run:update-insight XML tag visible in chat and run detail modal | 2026-04-23 | 2c52f49 | [260423-u59-fix-run-update-insight-xml-tag-visible-i](.planning/quick/260423-u59-fix-run-update-insight-xml-tag-visible-i/) | PR #78 |
 | 260423-wnm | Sidebar user email + logout dropdown, show-password toggle on login/reset | 2026-04-24 | 8bbb26f | [260423-wnm-sidebar-user-email-display-with-logout-d](.planning/quick/260423-wnm-sidebar-user-email-display-with-logout-d/) | PR #81 |
 | 260428-drl | security review of the whole code - write security.md in .docs with findings | 2026-04-28 | a5dbdea | [260428-drl-security-review-of-the-whole-code-write-](.planning/quick/260428-drl-security-review-of-the-whole-code-write-/) | PR #87 |
+| 260509-003 | phase 15 bug fixes — gym session exercises, unified save, duration validation, link modal gym display, log a session label | 2026-05-08 | c0a2870 | [260509-003-phase-15-bug-fixes-gym-session-exercises](.planning/quick/260509-003-phase-15-bug-fixes-gym-session-exercises/) |

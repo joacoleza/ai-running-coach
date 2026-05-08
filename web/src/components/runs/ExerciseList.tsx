@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { updateRun } from '../../hooks/useRuns';
+import { useState, useEffect } from 'react';
 import type { Run, Exercise } from '../../hooks/useRuns';
 import { ExerciseForm } from './ExerciseForm';
 
 interface ExerciseListProps {
   exercises: Exercise[];
   runId: string;
-  onUpdate: (updated: Run) => void;
+  onUpdate?: (updated: Run) => void;
+  onExercisesChange: (exercises: Exercise[]) => void;
 }
 
 function formatExercise(ex: Exercise): string {
@@ -14,14 +14,17 @@ function formatExercise(ex: Exercise): string {
   return `${ex.name} ${ex.sets}x${ex.reps}${weight}`;
 }
 
-export function ExerciseList({ exercises, runId, onUpdate }: ExerciseListProps) {
+export function ExerciseList({ exercises, runId: _runId, onExercisesChange }: ExerciseListProps) {
   const [localExercises, setLocalExercises] = useState<Exercise[]>(exercises);
   const [showForm, setShowForm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveError] = useState<string | null>(null);
 
   const atLimit = localExercises.length >= 20;
   const nearLimit = localExercises.length >= 15;
+
+  useEffect(() => {
+    onExercisesChange(localExercises);
+  }, [localExercises]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleAddExercise = (ex: Exercise) => {
     setLocalExercises(prev => [...prev, ex]);
@@ -31,20 +34,6 @@ export function ExerciseList({ exercises, runId, onUpdate }: ExerciseListProps) 
   const handleRemove = (idx: number) => {
     if (!window.confirm('Remove Exercise: This will remove the exercise from the logged session.')) return;
     setLocalExercises(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const handleDone = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    setSaveError(null);
-    try {
-      const updated = await updateRun(runId, { exercises: localExercises });
-      onUpdate(updated);
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save exercises');
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   return (
@@ -83,16 +72,6 @@ export function ExerciseList({ exercises, runId, onUpdate }: ExerciseListProps) 
       )}
 
       {saveError && <p className="text-red-600 text-xs">{saveError}</p>}
-
-      <div className="mt-4 pt-3 border-t border-gray-100">
-        <button
-          onClick={() => { void handleDone(); }}
-          disabled={isSaving}
-          className="bg-blue-600 text-white text-sm font-medium py-1 px-3 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isSaving ? 'Saving…' : 'Save exercises'}
-        </button>
-      </div>
     </div>
   );
 }
