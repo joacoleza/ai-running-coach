@@ -122,7 +122,7 @@ export function ExerciseForm({ onSave, onCancel }: ExerciseFormProps) {
           disabled={!isValid}
           className="bg-blue-600 text-white text-sm font-medium py-1 px-3 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Save Exercise
+          Add
         </button>
         <button
           onClick={onCancel}

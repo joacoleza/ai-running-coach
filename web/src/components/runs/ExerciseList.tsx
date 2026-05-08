@@ -84,13 +84,15 @@ export function ExerciseList({ exercises, runId, onUpdate }: ExerciseListProps) 
 
       {saveError && <p className="text-red-600 text-xs">{saveError}</p>}
 
-      <button
-        onClick={() => { void handleDone(); }}
-        disabled={isSaving}
-        className="mt-2 bg-blue-600 text-white text-sm font-medium py-1 px-3 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-      >
-        {isSaving ? 'Saving…' : 'Done'}
-      </button>
+      <div className="mt-4 pt-3 border-t border-gray-100">
+        <button
+          onClick={() => { void handleDone(); }}
+          disabled={isSaving}
+          className="bg-blue-600 text-white text-sm font-medium py-1 px-3 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {isSaving ? 'Saving…' : 'Save exercises'}
+        </button>
+      </div>
     </div>
   );
 }
