@@ -50,7 +50,7 @@
 - [x] **Phase 13: Discipline Foundation** — Data model, migrations, API + coach updates for multi-discipline (completed 2026-04-29)
 - [x] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration (completed 2026-05-04)
 - [x] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration (completed 2026-05-07)
-- [ ] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering
+- [x] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering (completed 2026-05-08)
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
 
@@ -130,13 +130,13 @@ Plans:
   5. LinkRunModal when opened from a gym plan day shows only unlinked gym sessions (not all sessions)
   6. ExerciseList "Done" button is visually separated from "+ Add Exercise"; ExerciseForm save button is labelled "Add" (not "Save Exercise") to clarify it adds to local list; ExerciseList "Done" button is labelled "Save exercises" to clarify it persists to server
   7. Plan day DayRow shows a discipline indicator (Run / Gym / Cycle) when discipline is set on the day
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 15.1-01-PLAN.md — Sidebar rename + ExerciseList/ExerciseForm label fixes + useRuns discipline param + RunEntryForm defaultDiscipline prop
 - [x] 15.1-02-PLAN.md — RunDetailModal: RunBadge in header, hide gym fields, fix labels, fix gym feedback message
 - [x] 15.1-03-PLAN.md — DayRow discipline badge + session labels + PlanView linkingDay discipline + LinkRunModal discipline filtering
-- [ ] 15.1-04-PLAN.md — Test updates (Sidebar/LinkRunModal/DayRow) + build verification + E2E smoke
+- [x] 15.1-04-PLAN.md — Test updates (Sidebar/LinkRunModal/DayRow) + build verification + E2E smoke
 
 ### Phase 16: Multi-Discipline Dashboard
 **Goal**: The dashboard shows training data across all disciplines with a filter and adapted stats, including a weight progression chart for gym exercises
@@ -176,6 +176,6 @@ Plans:
 | 13. Discipline Foundation | 3/3 | ✅ Complete | 2026-04-29 |
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
 | 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
-| 15.1. Multi-Discipline UI Polish | 3/4 | In Progress|  |
+| 15.1. Multi-Discipline UI Polish | 4/4 | Complete   | 2026-05-08 |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
