@@ -53,6 +53,8 @@ Progress: [████░░░░░░] 40% (2/5 phases complete)
 
 ### Roadmap Evolution
 
+- Phase 19 added: User Unit Preferences — settings panel for distance (km/miles) and weight (kg/lbs) per user; coach-aware, entries stored with creation-time units, dashboards convert on display
+- Phase 18 added: Gym Session Exercises in Plan — coach-created exercise checklists on planned gym days, user checks off exercises during the session
 - Phase 10 added: Login rate limiting (brute-force protection — failedLoginAttempts + lockedUntil on User doc, 5 attempts → 15 min lockout, 429 response). Replaces lockout system deleted in Phase 6.
 
 - Existing v1.1 data in MongoDB (plans, runs, messages) must be associated with a first/seed user record during migration
