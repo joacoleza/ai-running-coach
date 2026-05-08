@@ -112,8 +112,11 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, dayDisciplin
             const filtered = runs.filter(r => {
               if (!search.trim()) return true;
               const q = search.toLowerCase();
+              const isGymRun = (r.discipline ?? 'run') === 'gym';
               return formatRunDate(r.date).toLowerCase().includes(q)
-                || String(r.distance).includes(q);
+                || String(r.distance).includes(q)
+                || (isGymRun && (r.type ?? '').toLowerCase().includes(q))
+                || (isGymRun && r.duration.includes(q));
             });
 
             return filtered.length === 0 ? (
@@ -128,27 +131,32 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, dayDisciplin
                   </p>
                 )}
                 <ul className="space-y-2">
-                  {filtered.map((run) => (
-                    <li
-                      key={run._id}
-                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                    >
-                      <span className="text-sm text-gray-700">
-                        {formatRunDate(run.date)} &middot; {run.distance}km &middot; {
-                          (run.discipline ?? 'run') === 'cycle'
-                            ? formatSpeed(run.distance, run.duration)
-                            : formatPace(run.pace)
-                        }
-                      </span>
-                      <button
-                        onClick={() => { void handleLink(run); }}
-                        disabled={isLinking}
-                        className="cursor-pointer ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  {filtered.map((run) => {
+                    const discipline = run.discipline ?? 'run';
+                    let runInfo: string;
+                    if (discipline === 'gym') {
+                      runInfo = `${formatRunDate(run.date)} · ${run.type ?? 'Gym'} · ${run.duration}`;
+                    } else if (discipline === 'cycle') {
+                      runInfo = `${formatRunDate(run.date)} · ${run.distance}km · ${formatSpeed(run.distance, run.duration)}`;
+                    } else {
+                      runInfo = `${formatRunDate(run.date)} · ${run.distance}km · ${formatPace(run.pace)}`;
+                    }
+                    return (
+                      <li
+                        key={run._id}
+                        className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
                       >
-                        {isLinking ? 'Linking...' : 'Link'}
-                      </button>
-                    </li>
-                  ))}
+                        <span className="text-sm text-gray-700">{runInfo}</span>
+                        <button
+                          onClick={() => { void handleLink(run); }}
+                          disabled={isLinking}
+                          className="cursor-pointer ml-3 text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isLinking ? 'Linking...' : 'Link'}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               </>
             );

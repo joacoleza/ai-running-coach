@@ -204,4 +204,72 @@ describe('LinkRunModal', () => {
     // Should NOT show pace format (M:SS/km)
     expect(screen.queryByText(/\d+:\d{2}\/km/)).not.toBeInTheDocument();
   });
+
+  it('displays gym run with date + type + duration (NOT distance and pace)', async () => {
+    const gymRun = {
+      ...baseRun,
+      _id: 'gym-1',
+      date: '2026-04-01',
+      distance: 0,
+      duration: '45:30',
+      pace: 0,
+      discipline: 'gym',
+      type: 'upper body',
+    };
+    mockFetchUnlinkedRuns.mockResolvedValue([gymRun]);
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} />);
+    });
+
+    // Should show: date · session type · duration
+    expect(screen.getByText(/upper body/i)).toBeInTheDocument();
+    expect(screen.getByText(/45:30/)).toBeInTheDocument();
+    // Should NOT show "0km" or pace
+    expect(screen.queryByText(/0km/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\d+:\d{2}\/km/)).not.toBeInTheDocument();
+  });
+
+  it('displays gym run with "Gym" as type fallback when type is missing', async () => {
+    const gymRun = {
+      ...baseRun,
+      _id: 'gym-2',
+      date: '2026-04-01',
+      distance: 0,
+      duration: '60:00',
+      pace: 0,
+      discipline: 'gym',
+    };
+    mockFetchUnlinkedRuns.mockResolvedValue([gymRun]);
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} />);
+    });
+
+    expect(screen.getByText(/gym/i)).toBeInTheDocument();
+    expect(screen.getByText(/60:00/)).toBeInTheDocument();
+    expect(screen.queryByText(/0km/)).not.toBeInTheDocument();
+  });
+
+  it('gym session can be searched by duration', async () => {
+    const gymRun = {
+      ...baseRun,
+      _id: 'gym-3',
+      date: '2026-04-01',
+      distance: 0,
+      duration: '45:30',
+      pace: 0,
+      discipline: 'gym',
+      type: 'lower body',
+    };
+    const runRun = { ...baseRun, _id: 'run-x', date: '2026-03-10', distance: 10, duration: '50:00', pace: 5 };
+    mockFetchUnlinkedRuns.mockResolvedValue([gymRun, runRun]);
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} />);
+    });
+
+    const searchInput = screen.getByPlaceholderText(/search by date or distance/i);
+    fireEvent.change(searchInput, { target: { value: '45:30' } });
+
+    // Only the gym run matching duration should be visible
+    expect(screen.queryAllByRole('button', { name: /^link$/i })).toHaveLength(1);
+  });
 });
