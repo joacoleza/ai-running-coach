@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-07T20:37:06.426Z"
-last_activity: 2026-05-07
+last_updated: "2026-05-08T00:37:13.807Z"
+last_activity: 2026-05-08
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 14
+  completed_plans: 11
   percent: 40
 ---
 
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 15 — cycling-support
+**Current focus:** Phase 15.1 — multi-discipline-ui-polish
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Executing
-Last activity: 2026-05-07
-Last session: 2026-05-07T01:38:18Z — Completed 15-02-PLAN.md
+Phase: 15.1 (multi-discipline-ui-polish) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-05-08
+Last session: 2026-05-08T00:37:13.799Z
 
 Progress: [████░░░░░░] 40% (2/5 phases complete)
 
@@ -125,6 +125,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15-cycling-support]: Speed formula: (distance_km / totalMinutes) * 60 formatted to 1 decimal + km/h; isCycle pattern mirrors isGym for consistency
 - [Phase 15-cycling-support]: Speed computed at context-emission time (not stored in DB) — formatSpeed(distanceKm, duration) returns null for invalid inputs
 - [Phase 15-cycling-support]: Discipline context block uses three-branch pattern: isGymSession -> cycle -> else run; prompts.ts cycling plan:add example was already present from Phase 13
+- [Phase 15.1]: Sidebar label changed to Activities (path /runs unchanged) to avoid route refactor
+- [Phase 15.1]: fetchUnlinkedRuns discipline param uses encodeURIComponent; defaultDiscipline prop pattern established for RunEntryForm pre-selection
 
 ### Quick Tasks Completed
 
