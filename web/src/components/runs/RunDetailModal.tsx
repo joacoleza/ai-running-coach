@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useNavigate } from 'react-router-dom';
 import { updateRun, deleteRun, unlinkRun } from '../../hooks/useRuns';
-import type { Run } from '../../hooks/useRuns';
+import type { Run, Exercise } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
 import { DateInput } from './DateInput';
 import { ExerciseList } from './ExerciseList';
@@ -70,18 +70,29 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
   const [editAvgHR, setEditAvgHR] = useState(run.avgHR !== undefined ? String(run.avgHR) : '');
   const [editNotes, setEditNotes] = useState(run.notes ?? '');
 
+  const [pendingExercises, setPendingExercises] = useState<Exercise[]>(run.exercises ?? []);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [isRequestingFeedback, setIsRequestingFeedback] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Reset pendingExercises if run prop changes (e.g. after save)
+  useEffect(() => {
+    setPendingExercises(run.exercises ?? []);
+  }, [run._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const exercisesChanged =
+    run.discipline === 'gym' &&
+    JSON.stringify(pendingExercises) !== JSON.stringify(run.exercises ?? []);
+
   const isDirty =
     editDate !== run.date ||
     editDistance !== String(run.distance) ||
     editDuration !== run.duration ||
     editAvgHR !== (run.avgHR !== undefined ? String(run.avgHR) : '') ||
-    editNotes !== (run.notes ?? '');
+    editNotes !== (run.notes ?? '') ||
+    exercisesChanged;
 
   const editDistNum = parseFloat(editDistance);
   const editPace = computePace(editDistNum, editDuration);
@@ -106,6 +117,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
       if (hrVal !== run.avgHR) updates.avgHR = hrVal;
       const notesVal = editNotes || undefined;
       if (notesVal !== run.notes) updates.notes = notesVal;
+      if (exercisesChanged) updates.exercises = pendingExercises;
 
       const updated = await updateRun(run._id, updates);
       onUpdated(updated);
@@ -342,7 +354,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               <ExerciseList
                 exercises={run.exercises ?? []}
                 runId={run._id}
-                onUpdate={onUpdated}
+                onExercisesChange={setPendingExercises}
               />
             </section>
           )}

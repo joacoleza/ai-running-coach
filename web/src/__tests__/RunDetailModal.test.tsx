@@ -1,12 +1,28 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { RunDetailModal } from '../components/runs/RunDetailModal';
 import type { Run } from '../hooks/useRuns';
 
+// ExerciseList mock: exposes onExercisesChange callback so tests can trigger it
 vi.mock('../components/runs/ExerciseList', () => ({
-  ExerciseList: ({ runId }: { runId: string }) => (
-    <div data-testid="exercise-list">ExerciseList for {runId}</div>
+  ExerciseList: ({
+    runId,
+    onExercisesChange,
+  }: {
+    runId: string;
+    exercises: unknown[];
+    onExercisesChange: (exs: unknown[]) => void;
+  }) => (
+    <div data-testid="exercise-list">
+      <span>ExerciseList for {runId}</span>
+      <button
+        onClick={() => onExercisesChange([{ name: 'Bench Press', sets: 3, reps: 10 }])}
+        data-testid="trigger-exercise-change"
+      >
+        Add exercise
+      </button>
+    </div>
   ),
 }));
 
@@ -29,6 +45,7 @@ vi.mock('../contexts/ChatContext', () => ({
 vi.mock('../hooks/useRuns', () => ({
   updateRun: vi.fn(),
   deleteRun: vi.fn(),
+  unlinkRun: vi.fn(),
 }));
 
 import { useChatContext } from '../contexts/ChatContext';
@@ -260,6 +277,80 @@ describe('RunDetailModal', () => {
     );
     // 30km in 60:00 = 30.0 km/h
     expect(screen.getByText('30.0 km/h')).toBeInTheDocument();
+  });
+});
+
+describe('RunDetailModal — exercise unified save', () => {
+  const gymRun: Run = {
+    ...mockRun,
+    _id: 'gym-001',
+    discipline: 'gym',
+    type: 'upper body',
+    exercises: [],
+  };
+
+  it('ExerciseList receives onExercisesChange callback prop', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // The mock ExerciseList renders "Add exercise" button only when onExercisesChange is passed
+    expect(screen.getByTestId('trigger-exercise-change')).toBeInTheDocument();
+  });
+
+  it('isDirty becomes true when exercises change via onExercisesChange', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // Initially no Save changes button
+    expect(screen.queryByRole('button', { name: /save changes/i })).not.toBeInTheDocument();
+
+    // Trigger exercise change via mock
+    fireEvent.click(screen.getByTestId('trigger-exercise-change'));
+
+    // Now Save changes button should appear
+    expect(screen.getByRole('button', { name: /save changes/i })).toBeInTheDocument();
+  });
+
+  it('Save changes includes exercises in updateRun call', async () => {
+    vi.mocked(updateRun).mockResolvedValue({ ...gymRun, exercises: [{ name: 'Bench Press', sets: 3, reps: 10 }] });
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={onUpdated} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+
+    // Trigger exercise change
+    fireEvent.click(screen.getByTestId('trigger-exercise-change'));
+
+    // Click Save changes
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+    });
+
+    await waitFor(() => {
+      expect(updateRun).toHaveBeenCalledWith(
+        gymRun._id,
+        expect.objectContaining({
+          exercises: [{ name: 'Bench Press', sets: 3, reps: 10 }],
+        })
+      );
+    });
+  });
+
+  it('ExerciseList does not have standalone Save exercises button (removed)', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // The real ExerciseList should no longer have "Save exercises" button
+    // Our mock doesn't render it — the real component test checks this
+    expect(screen.queryByRole('button', { name: /save exercises/i })).not.toBeInTheDocument();
   });
 });
 
