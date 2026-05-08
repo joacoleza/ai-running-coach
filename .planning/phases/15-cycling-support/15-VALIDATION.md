@@ -3,8 +3,9 @@ phase: 15
 slug: cycling-support
 status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-05-07
+last_audited: 2026-05-09
 ---
 
 # Phase 15 — Validation Strategy
@@ -102,3 +103,32 @@ Existing infrastructure covers all phase requirements.
 |-------|--------|-------|
 | API tests | 378 | 382 |
 | Web tests | 540 | 549 |
+
+---
+
+## Validation Audit 2026-05-09
+
+| Metric | Count |
+|--------|-------|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
+
+All 4 CYCLE requirements remain COVERED with green tests. No new gaps introduced.
+
+Quick task 260509-003 (gym session bug fixes) added 19 additional web tests covering behaviors in the same Phase 15 components:
+
+| Describe block | Tests | File |
+|----------------|-------|------|
+| RunEntryForm — gym discipline exercise entry | 5 | RunEntryForm.test.tsx |
+| RunEntryForm — duration validation | 6 | RunEntryForm.test.tsx |
+| RunDetailModal — exercise unified save | 4 | RunDetailModal.test.tsx |
+| LinkRunModal gym display (3 new tests) | 3 | LinkRunModal.test.tsx |
+| Runs page "Log a session" label | updated | Runs.test.tsx |
+
+### Updated Test Counts
+
+| Suite | Phase 15 audit (2026-05-07) | Current (2026-05-09) |
+|-------|----------------------------|----------------------|
+| API tests | 382 | 382 |
+| Web tests | 549 | 568 |
