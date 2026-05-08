@@ -57,7 +57,7 @@ describe('LinkRunModal', () => {
     await act(async () => {
       render(<LinkRunModal {...defaultProps} />);
     });
-    expect(screen.getByText(/no unlinked runs available/i)).toBeInTheDocument();
+    expect(screen.getByText(/no unlinked run sessions available/i)).toBeInTheDocument();
   });
 
   it('renders runs list after loading', async () => {

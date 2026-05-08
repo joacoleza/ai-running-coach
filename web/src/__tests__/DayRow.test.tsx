@@ -168,9 +168,9 @@ describe('DayRow', () => {
     expect(screen.queryByText('Save run')).not.toBeInTheDocument();
   });
 
-  it('clicking Log run button opens RunEntryForm', async () => {
+  it('clicking Log session button opens RunEntryForm', async () => {
     render(<DayRow day={makeRunDay()} weekNumber={defaultWeekNumber} onUpdate={noop} onDelete={noop} />);
-    const logRunBtn = screen.getByTitle('Log run data');
+    const logRunBtn = screen.getByTitle('Log session data');
     fireEvent.click(logRunBtn);
     expect(await screen.findByText('Save Session')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
