@@ -6,6 +6,7 @@ interface LinkRunModalProps {
   weekNumber: number;
   dayLabel: string;
   dayGuidelines: string;
+  dayDiscipline?: string;
   onLinked: () => void;  // called after successful link (parent refreshes plan)
   onClose: () => void;
 }
@@ -36,7 +37,7 @@ function formatSpeed(distance: number, duration: string): string {
   return `${((distance / totalMinutes) * 60).toFixed(1)} km/h`;
 }
 
-export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, onClose }: LinkRunModalProps) {
+export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, dayDiscipline, onLinked, onClose }: LinkRunModalProps) {
   const [runs, setRuns] = useState<Run[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +46,7 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
 
   useEffect(() => {
     setIsLoading(true);
-    fetchUnlinkedRuns(100)
+    fetchUnlinkedRuns(100, dayDiscipline)
       .then(setRuns)
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Failed to load runs');
@@ -73,7 +74,7 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h2 className="text-base font-semibold text-gray-900">
-            Link a run to Week {weekNumber} Day {dayLabel}
+            Link a session to Week {weekNumber} Day {dayLabel}
           </h2>
           {dayGuidelines && (
             <p className="mt-1 text-sm text-gray-500">Target: {dayGuidelines}</p>
@@ -105,7 +106,7 @@ export function LinkRunModal({ weekNumber, dayLabel, dayGuidelines, onLinked, on
             </div>
           ) : runs.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
-              No unlinked runs available. Log a run from the Runs page first.
+              No unlinked {dayDiscipline ?? 'run'} sessions available. Log one from the Activities page first.
             </p>
           ) : (() => {
             const filtered = runs.filter(r => {
