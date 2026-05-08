@@ -6,6 +6,7 @@ import type { Run } from '../../hooks/useRuns';
 import { useChatContext } from '../../contexts/ChatContext';
 import { DateInput } from './DateInput';
 import { ExerciseList } from './ExerciseList';
+import { RunBadge } from './RunBadge';
 
 interface RunDetailModalProps {
   run: Run;
@@ -85,6 +86,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
   const editDistNum = parseFloat(editDistance);
   const editPace = computePace(editDistNum, editDuration);
   const isCycle = (run.discipline ?? 'run') === 'cycle';
+  const isGym = (run.discipline ?? 'run') === 'gym';
   const editSpeed = isCycle ? computeSpeed(editDistNum, editDuration) : null;
 
   const handleSave = async () => {
@@ -118,21 +120,33 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
     setIsRequestingFeedback(true);
 
     const dateStr = formatRunDate(run.date);
-    const distStr = `${run.distance}km`;
+    const isGymSession = (run.discipline ?? 'run') === 'gym';
     const isCycleSession = (run.discipline ?? 'run') === 'cycle';
-    const paceStr = isCycleSession
-      ? computeSpeed(run.distance, run.duration) ?? '--'
-      : formatPace(run.pace);
     const hrStr = run.avgHR ? `, avg HR ${run.avgHR}bpm` : '';
-    const notesStr = editNotes ? `, notes: "${editNotes}"` : '';
+    const notesStr = editNotes ? `\nNotes: "${editNotes}"` : '';
     const planStr = run.weekNumber
-      ? `\nThis run was for Week ${run.weekNumber} Day ${run.dayLabel} of my training plan.`
-      : '\nThis was a standalone run (not linked to my training plan).';
+      ? `\nThis session was for Week ${run.weekNumber} Day ${run.dayLabel} of my training plan.`
+      : '\nThis was a standalone session (not linked to my training plan).';
 
-    const message =
-      `Please give me coaching feedback on my ${isCycleSession ? 'cycling session' : 'run'}:\n` +
-      `Date: ${dateStr}\nDistance: ${distStr}\n${isCycleSession ? 'Speed' : 'Pace'}: ${paceStr}${hrStr}${notesStr}${planStr}\n` +
-      `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant. Do not emit any plan update commands — only provide text feedback.`;
+    let message: string;
+    if (isGymSession) {
+      message =
+        `Please give me coaching feedback on my gym session:\n` +
+        `Date: ${dateStr}\n` +
+        `Type: ${run.type ?? 'General'}\n` +
+        `Duration: ${run.duration}\n` +
+        `Exercises: ${run.exercises?.length ?? 0} logged${hrStr}${notesStr}${planStr}\n` +
+        `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant. Do not emit any plan update commands — only provide text feedback.`;
+    } else {
+      const distStr = `${run.distance}km`;
+      const paceStr = isCycleSession
+        ? computeSpeed(run.distance, run.duration) ?? '--'
+        : formatPace(run.pace);
+      message =
+        `Please give me coaching feedback on my ${isCycleSession ? 'cycling session' : 'run'}:\n` +
+        `Date: ${dateStr}\nDistance: ${distStr}\n${isCycleSession ? 'Speed' : 'Pace'}: ${paceStr}${hrStr}${notesStr}${planStr}\n` +
+        `Please provide: a brief assessment, one key insight, and any plan adjustments if relevant. Do not emit any plan update commands — only provide text feedback.`;
+    }
 
     openCoachPanel();
 
@@ -187,7 +201,10 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
       <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[85dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">{formatRunDate(run.date)}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-gray-900">{formatRunDate(run.date)}</h2>
+            <RunBadge discipline={(run.discipline ?? 'run') as 'run' | 'gym' | 'cycle'} />
+          </div>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -233,6 +250,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               </div>
 
               {/* Distance */}
+              {!isGym && (
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Distance</label>
                 <div className="relative">
@@ -247,6 +265,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">km</span>
                 </div>
               </div>
+              )}
 
               {/* Duration */}
               <div>
@@ -279,6 +298,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
               </div>
 
               {/* Pace / Speed (read-only, computed) */}
+              {!isGym && (
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">
                   {isCycle ? 'Speed (km/h)' : 'Pace'}
@@ -289,6 +309,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                     : (editPace !== null ? formatPace(editPace) : formatPace(run.pace))}
                 </p>
               </div>
+              )}
             </div>
 
             {/* Notes */}
@@ -339,7 +360,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
             </button>
           )}
 
-          {/* Add feedback to run button */}
+          {/* Get coaching feedback button */}
           <button
             onClick={() => void handleAddFeedback()}
             disabled={isRequestingFeedback}
@@ -354,7 +375,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                 Requesting feedback...
               </>
             ) : (
-              'Add feedback to run'
+              'Get coaching feedback'
             )}
           </button>
 
@@ -382,7 +403,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                   disabled
                   className="w-full bg-gray-100 text-gray-400 rounded-lg px-3 py-2 text-sm font-medium pointer-events-none"
                 >
-                  Delete run
+                  Delete session
                 </button>
               </span>
             ) : (
@@ -391,7 +412,7 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
                 disabled={isDeleting}
                 className="w-full text-red-600 text-sm hover:text-red-800 py-1 transition-colors disabled:opacity-50"
               >
-                {isDeleting ? 'Deleting...' : 'Delete run'}
+                {isDeleting ? 'Deleting...' : 'Delete session'}
               </button>
             )}
           </div>
