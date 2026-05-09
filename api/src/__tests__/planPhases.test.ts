@@ -86,6 +86,7 @@ afterAll(async () => {
 beforeEach(async () => {
   _resetDbForTest();
   await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('running-coach').collection('runs').deleteMany({});
 });
 
 const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
@@ -463,6 +464,183 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last', () => {
     // Phase 1 still has 2 weeks
     expect(result.jsonBody.plan.phases[1].weeks).toHaveLength(2);
     expect(result.jsonBody.plan.phases[1].name).toBe('Build Phase');
+  });
+});
+
+describe('POST /api/plan/phases/:phaseIndex/weeks — weekNumber migration', () => {
+  // Plan: phase0 has 1 week (week1), phase1 has 1 week (week2)
+  // Adding a week to phase0 inserts week2; phase1's week shifts to week3.
+  const PLAN_OID = new ObjectId();
+
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+    // Insert plan with known _id
+    await mongoClient.db('running-coach').collection('plans').insertOne({
+      ...validActivePlan,
+      _id: PLAN_OID,
+    });
+  });
+
+  it('increments weekNumber on runs whose weekNumber >= newly inserted week number', async () => {
+    const db = mongoClient.db('running-coach');
+    // Seed a run linked to phase1's week (weekNumber: 2) — should shift to 3
+    const runOnWeek2 = await db.collection('runs').insertOne({
+      planId: PLAN_OID,
+      weekNumber: 2,
+      dayLabel: 'A',
+      date: '2026-01-08',
+      distance: 5,
+      duration: '30:00',
+      pace: 6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    // Seed a run on week1 — should NOT shift
+    await db.collection('runs').insertOne({
+      planId: PLAN_OID,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-01-01',
+      distance: 5,
+      duration: '30:00',
+      pace: 6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeAddWeekReq('0');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+
+    // After adding week to phase0: phase0 has weeks 1,2; phase1 has week3.
+    // Run that was on week2 (phase1) should now be on week3.
+    const shiftedRun = await db.collection('runs').findOne({ _id: runOnWeek2.insertedId });
+    expect(shiftedRun?.weekNumber).toBe(3);
+  });
+
+  it('does NOT increment weekNumber on runs whose weekNumber < newly inserted week number', async () => {
+    const db = mongoClient.db('running-coach');
+    await db.collection('runs').insertOne({
+      planId: PLAN_OID,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-01-01',
+      distance: 5,
+      duration: '30:00',
+      pace: 6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeAddWeekReq('0');
+    const result = await handlers.get('addWeekToPhase')!(req, ctx);
+    expect(result.status).toBe(201);
+
+    // Week1 run should be unchanged
+    const run = await mongoClient.db('running-coach').collection('runs').findOne({ planId: PLAN_OID, weekNumber: 1 });
+    expect(run).not.toBeNull();
+    expect(run?.weekNumber).toBe(1);
+  });
+});
+
+describe('DELETE /api/plan/phases/:phaseIndex/weeks/last — weekNumber migration', () => {
+  const PLAN_OID_DEL = new ObjectId();
+
+  beforeEach(async () => {
+    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+    // twoPhasesTwoWeeks but with a known _id
+    const twoPhasesTwoWeeksPlan = {
+      ...validActivePlan,
+      _id: PLAN_OID_DEL,
+      phases: [
+        {
+          name: 'Base Building',
+          description: 'Build aerobic base',
+          weeks: [
+            { weekNumber: 1, days: makeWeekDays() },
+            { weekNumber: 2, days: [] }, // empty — deletable
+          ],
+        },
+        {
+          name: 'Build Phase',
+          description: 'Increase intensity',
+          weeks: [
+            { weekNumber: 3, days: makeWeekDays() },
+            { weekNumber: 4, days: [] },
+          ],
+        },
+      ],
+    };
+    await mongoClient.db('running-coach').collection('plans').insertOne(twoPhasesTwoWeeksPlan);
+  });
+
+  it('decrements weekNumber on runs whose weekNumber > deleted week number', async () => {
+    const db = mongoClient.db('running-coach');
+    // Run on week3 (phase1) — should shift to week2 after deleting week2 of phase0
+    const runOnWeek3 = await db.collection('runs').insertOne({
+      planId: PLAN_OID_DEL,
+      weekNumber: 3,
+      dayLabel: 'A',
+      date: '2026-01-15',
+      distance: 8,
+      duration: '45:00',
+      pace: 5.6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    // Run on week4 — should shift to week3
+    const runOnWeek4 = await db.collection('runs').insertOne({
+      planId: PLAN_OID_DEL,
+      weekNumber: 4,
+      dayLabel: 'A',
+      date: '2026-01-22',
+      distance: 8,
+      duration: '45:00',
+      pace: 5.6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(200);
+
+    const r3 = await db.collection('runs').findOne({ _id: runOnWeek3.insertedId });
+    expect(r3?.weekNumber).toBe(2);
+    const r4 = await db.collection('runs').findOne({ _id: runOnWeek4.insertedId });
+    expect(r4?.weekNumber).toBe(3);
+  });
+
+  it('does NOT decrement weekNumber on runs whose weekNumber <= deleted week number', async () => {
+    const db = mongoClient.db('running-coach');
+    // Run on week1 — should be unchanged
+    await db.collection('runs').insertOne({
+      planId: PLAN_OID_DEL,
+      weekNumber: 1,
+      dayLabel: 'A',
+      date: '2026-01-01',
+      distance: 5,
+      duration: '30:00',
+      pace: 6,
+      userId: TEST_USER_OID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    const req = makeDeleteLastWeekReq('0');
+    const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
+    expect(result.status).toBe(200);
+
+    const run = await db.collection('runs').findOne({ planId: PLAN_OID_DEL, weekNumber: 1 });
+    expect(run).not.toBeNull();
+    expect(run?.weekNumber).toBe(1);
   });
 });
 
