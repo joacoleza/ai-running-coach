@@ -7,8 +7,26 @@ import {
   fillWeekGaps,
   formatPaceToMMSS,
   computePlanAdherence,
+  filterRunsByDiscipline,
+  groupRunsByDiscipline,
+  computeAvgSpeed,
 } from '../hooks/useDashboard';
 import type { PlanData } from '../hooks/usePlan';
+import type { Run } from '../hooks/useRuns';
+
+// Minimal Run stub for discipline tests
+function makeDisciplineRun(date: string, distance: number, duration: string, discipline?: string): Run {
+  return {
+    _id: 'test-id',
+    date,
+    distance,
+    duration,
+    pace: 0,
+    discipline,
+    createdAt: '2026-04-01T00:00:00.000Z',
+    updatedAt: '2026-04-01T00:00:00.000Z',
+  } as Run
+}
 
 // Minimal Run stub for groupRunsByWeek tests
 function makeRun(overrides: {
@@ -365,3 +383,118 @@ describe('computePlanAdherence', () => {
     expect(computePlanAdherence(plan)).toEqual({ adherence: '50%', progress: '67%' })
   })
 });
+
+describe('filterRunsByDiscipline', () => {
+  const runRun = makeDisciplineRun('2026-04-07', 5, '40:00', 'run')
+  const gymRun = makeDisciplineRun('2026-04-07', 0, '45:00', 'gym')
+  const cycleRun = makeDisciplineRun('2026-04-07', 20, '60:00', 'cycle')
+  const undisciplinedRun = makeDisciplineRun('2026-04-07', 5, '40:00', undefined)
+
+  it('returns all runs when discipline is "all"', () => {
+    const result = filterRunsByDiscipline([runRun, gymRun, cycleRun, undisciplinedRun], 'all')
+    expect(result).toHaveLength(4)
+  })
+
+  it('returns run and undefined-discipline runs when discipline is "run"', () => {
+    const result = filterRunsByDiscipline([runRun, gymRun, cycleRun, undisciplinedRun], 'run')
+    expect(result).toHaveLength(2)
+    expect(result).toContain(runRun)
+    expect(result).toContain(undisciplinedRun)
+  })
+
+  it('returns only gym runs when discipline is "gym"', () => {
+    const result = filterRunsByDiscipline([runRun, gymRun, cycleRun], 'gym')
+    expect(result).toHaveLength(1)
+    expect(result[0]).toBe(gymRun)
+  })
+
+  it('returns only cycle runs when discipline is "cycle"', () => {
+    const result = filterRunsByDiscipline([runRun, gymRun, cycleRun], 'cycle')
+    expect(result).toHaveLength(1)
+    expect(result[0]).toBe(cycleRun)
+  })
+
+  it('returns empty array for empty input regardless of discipline', () => {
+    expect(filterRunsByDiscipline([], 'gym')).toHaveLength(0)
+    expect(filterRunsByDiscipline([], 'all')).toHaveLength(0)
+  })
+})
+
+describe('groupRunsByDiscipline', () => {
+  it('single run session creates bucket with runDistance only', () => {
+    const runs = [makeDisciplineRun('2026-04-07', 5, '40:00', 'run')]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].runDistance).toBe(5)
+    expect(buckets[0].gymSessions).toBe(0)
+    expect(buckets[0].cycleDistance).toBe(0)
+  })
+
+  it('single gym session creates bucket with gymSessions count', () => {
+    const runs = [makeDisciplineRun('2026-04-07', 0, '45:00', 'gym')]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].gymSessions).toBe(1)
+    expect(buckets[0].runDistance).toBe(0)
+    expect(buckets[0].cycleDistance).toBe(0)
+  })
+
+  it('single cycle session creates bucket with cycleDistance', () => {
+    const runs = [makeDisciplineRun('2026-04-07', 20, '60:00', 'cycle')]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].cycleDistance).toBe(20)
+    expect(buckets[0].gymSessions).toBe(0)
+    expect(buckets[0].runDistance).toBe(0)
+  })
+
+  it('three disciplines in same week produce one bucket with all values', () => {
+    const runs = [
+      makeDisciplineRun('2026-04-07', 5, '40:00', 'run'),
+      makeDisciplineRun('2026-04-08', 0, '45:00', 'gym'),
+      makeDisciplineRun('2026-04-09', 20, '60:00', 'cycle'),
+    ]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0].runDistance).toBe(5)
+    expect(buckets[0].gymSessions).toBe(1)
+    expect(buckets[0].cycleDistance).toBe(20)
+  })
+
+  it('two runs in different weeks produce two buckets sorted ascending', () => {
+    const runs = [
+      makeDisciplineRun('2026-04-14', 5, '40:00', 'run'),
+      makeDisciplineRun('2026-04-07', 8, '64:00', 'run'),
+    ]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets).toHaveLength(2)
+    // Earlier week comes first
+    expect(buckets[0].weekKey < buckets[1].weekKey).toBe(true)
+  })
+
+  it('run with no discipline field is counted as runDistance', () => {
+    const runs = [makeDisciplineRun('2026-04-07', 5, '40:00', undefined)]
+    const buckets = groupRunsByDiscipline(runs)
+    expect(buckets[0].runDistance).toBe(5)
+    expect(buckets[0].gymSessions).toBe(0)
+  })
+})
+
+describe('computeAvgSpeed', () => {
+  it('20km in 60:00 returns "20.0 km/h"', () => {
+    const runs = [makeDisciplineRun('2026-04-07', 20, '60:00', 'cycle')]
+    expect(computeAvgSpeed(runs)).toBe('20.0 km/h')
+  })
+
+  it('returns "0.0 km/h" for empty runs array', () => {
+    expect(computeAvgSpeed([])).toBe('0.0 km/h')
+  })
+
+  it('two sessions: 10km in 30:00 and 20km in 60:00 → 30km/90min * 60 = 20.0 km/h', () => {
+    const runs = [
+      makeDisciplineRun('2026-04-07', 10, '30:00', 'cycle'),
+      makeDisciplineRun('2026-04-09', 20, '60:00', 'cycle'),
+    ]
+    expect(computeAvgSpeed(runs)).toBe('20.0 km/h')
+  })
+})
