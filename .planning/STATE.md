@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: verifying
+status: Phase 16 shipped — PR #99
 last_updated: "2026-05-09T14:59:53.384Z"
 last_activity: 2026-05-09
 progress:
