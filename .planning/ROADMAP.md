@@ -51,10 +51,12 @@
 - [x] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration (completed 2026-05-04)
 - [x] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration (completed 2026-05-07)
 - [x] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering (completed 2026-05-08)
+- [ ] **Phase 15.2: Week Number Desync Bug Fix** — Bulk-update runs.weekNumber when assignPlanStructure renumbers the plan after week deletion/addition (INSERTED)
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
 - [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
 - [ ] **Phase 19: User Unit Preferences** — Settings panel for distance (km/miles) and weight (kg/lbs) units; persisted per user, coach-aware, entries stored with creation-time units, dashboards convert on display
+- [ ] **Phase 20: Plan Week Date Anchoring** — Anchor plan weeks to real calendar dates; plan view shows date ranges per week, coach reasons in calendar terms, adding/removing weeks shifts dates automatically
 
 ## Backlog
 
@@ -140,9 +142,23 @@ Plans:
 - [x] 15.1-03-PLAN.md — DayRow discipline badge + session labels + PlanView linkingDay discipline + LinkRunModal discipline filtering
 - [x] 15.1-04-PLAN.md — Test updates (Sidebar/LinkRunModal/DayRow) + build verification + E2E smoke
 
+### Phase 15.2: Week Number Desync Bug Fix (INSERTED)
+**Goal**: When a week is deleted from or added to a phase, `assignPlanStructure` renumbers plan week numbers but the `runs` collection is not updated — causing ghost-completed plan weeks with no linked runs and duplicate run links on the wrong week. Fix both `deleteLastWeekOfPhase` and `addWeekToPhase` to bulk-update `runs.weekNumber` after renumbering.
+**Depends on**: Phase 15.1
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Deleting an empty week from a phase decrements `weekNumber` on all runs whose `weekNumber` is greater than the deleted week's number
+  2. Adding a week to a phase increments `weekNumber` on all runs whose `weekNumber` is greater than or equal to the newly inserted week's number
+  3. After either operation the plan's completed-day state matches the linked runs exactly — no ghost-completed weeks and no orphaned run links
+  4. A unit test covers both operations: run weekNumbers shift correctly and plan integrity is preserved
+**Plans:** 1 plan
+
+Plans:
+- [ ] 15.2-01-PLAN.md — Fix addWeekToPhase + deleteLastWeekOfPhase to bulk-update runs.weekNumber + unit tests
+
 ### Phase 16: Multi-Discipline Dashboard
 **Goal**: The dashboard shows training data across all disciplines with a filter and adapted stats, including a weight progression chart for gym exercises
-**Depends on**: Phase 15
+**Depends on**: Phase 15.2
 **Requirements**: DASH-01, DASH-02, DASH-03, DASH-04
 **Success Criteria** (what must be TRUE):
   1. Dashboard has a discipline selector (All / Run / Gym / Cycle) that scopes all cards and charts on the page
@@ -189,6 +205,19 @@ Plans:
   7. Dashboard stat cards and charts convert all stored values to the user's current preferred unit before display
 **Plans**: TBD
 
+### Phase 20: Plan Week Date Anchoring
+**Goal**: Each plan week is anchored to a real calendar start date (Monday), so the plan view shows actual dates alongside week numbers and the coach can reason about the schedule in calendar terms. The user sets the start date of Week 1 (or any week); all other weeks derive their dates automatically. This eliminates the manual tracking the user currently does to keep plan weeks aligned with real-world dates.
+**Depends on**: Phase 19
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. A "Week start date" field is stored per week (or derived from a single plan anchor date + week offset)
+  2. The plan view displays the date range for each week (e.g. "Week 12 — Apr 6–12")
+  3. Adding or deleting a week correctly shifts the date ranges of all subsequent weeks
+  4. The coach system prompt includes the current week's date range so the coach can reference real dates when giving guidance
+  5. Existing plans without a date anchor continue to work — date display is shown only when an anchor has been set
+  6. The user can update the anchor date (e.g. if they slip a week) and all derived week dates update accordingly
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -204,7 +233,9 @@ Plans:
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
 | 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
+| 15.2. Week Number Desync Bug Fix | 0/1 | Not started | — |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. User Unit Preferences | 0/? | Not started | — |
+| 20. Plan Week Date Anchoring | 0/? | Not started | — |
