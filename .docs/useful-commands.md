@@ -3,7 +3,7 @@
 Connect to the local MongoDB container first:
 
 ```bash
-docker exec -it ai-running-coach-mongodb-1 mongosh
+docker exec -it ai-training-coach-mongodb-1 mongosh
 ```
 
 Then run any of the commands below inside the shell.
@@ -11,7 +11,7 @@ Then run any of the commands below inside the shell.
 ---
 
 ```js
-use running-coach
+use ai-training-coach
 
 // ── Users ────────────────────────────────────────────────────────────────────
 
