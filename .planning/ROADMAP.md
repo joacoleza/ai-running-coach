@@ -182,7 +182,12 @@ Plans:
   2. All UI visible strings say "Training Coach" where they previously said "Running Coach"
   3. `package.json` name fields in both `web/` and `api/` reflect ai-training-coach
   4. README, system prompt, and HTML `<title>` contain no references to "running coach"
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — UI display strings: LoginPage, ChangePasswordPage, PasswordPage, Sidebar, Coach, index.html, unauthorized.html
+- [ ] 17-02-PLAN.md — Package names + MongoDB DB fallbacks (db.ts, playwright.config.ts, global-setup.ts) + prompts.ts JSDoc
+- [ ] 17-03-PLAN.md — README.md + CLAUDE.md docs + GitHub rename instructions
 
 ### Phase 18: Gym Session Exercises in Plan
 **Goal**: Planned gym days can include a list of exercises (created by the coach), rendered as a checklist in the plan view so the user can mark each exercise done during the session
@@ -239,7 +244,7 @@ Plans:
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
 | 15.2. Week Number Desync Bug Fix | 0/1 | Complete    | 2026-05-09 |
 | 16. Multi-Discipline Dashboard | 3/3 | Complete    | 2026-05-09 |
-| 17. App Rename | 0/? | Not started | — |
+| 17. App Rename | 0/3 | Not started | — |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. User Unit Preferences | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
