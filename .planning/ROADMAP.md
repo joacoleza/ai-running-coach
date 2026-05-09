@@ -53,7 +53,7 @@
 - [x] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering (completed 2026-05-08)
 - [x] **Phase 15.2: Week Number Desync Bug Fix** — Bulk-update runs.weekNumber when assignPlanStructure renumbers the plan after week deletion/addition (completed 2026-05-09)
 - [x] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart (completed 2026-05-09)
-- [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
+- [x] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI (completed 2026-05-09)
 - [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
 - [ ] **Phase 19: User Unit Preferences** — Settings panel for distance (km/miles) and weight (kg/lbs) units; persisted per user, coach-aware, entries stored with creation-time units, dashboards convert on display
 - [ ] **Phase 20: Plan Week Date Anchoring** — Anchor plan weeks to real calendar dates; plan view shows date ranges per week, coach reasons in calendar terms, adding/removing weeks shifts dates automatically
@@ -244,7 +244,7 @@ Plans:
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
 | 15.2. Week Number Desync Bug Fix | 0/1 | Complete    | 2026-05-09 |
 | 16. Multi-Discipline Dashboard | 3/3 | Complete    | 2026-05-09 |
-| 17. App Rename | 2/3 | In Progress|  |
+| 17. App Rename | 2/3 | Complete    | 2026-05-09 |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. User Unit Preferences | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
