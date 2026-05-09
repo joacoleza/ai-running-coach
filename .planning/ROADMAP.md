@@ -151,7 +151,7 @@ Plans:
   2. Adding a week to a phase increments `weekNumber` on all runs whose `weekNumber` is greater than or equal to the newly inserted week's number
   3. After either operation the plan's completed-day state matches the linked runs exactly — no ghost-completed weeks and no orphaned run links
   4. A unit test covers both operations: run weekNumbers shift correctly and plan integrity is preserved
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [x] 15.2-01-PLAN.md — Fix addWeekToPhase + deleteLastWeekOfPhase to bulk-update runs.weekNumber + unit tests
@@ -233,7 +233,7 @@ Plans:
 | 14. Gym Support | 5/5 | Complete    | 2026-05-04 |
 | 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
-| 15.2. Week Number Desync Bug Fix | 0/1 | Not started | — |
+| 15.2. Week Number Desync Bug Fix | 0/1 | Complete    | 2026-05-09 |
 | 16. Multi-Discipline Dashboard | 0/? | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
