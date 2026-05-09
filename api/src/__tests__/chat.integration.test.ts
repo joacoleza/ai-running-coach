@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -127,14 +127,14 @@ beforeEach(async () => {
   _resetDbForTest();
   vi.clearAllMocks();
   vi.mocked(requireAuth).mockResolvedValue(null);
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
-  await mongoClient.db('running-coach').collection('messages').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('messages').deleteMany({});
 });
 
 const TEST_USER_OID = new ObjectId('000000000000000000000001');
 
 async function insertOnboardingPlan() {
-  const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+  const { insertedId } = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
     status: 'onboarding',
     onboardingStep: 0,
     onboardingMode: 'conversational',
@@ -187,7 +187,7 @@ describe('Chat - server-side plan saving from <training_plan>', () => {
     expect(doneEvent?.planGenerated).toBe(true);
 
     // Plan saved with active status and correct phases
-    const saved = await mongoClient.db('running-coach').collection('plans').findOne({});
+    const saved = await mongoClient.db('ai-training-coach').collection('plans').findOne({});
     expect(saved?.status).toBe('active');
     expect(saved?.phases).toHaveLength(1);
     expect(saved?.phases[0].name).toBe('Base');
@@ -208,7 +208,7 @@ describe('Chat - server-side plan saving from <training_plan>', () => {
 
 describe('Chat - synthetic plan-state context injection', () => {
   async function insertActivePlanWithPhases() {
-    const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+    const { insertedId } = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingStep: 6,
       onboardingMode: 'conversational',
@@ -276,11 +276,11 @@ describe('Chat - synthetic plan-state context injection', () => {
 
 describe('Chat - run context injection into synthetic plan-state (COACH-03)', () => {
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
   });
 
   async function insertActivePlanWithCompletedDay() {
-    const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+    const { insertedId } = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingStep: 6,
       onboardingMode: 'conversational',
@@ -312,7 +312,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const planId = planOid.toString();
 
     // Insert a run linked to Week 1 Day A
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -345,7 +345,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const planOid = await insertActivePlanWithCompletedDay();
     const planId = planOid.toString();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -375,7 +375,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const planId = planOid.toString();
     const longNotes = 'A'.repeat(520);
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -401,7 +401,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
   });
 
   it('injects progressFeedback before day listing when plan has it set', async () => {
-    const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+    const { insertedId } = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingStep: 6,
       onboardingMode: 'conversational',
@@ -467,7 +467,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const planId = planOid.toString();
 
     const longInsight = 'A'.repeat(200); // 200 chars — exceeds 150 limit
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -501,7 +501,7 @@ describe('Chat - run context injection into synthetic plan-state (COACH-03)', ()
     const planOid = await insertActivePlanWithCompletedDay();
     const planId = planOid.toString();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -540,7 +540,7 @@ describe('Chat Integration (COACH-01)', () => {
     await consumeStream(result.body as ReadableStream<Uint8Array>);
 
     const userMsg = await mongoClient
-      .db('running-coach')
+      .db('ai-training-coach')
       .collection('messages')
       .findOne({ planId, role: 'user' });
     expect(userMsg?.content).toBe('I want to start a training plan');
@@ -555,7 +555,7 @@ describe('Chat Integration (COACH-01)', () => {
     await consumeStream(result.body as ReadableStream<Uint8Array>);
 
     const assistantMsg = await mongoClient
-      .db('running-coach')
+      .db('ai-training-coach')
       .collection('messages')
       .findOne({ planId, role: 'assistant' });
     expect(assistantMsg?.content).toBe('What is your target race distance?');

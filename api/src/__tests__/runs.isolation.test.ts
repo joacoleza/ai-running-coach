@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -71,14 +71,14 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
   // Reset auth context to user A for each test
   vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 });
 
 describe('POST /api/runs — data isolation', () => {
   it('sets userId on new run document from auth context', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 
     const req = makePostReq('http://localhost/api/runs', {
@@ -97,7 +97,7 @@ describe('POST /api/runs — data isolation', () => {
   });
 
   it('run from user A does not appear when user B creates a run — separate userId', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Create run as user A
     vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
@@ -128,7 +128,7 @@ describe('POST /api/runs — data isolation', () => {
 
 describe('GET /api/runs — data isolation', () => {
   it('includes userId filter in find query — only returns the authenticated user runs', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userAId = new ObjectId(USER_A_ID);
     const userBId = new ObjectId(USER_B_ID);
 
@@ -178,7 +178,7 @@ describe('GET /api/runs — data isolation', () => {
   });
 
   it('user B cannot see user A runs even when requesting all runs', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userAId = new ObjectId(USER_A_ID);
 
     // Insert a run for user A
@@ -205,7 +205,7 @@ describe('GET /api/runs — data isolation', () => {
 
 describe('DELETE /api/runs/{id} — data isolation', () => {
   it('returns 404 when user B tries to delete user A run', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userAId = new ObjectId(USER_A_ID);
 
     // Insert a run belonging to user A

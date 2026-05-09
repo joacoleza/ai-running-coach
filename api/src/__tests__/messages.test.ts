@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -56,7 +56,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await mongoClient.db('running-coach').collection('messages').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('messages').deleteMany({});
   _resetDbForTest();
   vi.mocked(requireAuth).mockResolvedValue(null);
 });
@@ -83,7 +83,7 @@ describe('getMessages handler', () => {
   });
 
   it('returns messages sorted by timestamp for matching planId', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     await db.collection('messages').insertMany([
       { planId: 'p1', role: 'user', content: 'first', timestamp: new Date('2026-04-07T10:00:00Z'), userId: TEST_USER_OID },
       { planId: 'p1', role: 'assistant', content: 'second', timestamp: new Date('2026-04-07T10:01:00Z'), userId: TEST_USER_OID },

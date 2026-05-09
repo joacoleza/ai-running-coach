@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -63,7 +63,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('messages').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('messages').deleteMany({});
   // Reset auth context to user A for each test
   vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 });
@@ -73,7 +73,7 @@ const USER_B_OID = new ObjectId(USER_B_ID);
 
 describe('GET /api/messages — data isolation', () => {
   it('user B cannot read user A messages for a plan — returns empty array', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const planIdA = new ObjectId().toString();
 
     // Insert messages for user A and planIdA
@@ -92,7 +92,7 @@ describe('GET /api/messages — data isolation', () => {
   });
 
   it('user A can read their own messages for a plan', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const planIdA = new ObjectId().toString();
 
     // Insert messages for user A and planIdA
@@ -113,7 +113,7 @@ describe('GET /api/messages — data isolation', () => {
   });
 
   it('user A cannot see messages for same planId that belong to user B', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const planId = new ObjectId().toString();
 
     // Insert messages for user B and planId
@@ -131,7 +131,7 @@ describe('GET /api/messages — data isolation', () => {
   });
 
   it('messages are filtered by both planId AND userId', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const planIdA = new ObjectId().toString();
     const planIdB = new ObjectId().toString();
 
@@ -163,7 +163,7 @@ describe('GET /api/messages — data isolation', () => {
   });
 
   it('messages are sorted by timestamp in ascending order', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const planId = new ObjectId().toString();
 
     // Insert messages out of order

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -62,7 +62,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
 });
 
 // ── Seed helpers ────────────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ describe('GET /api/runs/exercise-weights', () => {
     const handler = handlers.get('getExerciseWeights');
     expect(handler).toBeDefined();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne(makeGymRun());
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne(makeGymRun());
 
     const req = makeGetReqWithQuery('http://localhost/api/runs/exercise-weights', { exercise: 'Squat' });
     const res = await handler!(req, ctx);
@@ -126,7 +126,7 @@ describe('GET /api/runs/exercise-weights', () => {
     const handler = handlers.get('getExerciseWeights');
     expect(handler).toBeDefined();
 
-    await mongoClient.db('running-coach').collection('runs').insertMany([
+    await mongoClient.db('ai-training-coach').collection('runs').insertMany([
       makeGymRun({ date: '2026-04-01', exercises: [{ name: 'Squat', sets: 3, reps: 8, weight: 80, unit: 'kg' }] }),
       makeGymRun({ date: '2026-04-08', exercises: [{ name: 'Squat', sets: 3, reps: 8, weight: 90, unit: 'kg' }] }),
     ]);
@@ -144,7 +144,7 @@ describe('GET /api/runs/exercise-weights', () => {
     const handler = handlers.get('getExerciseWeights');
     expect(handler).toBeDefined();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne(
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne(
       makeGymRun({ exercises: [{ name: 'Squat', sets: 3, reps: 8 }] })
     );
 
@@ -159,7 +159,7 @@ describe('GET /api/runs/exercise-weights', () => {
     const handler = handlers.get('getExerciseWeights');
     expect(handler).toBeDefined();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       userId: new ObjectId(TEST_USER_ID),
       date: '2026-04-01',
       distance: 10,
@@ -183,7 +183,7 @@ describe('GET /api/runs/exercise-weights', () => {
     expect(handler).toBeDefined();
 
     const otherUserId = '000000000000000000000002';
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       userId: new ObjectId(otherUserId),
       date: '2026-04-01',
       distance: 0,
@@ -206,7 +206,7 @@ describe('GET /api/runs/exercise-weights', () => {
     const handler = handlers.get('getExerciseWeights');
     expect(handler).toBeDefined();
 
-    await mongoClient.db('running-coach').collection('runs').insertOne(
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne(
       makeGymRun({
         exercises: [
           { name: 'Squat', sets: 3, reps: 8, weight: 80, unit: 'kg' },

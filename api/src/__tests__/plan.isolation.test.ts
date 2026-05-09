@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -64,14 +64,14 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
   // Reset auth context to user A for each test
   vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 });
 
 describe('GET /api/plan — data isolation', () => {
   it('queries plans with userId filter — only returns the authenticated user plan', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userAId = new ObjectId(USER_A_ID);
     const userBId = new ObjectId(USER_B_ID);
 
@@ -107,7 +107,7 @@ describe('GET /api/plan — data isolation', () => {
   });
 
   it('returns plan: null when another user has a plan but authenticated user does not', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userBId = new ObjectId(USER_B_ID);
 
     // Insert a plan for user B only
@@ -132,7 +132,7 @@ describe('GET /api/plan — data isolation', () => {
 
 describe('POST /api/plan — data isolation', () => {
   it('sets userId on newly created plan document', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 
     const req = makeReq('POST', { mode: 'conversational' });
@@ -148,7 +148,7 @@ describe('POST /api/plan — data isolation', () => {
   });
 
   it('only deletes onboarding plans belonging to the authenticated user', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     const userAId = new ObjectId(USER_A_ID);
     const userBId = new ObjectId(USER_B_ID);
 
