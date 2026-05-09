@@ -203,6 +203,27 @@ describe('POST /api/runs - createRun', () => {
     expect(result.jsonBody.error).toContain('already completed');
   });
 
+  it('returns 409 when day already has a linked run even if not marked completed', async () => {
+    const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const planId = planInsert.insertedId;
+
+    // Existing run linked to week 1 day A (day not marked completed — simulates desync)
+    await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-03-31', distance: 6, planId, weekNumber: 1, dayLabel: 'A' })
+    );
+
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      weekNumber: 1,
+      dayLabel: 'A',
+    });
+    const result = await handlers.get('createRun')!(req, ctx);
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('already has a linked run');
+  });
+
   it('returns 400 when required fields missing', async () => {
     const req = makePostReq('http://localhost/api/runs', {
       date: '2026-04-01',
@@ -574,6 +595,29 @@ describe('POST /api/runs/:id/link - linkRun', () => {
     const result = await handlers.get('linkRun')!(fakeReq, ctx);
     expect(result.status).toBe(200);
     expect(result.jsonBody.weekNumber).toBe(1);
+  });
+
+  it('returns 409 when day already has a linked run even if not marked completed', async () => {
+    const planInsert = await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    const planId = planInsert.insertedId;
+
+    // Existing run linked to week 1 day A (day not marked completed — simulates desync)
+    await mongoClient.db('running-coach').collection('runs').insertOne(
+      makeRun({ date: '2026-03-31', distance: 6, planId, weekNumber: 1, dayLabel: 'A' })
+    );
+
+    const newRunInsert = await mongoClient.db('running-coach').collection('runs').insertOne(makeRun({ date: '2026-04-01' }));
+    const runId = newRunInsert.insertedId.toHexString();
+
+    const fakeReq = {
+      params: { id: runId },
+      json: async () => ({ weekNumber: 1, dayLabel: 'A' }),
+      headers: { get: () => 'test-pw' },
+    } as any;
+
+    const result = await handlers.get('linkRun')!(fakeReq, ctx);
+    expect(result.status).toBe(409);
+    expect(result.jsonBody.error).toContain('already has a linked run');
   });
 
   it('returns 409 when day is already completed and already has a linked run', async () => {

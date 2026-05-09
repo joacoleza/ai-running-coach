@@ -109,6 +109,17 @@ app.http('createRun', {
         if (!targetDay) {
           return { status: 404, jsonBody: { error: `Day ${dayLab} not found in week ${weekNum}` } };
         }
+
+        const existingLinkedRun = await db.collection<Run>('runs').findOne({
+          planId: plan._id,
+          weekNumber: weekNum,
+          dayLabel: dayLab,
+          userId: new ObjectId(userId),
+        });
+        if (existingLinkedRun) {
+          return { status: 409, jsonBody: { error: 'Day already has a linked run' } };
+        }
+
         if (targetDay.completed) {
           return { status: 409, jsonBody: { error: 'Day is already completed' } };
         }
@@ -464,17 +475,17 @@ app.http('linkRun', {
       if (!targetDay) {
         return { status: 404, jsonBody: { error: `Day ${dayLabel} not found in week ${weekNumber}` } };
       }
+      const existingLinkedRun = await db.collection<Run>('runs').findOne({
+        planId: plan._id,
+        weekNumber,
+        dayLabel,
+        userId: new ObjectId(userId),
+      });
+      if (existingLinkedRun) {
+        return { status: 409, jsonBody: { error: 'Day already has a linked run' } };
+      }
+
       if (targetDay.completed) {
-        // Allow linking to completed day ONLY if no run is already linked
-        const existingLinkedRun = await db.collection<Run>('runs').findOne({
-          planId: plan._id,
-          weekNumber,
-          dayLabel,
-          userId: new ObjectId(userId),
-        });
-        if (existingLinkedRun) {
-          return { status: 409, jsonBody: { error: 'Day already has a linked run' } };
-        }
         // Day is completed but has no linked run — allow linking (skip marking completed again)
       } else {
         // Mark the plan day as completed (only if not already completed)
