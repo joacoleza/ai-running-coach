@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-09T14:45:08.388Z"
+last_updated: "2026-05-09T14:46:53.593Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 11
   completed_phases: 5
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
   percent: 45
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 ## Current Position
 
 Phase: 16 (multi-discipline-dashboard) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-05-09
-Last session: 2026-05-09T14:45:08.382Z
+Last session: 2026-05-09T14:46:53.587Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -134,6 +134,9 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15.1-03]: RunBadge shown for all disciplines in DayRow; dayDiscipline optional in LinkRunModal for backward compat
 - [Phase 15.2-01]: updateMany runs BEFORE plan findOneAndUpdate; scoped by planId; addWeekToPhase uses $gte, deleteLastWeekOfPhase uses $gt to correctly shift linked run weekNumbers
 - [Phase 16]: Route runs/exercise-weights registered before runs/{id} wildcard to prevent Azure Functions parameter shadowing
+- [Phase 16-02]: computeStats takes activeDiscipline param; gym returns totalSessions+totalDuration; cycle returns totalDistance+avgSpeed; run/all keeps existing behavior
+- [Phase 16-02]: filteredRuns gates computeStats and multiWeeklyData on discipline but weekBuckets/weeklyData/paceData remain unfiltered for pace chart compatibility
+- [Phase 16-02]: groupRunsByDiscipline is a new separate function from groupRunsByWeek to avoid breaking existing weekly bucket data pipeline
 
 ### Quick Tasks Completed
 
