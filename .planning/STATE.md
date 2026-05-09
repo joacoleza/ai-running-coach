@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: executing
-last_updated: "2026-05-08T22:57:37.823Z"
-last_activity: "2026-05-09 - Completed quick task 260509-003: Phase 15 bug fixes (gym exercises in log form, unified save, duration validation, link modal gym display, log button label)"
+status: completed
+last_updated: "2026-05-09T01:07:30.189Z"
+last_activity: 2026-05-09
 progress:
-  total_phases: 7
-  completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 40
+  total_phases: 11
+  completed_phases: 5
+  total_plans: 15
+  completed_plans: 15
+  percent: 45
 ---
 
 # State
@@ -20,17 +20,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 15.1 — multi-discipline-ui-polish
+**Current focus:** Phase 15.2 — week-number-desync-bug-fix
 
 ## Current Position
 
-Phase: 999.1
+Phase: 18
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-09 - Completed quick task 260509-003: Phase 15 bug fixes (gym exercises in log form, unified save, duration validation, link modal gym display, log button label)
-Last session: 2026-05-08T01:15:39.796Z
+Status: Phase 15.2 complete — ready for next phase
+Last activity: 2026-05-09
+Last session: 2026-05-09T03:05:00.000Z
 
-Progress: [████░░░░░░] 40% (2/5 phases complete)
+Progress: [█████░░░░░] 45% (3/5 phases complete)
 
 ## Milestone
 
@@ -53,6 +53,8 @@ Progress: [████░░░░░░] 40% (2/5 phases complete)
 
 ### Roadmap Evolution
 
+- Phase 20 added: Plan Week Date Anchoring — anchor plan weeks to a real Monday; all week date ranges derive from a single anchor, coach uses calendar dates, adding/removing weeks shifts dates
+- Phase 15.2 inserted after Phase 15.1: Week Number Desync Bug Fix — runs.weekNumber not updated when assignPlanStructure renumbers after week deletion/addition (URGENT)
 - Phase 19 added: User Unit Preferences — settings panel for distance (km/miles) and weight (kg/lbs) per user; coach-aware, entries stored with creation-time units, dashboards convert on display
 - Phase 18 added: Gym Session Exercises in Plan — coach-created exercise checklists on planned gym days, user checks off exercises during the session
 - Phase 10 added: Login rate limiting (brute-force protection — failedLoginAttempts + lockedUntil on User doc, 5 attempts → 15 min lockout, 429 response). Replaces lockout system deleted in Phase 6.
@@ -130,12 +132,14 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15.1]: Sidebar label changed to Activities (path /runs unchanged) to avoid route refactor
 - [Phase 15.1]: fetchUnlinkedRuns discipline param uses encodeURIComponent; defaultDiscipline prop pattern established for RunEntryForm pre-selection
 - [Phase 15.1-03]: RunBadge shown for all disciplines in DayRow; dayDiscipline optional in LinkRunModal for backward compat
+- [Phase 15.2-01]: updateMany runs BEFORE plan findOneAndUpdate; scoped by planId; addWeekToPhase uses $gte, deleteLastWeekOfPhase uses $gt to correctly shift linked run weekNumbers
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260416-jkp | fix change-password 401 in production - token not accepted | 2026-04-16 | 73b97da | [260416-jkp-fix-change-password-401-in-production-to](.planning/quick/260416-jkp-fix-change-password-401-in-production-to/) | PR #70 |
+| 260509-153 | Phase 15.3: block duplicate run-to-day links regardless of completed flag | 2026-05-09 | 20f4dce | api/src/functions/runs.ts |
 | 260423-u59 | Fix run:update-insight XML tag visible in chat and run detail modal | 2026-04-23 | 2c52f49 | [260423-u59-fix-run-update-insight-xml-tag-visible-i](.planning/quick/260423-u59-fix-run-update-insight-xml-tag-visible-i/) | PR #78 |
 | 260423-wnm | Sidebar user email + logout dropdown, show-password toggle on login/reset | 2026-04-24 | 8bbb26f | [260423-wnm-sidebar-user-email-display-with-logout-d](.planning/quick/260423-wnm-sidebar-user-email-display-with-logout-d/) | PR #81 |
 | 260428-drl | security review of the whole code - write security.md in .docs with findings | 2026-04-28 | a5dbdea | [260428-drl-security-review-of-the-whole-code-write-](.planning/quick/260428-drl-security-review-of-the-whole-code-write-/) | PR #87 |

@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { ObjectId } from 'mongodb';
 import { requireAuth, getAuthContext } from '../middleware/auth.js';
 import { getDb } from '../shared/db.js';
-import type { Plan, PlanPhase } from '../shared/types.js';
+import type { Plan, PlanPhase, Run } from '../shared/types.js';
 import { assignPlanStructure } from '../shared/planUtils.js';
 
 app.http('patchPhase', {
@@ -132,6 +132,17 @@ app.http('addWeekToPhase', {
       );
       const recomputed = assignPlanStructure(updatedPhases);
 
+      // The new week is last in phase phaseIndex after append.
+      // Determine which weekNumber was assigned to the newly inserted week.
+      const newWeekNumber = recomputed[phaseIndex].weeks[recomputed[phaseIndex].weeks.length - 1].weekNumber;
+
+      // Bulk-shift runs: any run linked to this plan with weekNumber >= newWeekNumber gets +1.
+      // Scoped to this plan's _id to avoid touching other users' runs.
+      await db.collection<Run>('runs').updateMany(
+        { planId: plan._id, weekNumber: { $gte: newWeekNumber } },
+        { $inc: { weekNumber: 1 } },
+      );
+
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },
         { $set: { phases: recomputed, updatedAt: new Date() } },
@@ -180,12 +191,22 @@ app.http('deleteLastWeekOfPhase', {
         return { status: 400, jsonBody: { error: 'Cannot delete a week that contains workout days' } };
       }
 
+      // Capture the deleted week's number before reassignment.
+      const deletedWeekNumber = lastWeek.weekNumber;
+
       const updatedPhases = plan.phases.map((p, i) =>
         i === phaseIndex
           ? { ...p, weeks: p.weeks.slice(0, -1) }
           : p
       );
       const recomputed = assignPlanStructure(updatedPhases);
+
+      // Bulk-shift runs: any run linked to this plan with weekNumber > deletedWeekNumber gets -1.
+      // Runs on the deleted week itself cannot exist (guard ensures no non-rest days).
+      await db.collection<Run>('runs').updateMany(
+        { planId: plan._id, weekNumber: { $gt: deletedWeekNumber } },
+        { $inc: { weekNumber: -1 } },
+      );
 
       const result = await db.collection<Plan>('plans').findOneAndUpdate(
         { status: { $in: ['active', 'onboarding'] }, userId: new ObjectId(userId) },

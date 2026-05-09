@@ -8,7 +8,7 @@
 
 ![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-88.7%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-382%2F382-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-388%2F388-brightgreen)
 ![Web Tests](https://img.shields.io/badge/web_tests-568%2F568-brightgreen)
 ![E2E Tests](https://img.shields.io/badge/e2e_tests-94%2F94-brightgreen)
 
