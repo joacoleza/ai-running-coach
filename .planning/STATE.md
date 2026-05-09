@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: executing
-last_updated: "2026-05-09T14:46:53.593Z"
+status: verifying
+last_updated: "2026-05-09T14:56:37.433Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 11
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
   percent: 45
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 
 Phase: 16 (multi-discipline-dashboard) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-09
-Last session: 2026-05-09T14:46:53.587Z
+Last session: 2026-05-09T14:56:37.427Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -137,6 +137,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 16-02]: computeStats takes activeDiscipline param; gym returns totalSessions+totalDuration; cycle returns totalDistance+avgSpeed; run/all keeps existing behavior
 - [Phase 16-02]: filteredRuns gates computeStats and multiWeeklyData on discipline but weekBuckets/weeklyData/paceData remain unfiltered for pace chart compatibility
 - [Phase 16-02]: groupRunsByDiscipline is a new separate function from groupRunsByWeek to avoid breaking existing weekly bucket data pipeline
+- [Phase 16]: renderStatCards() extracted as function to cleanly handle gym/cycle/run+all branches without deep ternary nesting
+- [Phase 16]: WeightProgressionChart manages its own fetch state and X-Authorization header; gymExerciseOptions filtered to exercises with weight !== undefined to exclude bodyweight movements
 
 ### Quick Tasks Completed
 
