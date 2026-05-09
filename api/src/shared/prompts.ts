@@ -1,7 +1,7 @@
 import type { PlanPhase } from './types.js';
 
 /**
- * Build the system prompt for the AI running coach.
+ * Build the system prompt for the AI training coach.
  * @param summary - Optional condensed conversation summary from older messages
  * @param onboardingStep - Current onboarding question index (0-5), or undefined if onboarding complete
  * @param phases - Active plan phases to include as context so Claude can reference upcoming days

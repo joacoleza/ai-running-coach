@@ -1,5 +1,5 @@
 {
-  "name": "ai-running-coach-api",
+  "name": "ai-training-coach-api",
   "version": "1.0.0",
   "private": true,
   "main": "dist/src/index.js",
