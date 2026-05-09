@@ -64,7 +64,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - ✓ User can log cycling sessions; speed (km/h) displayed instead of pace across all UI components; coach generates cycling plan days and receives cycling context as "Cycled: DD/MM/YYYY, Xkm @ Y.Y km/h" — Phase 15
 - ✓ All discipline-unaware UI labels, fields, and actions updated: Sidebar "Activities", ExerciseList/Form button labels, RunDetailModal discipline badge + gym field hiding + neutral button labels, DayRow discipline badge + "Log/Link session" labels, LinkRunModal discipline filtering — Phase 15.1
 - ✓ Week number desync bug fixed: `addWeekToPhase` and `deleteLastWeekOfPhase` now bulk-update `runs.weekNumber` after renumbering so linked runs point to the correct week — Phase 15.2
-- [ ] Dashboard supports multi-discipline filter and adapted stats
+- ✓ Dashboard supports multi-discipline filter and adapted stats: DisciplineSelector (All/Run/Gym/Cycle), discipline-aware stat cards (gym→sessions/duration, cycle→distance/speed, run/all→existing), multi-discipline WeeklyVolumeChart, gym WeightProgressionChart with exercise dropdown — Phase 16
 
 ### Out of Scope
 
@@ -124,7 +124,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-04-28 — v2.1 Usage & Plan Controls shipped.
+Last updated: 2026-05-09 — Phase 16 Multi-Discipline Dashboard complete.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
