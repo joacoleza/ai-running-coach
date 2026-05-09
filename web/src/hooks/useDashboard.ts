@@ -9,6 +9,19 @@ export interface DashboardStats {
   totalTime: string       // e.g. "3h25m"
   adherence: string       // completed / (completed + skipped), or "N/A"
   progress: string        // (completed + skipped) / total, or "N/A"
+  totalSessions?: number  // gym: total sessions count
+  avgSpeed?: string       // cycle: average speed e.g. "18.5 km/h"
+  totalDuration?: string  // gym: total duration formatted
+}
+
+export type DisciplineFilter = 'all' | 'run' | 'gym' | 'cycle'
+
+export interface MultiDisciplineWeekBucket {
+  weekKey: string
+  weekLabel: string
+  runDistance: number   // km
+  gymSessions: number   // count
+  cycleDistance: number // km
 }
 
 export interface WeeklyDataPoint {
@@ -179,6 +192,45 @@ export function groupRunsByWeek(runs: Run[]): WeekBucket[] {
   return sorted
 }
 
+export function filterRunsByDiscipline(runs: Run[], discipline: DisciplineFilter): Run[] {
+  if (discipline === 'all') return runs
+  return runs.filter(r => (r.discipline ?? 'run') === discipline)
+}
+
+export function groupRunsByDiscipline(runs: Run[]): MultiDisciplineWeekBucket[] {
+  const buckets = new Map<string, MultiDisciplineWeekBucket>()
+
+  for (const run of runs) {
+    const date = parseISO(run.date)
+    const monday = startOfWeek(date, { weekStartsOn: 1 })
+    const key = monday.toISOString().slice(0, 10)
+    const weekLabel = format(monday, 'MMM d')
+
+    if (!buckets.has(key)) {
+      buckets.set(key, { weekKey: key, weekLabel, runDistance: 0, gymSessions: 0, cycleDistance: 0 })
+    }
+
+    const bucket = buckets.get(key)!
+    const discipline = run.discipline ?? 'run'
+
+    if (discipline === 'gym') {
+      bucket.gymSessions += 1
+    } else if (discipline === 'cycle') {
+      bucket.cycleDistance += run.distance
+    } else {
+      bucket.runDistance += run.distance
+    }
+  }
+
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, bucket]) => ({
+      ...bucket,
+      runDistance: Math.round(bucket.runDistance * 10) / 10,
+      cycleDistance: Math.round(bucket.cycleDistance * 10) / 10,
+    }))
+}
+
 /**
  * Fill in empty week buckets between the first and last week of the sorted list.
  * Weeks with no runs get distance=0 and avgPace=null, so charts show gaps.
@@ -275,17 +327,21 @@ export function computePlanAdherence(plan: PlanData): { adherence: string; progr
   return { adherence, progress }
 }
 
+export function computeAvgSpeed(runs: Run[]): string {
+  const totalDistance = runs.reduce((s, r) => s + r.distance, 0)
+  const totalMinutes = runs.reduce((s, r) => s + parseDurationToMinutes(r.duration), 0)
+  if (totalMinutes === 0 || totalDistance === 0) return '0.0 km/h'
+  return ((totalDistance / totalMinutes) * 60).toFixed(1) + ' km/h'
+}
+
 function computeStats(
   runs: Run[],
   plan: PlanData | null,
   filter: FilterPreset,
-  linkedRuns: Map<string, Run>
+  linkedRuns: Map<string, Run>,
+  activeDiscipline: DisciplineFilter
 ): DashboardStats {
-  const totalDistance =
-    Math.round(runs.reduce((sum, r) => sum + r.distance, 0) * 10) / 10
-  const totalRuns = runs.length
   const totalMinutes = runs.reduce((sum, r) => sum + parseDurationToMinutes(r.duration), 0)
-  const totalTime = formatTotalTime(totalMinutes)
 
   let adherence = 'N/A'
   let progress = 'N/A'
@@ -301,6 +357,37 @@ function computeStats(
     }
   }
 
+  if (activeDiscipline === 'gym') {
+    return {
+      totalDistance: '0km',
+      totalRuns: 0,
+      totalTime: '0m',
+      adherence,
+      progress,
+      totalSessions: runs.length,
+      totalDuration: formatTotalTime(totalMinutes),
+    }
+  }
+
+  if (activeDiscipline === 'cycle') {
+    const totalDistance = Math.round(runs.reduce((sum, r) => sum + r.distance, 0) * 10) / 10
+    const totalTime = formatTotalTime(totalMinutes)
+    return {
+      totalDistance: `${totalDistance}km`,
+      totalRuns: 0,
+      totalTime,
+      adherence,
+      progress,
+      avgSpeed: computeAvgSpeed(runs),
+    }
+  }
+
+  // run or all: standard run metrics
+  const totalDistance =
+    Math.round(runs.reduce((sum, r) => sum + r.distance, 0) * 10) / 10
+  const totalRuns = runs.length
+  const totalTime = formatTotalTime(totalMinutes)
+
   return {
     totalDistance: `${totalDistance}km`,
     totalRuns,
@@ -315,6 +402,15 @@ export function useDashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterPreset>('current-plan')
   const [runs, setRuns] = useState<Run[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [activeDisciplineState, setActiveDisciplineStateRaw] = useState<DisciplineFilter>(() => {
+    const stored = localStorage.getItem('dashboard_discipline_filter')
+    return (stored as DisciplineFilter) ?? 'all'
+  })
+
+  const setActiveDiscipline = (d: DisciplineFilter) => {
+    setActiveDisciplineStateRaw(d)
+    localStorage.setItem('dashboard_discipline_filter', d)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -358,6 +454,9 @@ export function useDashboard() {
     return () => { cancelled = true }
   }, [activeFilter, plan?._id])
 
+  const filteredRuns = filterRunsByDiscipline(runs, activeDisciplineState)
+  const multiWeeklyData = groupRunsByDiscipline(filteredRuns)
+
   const weekBuckets = fillWeekGaps(groupRunsByWeek(runs))
 
   const weeklyData: WeeklyDataPoint[] = weekBuckets.map(w => ({
@@ -379,15 +478,19 @@ export function useDashboard() {
       : null,
   }))
 
-  const stats = computeStats(runs, plan, activeFilter, linkedRuns)
+  const stats = computeStats(filteredRuns, plan, activeFilter, linkedRuns, activeDisciplineState)
 
   return {
     activeFilter,
     setActiveFilter,
+    activeDiscipline: activeDisciplineState,
+    setActiveDiscipline,
     stats,
     weeklyData,
     paceData,
     paceBpmData,
+    multiWeeklyData,
+    runs,
     isLoading,
     isPlanLoading,
     hasPlan: plan !== null && plan.status === 'active',
