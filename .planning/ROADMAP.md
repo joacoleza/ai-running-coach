@@ -166,8 +166,12 @@ Plans:
   3. When "Run" or "Cycle" is selected, stat cards show distance and the appropriate speed metric (pace or km/h)
   4. The weekly volume chart renders all disciplines in the same view with distinct colors (run=blue, gym=orange, cycle=green)
   5. A weight progression chart is visible; user can select an exercise name and see max weight lifted per session over time
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — GET /api/runs/exercise-weights endpoint + unit tests
+- [ ] 16-02-PLAN.md — useDashboard.ts: DisciplineFilter, MultiDisciplineWeekBucket, filterRunsByDiscipline, groupRunsByDiscipline, computeAvgSpeed, activeDiscipline state
+- [ ] 16-03-PLAN.md — Dashboard UI: DisciplineSelector, WeeklyVolumeChart, WeightProgressionChart components + Dashboard.tsx wiring
 
 ### Phase 17: App Rename
 **Goal**: Every reference to "running coach" / "ai-running-coach" is replaced with "training coach" / "ai-training-coach" across the entire codebase, UI, and repository
@@ -234,7 +238,7 @@ Plans:
 | 15. Cycling Support | 2/2 | ✅ Complete | 2026-05-07 |
 | 15.1. Multi-Discipline UI Polish | 4/4 | Complete    | 2026-05-08 |
 | 15.2. Week Number Desync Bug Fix | 0/1 | Complete    | 2026-05-09 |
-| 16. Multi-Discipline Dashboard | 0/? | Not started | — |
+| 16. Multi-Discipline Dashboard | 0/3 | Not started | — |
 | 17. App Rename | 0/? | Not started | — |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. User Unit Preferences | 0/? | Not started | — |
