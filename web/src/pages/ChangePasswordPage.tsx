@@ -76,7 +76,7 @@ export function ChangePasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-gray-900 mb-2">AI Running Coach</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">AI Training Coach</h1>
         <h2 className="text-lg font-semibold text-gray-700 mb-6">Change Your Password</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">

@@ -41,7 +41,7 @@ export function PasswordPage({ onSuccess }: PasswordPageProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-gray-900 mb-6">AI Running Coach</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-6">AI Training Coach</h1>
         <form onSubmit={handleSubmit}>
           <input
             type="password"
