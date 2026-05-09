@@ -15,11 +15,12 @@ interface WeeklyVolumeChartProps {
   activeDiscipline: DisciplineFilter
 }
 
-function tooltipFormatter(v: unknown, name: string): [string, string] {
-  if (name === 'Runs') return [`${Number(v).toFixed(1)}km (Runs)`, name]
-  if (name === 'Gym') return [`${Number(v)} sessions (Gym)`, name]
-  if (name === 'Cycling') return [`${Number(v).toFixed(1)}km (Cycling)`, name]
-  return [String(v), name]
+function tooltipFormatter(v: unknown, name: unknown): [string, string] {
+  const nameStr = String(name ?? '')
+  if (nameStr === 'Runs') return [`${Number(v).toFixed(1)}km (Runs)`, nameStr]
+  if (nameStr === 'Gym') return [`${Number(v)} sessions (Gym)`, nameStr]
+  if (nameStr === 'Cycling') return [`${Number(v).toFixed(1)}km (Cycling)`, nameStr]
+  return [String(v), nameStr]
 }
 
 export function WeeklyVolumeChart({ data, activeDiscipline }: WeeklyVolumeChartProps) {

@@ -349,7 +349,7 @@ describe('WeightProgressionChart visibility', () => {
   it('renders WeightProgressionChart when runs includes a gym session', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
       weeklyData: [{ weekLabel: 'Apr 7', distance: 0 }],
-      runs: [{ _id: 'run1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', exercises: [] }],
+      runs: [{ _id: 'run1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', exercises: [], createdAt: '2026-04-07', updatedAt: '2026-04-07' }],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByTestId('weight-progression-chart')).toBeInTheDocument()

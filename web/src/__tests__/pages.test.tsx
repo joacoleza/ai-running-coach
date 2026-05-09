@@ -9,15 +9,29 @@ vi.mock('../hooks/useDashboard', () => ({
   useDashboard: vi.fn(() => ({
     activeFilter: 'current-plan' as const,
     setActiveFilter: vi.fn(),
+    activeDiscipline: 'all' as const,
+    setActiveDiscipline: vi.fn(),
     stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
     weeklyData: [],
+    multiWeeklyData: [],
     paceData: [],
     paceBpmData: [],
+    runs: [],
     isLoading: false,
     isPlanLoading: false,
     hasPlan: true,
   })),
   formatPaceToMMSS: (v: number) => String(v),
+}))
+
+vi.mock('../components/dashboard/DisciplineSelector', () => ({
+  DisciplineSelector: () => <div data-testid="discipline-selector" />,
+}))
+vi.mock('../components/dashboard/WeeklyVolumeChart', () => ({
+  WeeklyVolumeChart: () => <div data-testid="weekly-volume-chart" />,
+}))
+vi.mock('../components/dashboard/WeightProgressionChart', () => ({
+  WeightProgressionChart: () => <div data-testid="weight-progression-chart" />,
 }))
 
 describe('Coach page', () => {

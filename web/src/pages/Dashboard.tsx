@@ -7,7 +7,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { useDashboard, formatPaceToMMSS, type FilterPreset, type DisciplineFilter } from '../hooks/useDashboard'
+import { useDashboard, formatPaceToMMSS, type FilterPreset } from '../hooks/useDashboard'
 import { DisciplineSelector } from '../components/dashboard/DisciplineSelector'
 import { WeeklyVolumeChart } from '../components/dashboard/WeeklyVolumeChart'
 import { WeightProgressionChart } from '../components/dashboard/WeightProgressionChart'
