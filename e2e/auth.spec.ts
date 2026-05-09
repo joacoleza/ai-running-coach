@@ -15,7 +15,7 @@ test.describe('Auth flows', () => {
 
   test('login page renders when unauthenticated', async ({ page }) => {
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'AI Running Coach' })).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('heading', { name: 'AI Training Coach' })).toBeVisible({ timeout: 10_000 })
     await expect(page.getByRole('button', { name: 'Log In' })).toBeVisible()
     await expect(page.getByLabel('Email')).toBeVisible()
     await expect(page.getByLabel('Password', { exact: true })).toBeVisible()
@@ -151,11 +151,11 @@ test.describe('Auth flows', () => {
 test.describe('Login rate limiting', () => {
   test.afterAll(async () => {
     // Clear IP lockout so subsequent specs (e.g. isolation.spec.ts) can log in from 127.0.0.1
-    const uri = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/running-coach-e2e'
+    const uri = process.env.MONGODB_CONNECTION_STRING || 'mongodb://localhost:27017/ai-training-coach-e2e'
     const client = new MongoClient(uri)
     try {
       await client.connect()
-      const dbName = uri.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'running-coach'
+      const dbName = uri.match(/\/\/[^/]+\/([^/?]+)/)?.[1] || 'ai-training-coach'
       await client.db(dbName).collection('login_attempts').deleteMany({})
     } finally {
       await client.close()

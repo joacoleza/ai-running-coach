@@ -1,12 +1,12 @@
 import { defineConfig } from '@playwright/test'
 
 // Set E2E database before globalSetup runs. CI provides MONGODB_CONNECTION_STRING explicitly
-// (mongodb://localhost:27017, no db name → falls back to 'running-coach' in db.ts).
-// Locally, default to an isolated 'running-coach-e2e' database so E2E never touches dev data.
+// (mongodb://localhost:27017, no db name → falls back to 'ai-training-coach' in db.ts).
+// Locally, default to an isolated 'ai-training-coach-e2e' database so E2E never touches dev data.
 // NOTE: requires the dev API server to be stopped first — if it's already running on port 7071,
-// Playwright reuses it (with its own 'running-coach' connection) and E2E logins will fail.
+// Playwright reuses it (with its own 'ai-training-coach' connection) and E2E logins will fail.
 if (!process.env.MONGODB_CONNECTION_STRING) {
-  process.env.MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017/running-coach-e2e'
+  process.env.MONGODB_CONNECTION_STRING = 'mongodb://localhost:27017/ai-training-coach-e2e'
 }
 
 export default defineConfig({
