@@ -51,7 +51,7 @@
 - [x] **Phase 14: Gym Support** — Gym session logging, exercise checklist, gym plan days, coach gym integration (completed 2026-05-04)
 - [x] **Phase 15: Cycling Support** — Cycling session logging, speed display, cycling plan days, coach cycling integration (completed 2026-05-07)
 - [x] **Phase 15.1: Multi-Discipline UI Polish** — Discipline-aware labels, RunDetailModal gym/cycle fixes, Sidebar rename, plan day discipline indicators, link-session filtering (completed 2026-05-08)
-- [ ] **Phase 15.2: Week Number Desync Bug Fix** — Bulk-update runs.weekNumber when assignPlanStructure renumbers the plan after week deletion/addition (INSERTED)
+- [x] **Phase 15.2: Week Number Desync Bug Fix** — Bulk-update runs.weekNumber when assignPlanStructure renumbers the plan after week deletion/addition (completed 2026-05-09)
 - [ ] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart
 - [ ] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI
 - [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
@@ -154,7 +154,7 @@ Plans:
 **Plans:** 1 plan
 
 Plans:
-- [ ] 15.2-01-PLAN.md — Fix addWeekToPhase + deleteLastWeekOfPhase to bulk-update runs.weekNumber + unit tests
+- [x] 15.2-01-PLAN.md — Fix addWeekToPhase + deleteLastWeekOfPhase to bulk-update runs.weekNumber + unit tests
 
 ### Phase 16: Multi-Discipline Dashboard
 **Goal**: The dashboard shows training data across all disciplines with a filter and adapted stats, including a weight progression chart for gym exercises
