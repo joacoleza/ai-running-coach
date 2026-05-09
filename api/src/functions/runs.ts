@@ -220,6 +220,52 @@ app.http('listRuns', {
   },
 });
 
+// ── GET /api/runs/exercise-weights ─────────────────────────────────────────
+app.http('getExerciseWeights', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'runs/exercise-weights',
+  handler: async (req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
+    const denied = await requireAuth(req);
+    if (denied) return denied;
+    const { userId } = getAuthContext(req);
+
+    const exercise = req.query.get('exercise');
+    if (!exercise || exercise.trim() === '') {
+      return { status: 400, jsonBody: { error: 'exercise query parameter required' } };
+    }
+
+    try {
+      const db = await getDb();
+      const runs = await db.collection<Run>('runs')
+        .find({
+          userId: new ObjectId(userId),
+          discipline: 'gym',
+          'exercises.name': exercise,
+        })
+        .sort({ date: 1 })
+        .toArray();
+
+      const data = runs
+        .map(r => {
+          const ex = (r.exercises ?? []).find(e => e.name === exercise);
+          if (!ex || ex.weight === undefined || ex.weight === null) return null;
+          return {
+            date: r.date,
+            maxWeight: ex.weight,
+            unit: ex.unit ?? 'kg',
+          };
+        })
+        .filter((d): d is NonNullable<typeof d> => d !== null);
+
+      return { status: 200, jsonBody: { exercise, data } };
+    } catch (err) {
+      context.log('Error fetching exercise weights:', err);
+      return { status: 503, jsonBody: { error: 'Service unavailable' } };
+    }
+  },
+});
+
 // ── GET /api/runs/{id} ─────────────────────────────────────────────────────
 app.http('getRun', {
   methods: ['GET'],

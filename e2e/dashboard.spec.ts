@@ -136,6 +136,111 @@ test.describe('Dashboard', () => {
   })
 })
 
+test.describe('Discipline filter', () => {
+  const mockGymRun = {
+    _id: 'gym-001',
+    discipline: 'gym',
+    distance: 0,
+    duration: '45:00',
+    pace: 0,
+    date: '2026-04-10',
+    planId: 'plan-dash-001',
+    createdAt: '2026-04-10T00:00:00Z',
+    updatedAt: '2026-04-10T00:00:00Z',
+  }
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('access_token', 'e2e-test-token')
+      localStorage.setItem('auth_temp_password', 'false')
+      localStorage.setItem('auth_email', 'test@example.com')
+    })
+    await page.route('**/api/plan', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: mockActivePlan, linkedRuns: { '1-A': mockRuns[0] } }) })
+    })
+    await page.route('**/api/plans/archived', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plans: [] }) })
+    })
+    await page.route('**/api/plans/archived/**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ plan: null }) })
+    })
+    await page.route('**/api/messages**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ messages: [] }) })
+    })
+  })
+
+  test('Discipline selector renders 4 buttons: All, Run, Gym, Cycle', async ({ page }) => {
+    await page.route('**/api/runs*', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: mockRuns, total: mockRuns.length, totalAll: mockRuns.length }) })
+    })
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByRole('button', { name: 'All', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Run', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Gym', exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cycle', exact: true })).toBeVisible()
+  })
+
+  test('Gym filter shows Total Sessions and Total Duration, hides Total Runs', async ({ page }) => {
+    const allRuns = [...mockRuns, mockGymRun]
+    await page.route('**/api/runs*', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: allRuns, total: allRuns.length, totalAll: allRuns.length }) })
+    })
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: 'Gym' }).click()
+
+    await expect(page.getByText('Total Sessions')).toBeVisible()
+    await expect(page.getByText('Total Duration')).toBeVisible()
+    await expect(page.getByText('Total Runs')).not.toBeVisible()
+  })
+
+  test('Cycle filter shows Total Speed, hides Total Runs', async ({ page }) => {
+    const cycleRun = {
+      _id: 'cycle-001', discipline: 'cycle', distance: 20, duration: '60:00', pace: 0,
+      date: '2026-04-09', createdAt: '2026-04-09T00:00:00Z', updatedAt: '2026-04-09T00:00:00Z',
+    }
+    const allRuns = [...mockRuns, cycleRun]
+    await page.route('**/api/runs*', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: allRuns, total: allRuns.length, totalAll: allRuns.length }) })
+    })
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await page.getByRole('button', { name: 'Cycle' }).click()
+
+    await expect(page.getByText('Total Speed')).toBeVisible()
+    await expect(page.getByText('Total Runs')).not.toBeVisible()
+  })
+
+  test('WeightProgressionChart visible when gym runs exist', async ({ page }) => {
+    const allRuns = [...mockRuns, mockGymRun]
+    await page.route('**/api/runs*', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: allRuns, total: allRuns.length, totalAll: allRuns.length }) })
+    })
+    // registered after **/api/runs* so it takes precedence (Playwright LIFO)
+    await page.route('**/api/runs/exercise-weights**', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ exercise: '', data: [] }) })
+    })
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByRole('heading', { name: 'Weight Progression' })).toBeVisible()
+  })
+
+  test('WeightProgressionChart not visible when no gym runs exist', async ({ page }) => {
+    await page.route('**/api/runs*', async (route: any) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: mockRuns, total: mockRuns.length, totalAll: mockRuns.length }) })
+    })
+    await page.goto('/dashboard')
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
+
+    await expect(page.getByText('Weight Progression')).not.toBeVisible()
+  })
+})
+
 test.describe('ArchivePlan', () => {
   test('archived plan page shows readonly panel FAB on mobile', async ({ page }) => {
     await page.addInitScript(() => {

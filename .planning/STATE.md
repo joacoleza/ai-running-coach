@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: completed
-last_updated: "2026-05-09T01:07:30.189Z"
+status: Phase 16 shipped — PR #99
+last_updated: "2026-05-09T14:59:53.384Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 11
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  completed_phases: 6
+  total_plans: 18
+  completed_plans: 18
   percent: 45
 ---
 
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 15.2 — week-number-desync-bug-fix
+**Current focus:** Phase 16 — multi-discipline-dashboard
 
 ## Current Position
 
 Phase: 18
 Plan: Not started
-Status: Phase 15.2 complete — ready for next phase
+Status: Phase complete — ready for verification
 Last activity: 2026-05-09
-Last session: 2026-05-09T03:05:00.000Z
+Last session: 2026-05-09T14:56:37.427Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -133,6 +133,12 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15.1]: fetchUnlinkedRuns discipline param uses encodeURIComponent; defaultDiscipline prop pattern established for RunEntryForm pre-selection
 - [Phase 15.1-03]: RunBadge shown for all disciplines in DayRow; dayDiscipline optional in LinkRunModal for backward compat
 - [Phase 15.2-01]: updateMany runs BEFORE plan findOneAndUpdate; scoped by planId; addWeekToPhase uses $gte, deleteLastWeekOfPhase uses $gt to correctly shift linked run weekNumbers
+- [Phase 16]: Route runs/exercise-weights registered before runs/{id} wildcard to prevent Azure Functions parameter shadowing
+- [Phase 16-02]: computeStats takes activeDiscipline param; gym returns totalSessions+totalDuration; cycle returns totalDistance+avgSpeed; run/all keeps existing behavior
+- [Phase 16-02]: filteredRuns gates computeStats and multiWeeklyData on discipline but weekBuckets/weeklyData/paceData remain unfiltered for pace chart compatibility
+- [Phase 16-02]: groupRunsByDiscipline is a new separate function from groupRunsByWeek to avoid breaking existing weekly bucket data pipeline
+- [Phase 16]: renderStatCards() extracted as function to cleanly handle gym/cycle/run+all branches without deep ternary nesting
+- [Phase 16]: WeightProgressionChart manages its own fetch state and X-Authorization header; gymExerciseOptions filtered to exercises with weight !== undefined to exclude bodyweight movements
 
 ### Quick Tasks Completed
 
