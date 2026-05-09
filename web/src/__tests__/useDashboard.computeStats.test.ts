@@ -6,8 +6,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../hooks/useRuns');
 vi.mock('../hooks/usePlan');
 
-import { useDashboard } from '../hooks/useDashboard';
-
 describe('useDashboard computeStats discipline branches (integration)', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -76,7 +74,7 @@ describe('useDashboard computeStats discipline branches (integration)', () => {
     expect(runStats.totalDistance).toBe('42.5km');
     expect(runStats.totalRuns).toBe(8);
     // Gym and cycle-specific fields should not be present
-    expect(runStats.totalSessions).toBeUndefined();
-    expect(runStats.avgSpeed).toBeUndefined();
+    expect((runStats as Record<string, unknown>).totalSessions).toBeUndefined();
+    expect((runStats as Record<string, unknown>).avgSpeed).toBeUndefined();
   });
 });

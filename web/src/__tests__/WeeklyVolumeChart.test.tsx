@@ -92,7 +92,7 @@ describe('WeeklyVolumeChart', () => {
   });
 
   it('renders bars with correct colors when activeDiscipline is "all"', () => {
-    const { container } = render(<WeeklyVolumeChart data={mockData} activeDiscipline="all" />);
+    render(<WeeklyVolumeChart data={mockData} activeDiscipline="all" />);
     const runsBar = screen.getByTestId('bar-Runs');
     const gymBar = screen.getByTestId('bar-Gym');
     const cycleBar = screen.getByTestId('bar-Cycling');
@@ -103,14 +103,14 @@ describe('WeeklyVolumeChart', () => {
   });
 
   it('shows correct Y-axis label for gym discipline', () => {
-    const { container } = render(<WeeklyVolumeChart data={mockData} activeDiscipline="gym" />);
+    render(<WeeklyVolumeChart data={mockData} activeDiscipline="gym" />);
     // Since we're mocking recharts, we check that the component renders without error
     // In a real test, we'd check the YAxis label prop
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument();
   });
 
   it('shows correct Y-axis label for run discipline', () => {
-    const { container } = render(<WeeklyVolumeChart data={mockData} activeDiscipline="run" />);
+    render(<WeeklyVolumeChart data={mockData} activeDiscipline="run" />);
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument();
   });
 });
