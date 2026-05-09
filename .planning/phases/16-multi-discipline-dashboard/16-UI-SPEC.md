@@ -46,17 +46,19 @@ Exceptions: none
 
 ## Typography
 
+**Font weights declared: 2 maximum**
+
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px | 400 | 1.5 |
-| Label | 12px | 500 | 1.4 |
-| Heading | 18px | 600 | 1.3 |
+| Label | 12px | 400 | 1.4 |
+| Heading | 18px | 400 | 1.3 |
 | Display | 24px | 700 | 1.2 |
 
 **Mapping to Tailwind:**
-- Body: `text-sm` (14px)
-- Label: `text-xs` (12px) + `font-medium`
-- Heading: `text-lg` (18px) + `font-semibold`
+- Body: `text-sm` (14px) + `font-normal`
+- Label: `text-xs` (12px) + `font-normal`
+- Heading: `text-lg` (18px) + `font-normal`
 - Display: `text-2xl` (24px) + `font-bold`
 
 ---
@@ -104,6 +106,14 @@ Accent reserved for:
 
 ---
 
+## Visual Hierarchy & Focal Point
+
+**Primary focal point:** Stats grid (positioned below filter buttons) is the primary visual anchor, drawing the eye immediately with prominently displayed key metrics (distance, duration, adherence). This anchors the user's understanding of their progress before secondary engagement with trend charts.
+
+**Secondary engagement area:** Charts (Weekly Volume, Weight Progression) follow below stats grid as secondary visual elements for trend analysis and deeper insights.
+
+---
+
 ## Component Inventory
 
 ### New Components
@@ -121,7 +131,7 @@ Accent reserved for:
 - Type: Data card
 - Location: Grid below discipline selector (2 cols on mobile, 4 cols on desktop)
 - Appearance: White bg, gray-200 border, 16px padding, 4px rounded
-- Title: 12px, weight-500, gray-600
+- Title: 12px, weight-400, gray-600
 - Value: 24px, weight-700, gray-900
 - Subtext: 12px, weight-400, gray-500 (for adherence progress)
 - Discipline switching: When discipline changes, card titles/values update without layout shift
@@ -289,8 +299,8 @@ Not required. All colors use light theme (gray-50 background, white cards).
 ## Accessibility
 
 - Discipline selector buttons: `aria-pressed` or semantic `<button>` (active = aria-selected)
-- Stat card labels: `<p class="text-xs font-medium text-gray-600">` (visible label)
-- Chart titles: `<h2 class="text-lg font-semibold">` (semantic heading)
+- Stat card labels: `<p class="text-xs font-normal text-gray-600">` (visible label)
+- Chart titles: `<h2 class="text-lg font-normal">` (semantic heading)
 - Empty states: Centered text, clear next-step instruction
 - Tooltip: Native recharts behavior (mouse hover only, no keyboard access — acceptable for charts)
 
@@ -298,11 +308,11 @@ Not required. All colors use light theme (gray-50 background, white cards).
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS (focal point declared)
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS (2 weights: 400, 700)
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
 
-**Approval:** pending
+**Approval:** resolved
