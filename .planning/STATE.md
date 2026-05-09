@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: completed
-last_updated: "2026-05-09T01:07:30.189Z"
+status: executing
+last_updated: "2026-05-09T14:45:08.388Z"
 last_activity: 2026-05-09
 progress:
   total_phases: 11
   completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 18
+  completed_plans: 16
   percent: 45
 ---
 
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 15.2 — week-number-desync-bug-fix
+**Current focus:** Phase 16 — multi-discipline-dashboard
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
-Status: Phase 15.2 complete — ready for next phase
+Phase: 16 (multi-discipline-dashboard) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-05-09
-Last session: 2026-05-09T03:05:00.000Z
+Last session: 2026-05-09T14:45:08.382Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -133,6 +133,7 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 15.1]: fetchUnlinkedRuns discipline param uses encodeURIComponent; defaultDiscipline prop pattern established for RunEntryForm pre-selection
 - [Phase 15.1-03]: RunBadge shown for all disciplines in DayRow; dayDiscipline optional in LinkRunModal for backward compat
 - [Phase 15.2-01]: updateMany runs BEFORE plan findOneAndUpdate; scoped by planId; addWeekToPhase uses $gte, deleteLastWeekOfPhase uses $gt to correctly shift linked run weekNumbers
+- [Phase 16]: Route runs/exercise-weights registered before runs/{id} wildcard to prevent Azure Functions parameter shadowing
 
 ### Quick Tasks Completed
 

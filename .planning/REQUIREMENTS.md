@@ -42,7 +42,7 @@
 - [ ] **DASH-01**: Dashboard has a discipline filter (All / Run / Gym / Cycle) that scopes all displayed data
 - [ ] **DASH-02**: Stat cards adapt to selected discipline — gym shows sessions count + total duration (not distance); run/cycle show distance + pace or speed
 - [ ] **DASH-03**: Weekly volume chart shows all disciplines in the same view, color-coded by sport (e.g., run=blue, gym=orange, cycle=green)
-- [ ] **DASH-04**: Weight progression chart shows max weight lifted per session for a user-selected exercise over time
+- [x] **DASH-04**: Weight progression chart shows max weight lifted per session for a user-selected exercise over time
 
 ---
 
@@ -85,4 +85,4 @@
 | DASH-01 | Phase 16 | Pending |
 | DASH-02 | Phase 16 | Pending |
 | DASH-03 | Phase 16 | Pending |
-| DASH-04 | Phase 16 | Pending |
+| DASH-04 | Phase 16 | Complete |
