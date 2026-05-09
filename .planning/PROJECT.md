@@ -1,8 +1,8 @@
-# AI Running Coach
+# AI Training Coach
 
 ## What This Is
 
-A multi-user web app that acts as a personal AI running coach. Each user sets a goal (e.g. a half marathon), the coach asks questions and generates a structured training plan, and after each run the user logs the data so the coach can give feedback and adjust the plan. A dashboard shows training stats, volume charts, and pace trends. User accounts are admin-provisioned — no public registration.
+A multi-user web app that acts as a personal AI training coach. Each user sets a goal (e.g. a half marathon), the coach asks questions and generates a structured training plan, and after each run the user logs the data so the coach can give feedback and adjust the plan. A dashboard shows training stats, volume charts, and pace trends. User accounts are admin-provisioned — no public registration.
 
 ## Core Value
 
@@ -58,7 +58,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
-- [ ] App renamed to ai-training-coach throughout (repo, package.json, HTML title, README)
+- ✓ App renamed to ai-training-coach throughout (repo, package.json, HTML title, README) — Phase 17
 - ✓ Discipline type (run/gym/cycle) added to TypeScript interfaces; existing documents backfilled via startup migration; four API endpoints accept discipline field; AI coach identity updated to "training coach" with discipline coaching instructions — Phase 13
 - ✓ User can log gym sessions with exercises; gym plan days show interactive exercise checklist; coach generates gym plan days and receives gym session history — Phase 14
 - ✓ User can log cycling sessions; speed (km/h) displayed instead of pace across all UI components; coach generates cycling plan days and receives cycling context as "Cycled: DD/MM/YYYY, Xkm @ Y.Y km/h" — Phase 15
@@ -124,7 +124,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 This document evolves at phase transitions and milestone boundaries.
 
-Last updated: 2026-05-09 — Phase 16 Multi-Discipline Dashboard complete.
+Last updated: 2026-05-09 — Phase 17 App Rename complete.
 
 **After each phase transition** (via `/gsd:transition`):
 1. Requirements invalidated? → Move to Out of Scope with reason
@@ -140,4 +140,4 @@ Last updated: 2026-05-09 — Phase 16 Multi-Discipline Dashboard complete.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 — Phase 15.2 complete: week number desync bug fix (runs.weekNumber now synced on add/delete week)*
+*Last updated: 2026-05-09 — Phase 17 complete: App renamed from AI Running Coach to AI Training Coach throughout (UI strings, package names, DB fallbacks, test fixtures, documentation)*
