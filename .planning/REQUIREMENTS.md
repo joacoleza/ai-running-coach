@@ -48,9 +48,9 @@
 
 - [x] **DASH2-01**: Dashboard reorganized into three stacked per-discipline sections (Run, Cycling, Gym), each with its own stat cards and charts, when the discipline filter is set to "All"
 - [x] **DASH2-02**: The combined `WeeklyVolumeChart` (all disciplines in one bar chart) is removed; each discipline section has its own dedicated charts instead
-- [ ] **DASH2-03**: A discipline section is hidden when the active time filter returns no data for that discipline; shown with an empty-state message when the single-discipline filter explicitly selects it
-- [ ] **DASH2-04**: When a single discipline is selected (Run / Gym / Cycle), only that discipline's section is shown; other sections are not rendered
-- [ ] **DASH2-05**: Each discipline section has discipline-specific stat cards and charts: Run (Total Distance, Total Runs, Total Time + pace/HR charts), Cycling (Total Distance, Avg Speed, Total Time + speed/distance charts), Gym (Total Sessions, Total Duration + duration/weight-progression charts)
+- [x] **DASH2-03**: A discipline section is hidden when the active time filter returns no data for that discipline; shown with an empty-state message when the single-discipline filter explicitly selects it
+- [x] **DASH2-04**: When a single discipline is selected (Run / Gym / Cycle), only that discipline's section is shown; other sections are not rendered
+- [x] **DASH2-05**: Each discipline section has discipline-specific stat cards and charts: Run (Total Distance, Total Runs, Total Time + pace/HR charts), Cycling (Total Distance, Avg Speed, Total Time + speed/distance charts), Gym (Total Sessions, Total Duration + duration/weight-progression charts)
 
 ---
 
@@ -94,8 +94,8 @@
 | DASH-02 | Phase 16 | Complete |
 | DASH-03 | Phase 16 | Complete |
 | DASH-04 | Phase 16 | Complete |
-| DASH2-01 | Phase 21 | In Progress |
-| DASH2-02 | Phase 21 | In Progress |
-| DASH2-03 | Phase 21 | In Progress |
-| DASH2-04 | Phase 21 | In Progress |
-| DASH2-05 | Phase 21 | In Progress |
+| DASH2-01 | Phase 21 | Complete |
+| DASH2-02 | Phase 21 | Complete |
+| DASH2-03 | Phase 21 | Complete |
+| DASH2-04 | Phase 21 | Complete |
+| DASH2-05 | Phase 21 | Complete |
