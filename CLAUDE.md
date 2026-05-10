@@ -2,7 +2,7 @@
 
 ## Git Workflow
 
-- **Never commit directly to `master`** — it is branch-protected
+- **Never commit directly to `master`** — it is branch-protected. Creating a commit on master locally is NOT allowed — always branch first.
 - Always create a feature branch before starting work: `git checkout -b feature/phase-N-name`
 - When a phase is complete, open a PR against `master` using `gh pr create`
 - Stop after opening the PR — the user reviews and merges manually via GitHub UI

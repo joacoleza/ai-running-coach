@@ -21,6 +21,15 @@ function computePace(distance: number, duration: string): number {
   return Math.round((totalMinutes / distance) * 100) / 100;
 }
 
+/**
+ * Validate duration string format: MM:SS (1-2 digit minutes, 2-digit seconds)
+ * or HH:MM:SS (1-3 digit hours, 2-digit minutes, 2-digit seconds).
+ * Anchors prevent trailing characters like "12:0011".
+ */
+function isValidDuration(duration: string): boolean {
+  return /^\d{1,2}:\d{2}$/.test(duration) || /^\d{1,3}:\d{2}:\d{2}$/.test(duration);
+}
+
 
 // ── POST /api/runs ─────────────────────────────────────────────────────────
 app.http('createRun', {
@@ -58,6 +67,9 @@ app.http('createRun', {
     }
     if (!isGym && (distance === undefined || distance === null)) {
       return { status: 400, jsonBody: { error: 'distance is required for run and cycle sessions' } };
+    }
+    if (!isValidDuration(duration)) {
+      return { status: 400, jsonBody: { error: 'Invalid duration format. Use MM:SS or HH:MM:SS.' } };
     }
 
     const pace = (distance !== undefined && distance > 0) ? computePace(distance, duration) : 0;
@@ -330,6 +342,10 @@ app.http('updateRun', {
       body = (await req.json()) as typeof body;
     } catch {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } };
+    }
+
+    if (body.duration !== undefined && !isValidDuration(body.duration)) {
+      return { status: 400, jsonBody: { error: 'Invalid duration format. Use MM:SS or HH:MM:SS.' } };
     }
 
     try {

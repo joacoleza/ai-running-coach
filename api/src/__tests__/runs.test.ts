@@ -943,3 +943,119 @@ function makePatchPlanReq(body: unknown): HttpRequest {
   vi.spyOn(req, 'json').mockResolvedValue(body);
   return req;
 }
+
+// ── PATCH /api/runs/:id - duration validation ─────────────────────────────
+
+describe('PATCH /api/runs/:id - duration validation', () => {
+  let runId: string;
+
+  beforeEach(async () => {
+    const runInsert = await mongoClient
+      .db('ai-training-coach')
+      .collection('runs')
+      .insertOne(makeRun({ date: '2026-05-01', distance: 5, duration: '25:00', pace: 5 }));
+    runId = runInsert.insertedId.toHexString();
+  });
+
+  it('returns 400 for duration "12:0011" (trailing digits after MM:SS)', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { duration: '12:0011' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid duration format');
+  });
+
+  it('returns 400 for duration "1:00asdasda" (non-digit characters)', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { duration: '1:00asdasda' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid duration format');
+  });
+
+  it('returns 400 for duration "9:5" (single-digit seconds)', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { duration: '9:5' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid duration format');
+  });
+
+  it('returns 200 for valid MM:SS duration "25:00"', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { duration: '25:00' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.duration).toBe('25:00');
+  });
+
+  it('returns 200 for valid HH:MM:SS duration "1:30:00"', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { duration: '1:30:00' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.duration).toBe('1:30:00');
+  });
+
+  it('returns 200 when no duration field provided (validation skipped, notes-only update)', async () => {
+    const req = makePatchReq(
+      `http://localhost/api/runs/${runId}`,
+      { id: runId },
+      { notes: 'Updated notes' },
+    );
+    const result = await handlers.get('updateRun')!(req, ctx);
+    expect(result.status).toBe(200);
+    expect(result.jsonBody.notes).toBe('Updated notes');
+  });
+});
+
+// ── POST /api/runs - duration validation (defense-in-depth) ───────────────
+
+describe('POST /api/runs - duration validation', () => {
+  it('returns 400 for duration "12:0011" on create', async () => {
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-05-01',
+      distance: 5,
+      duration: '12:0011',
+    });
+    const result = await handlers.get('createRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid duration format');
+  });
+
+  it('returns 400 for duration "9:5" on create (single-digit seconds)', async () => {
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-05-01',
+      distance: 5,
+      duration: '9:5',
+    });
+    const result = await handlers.get('createRun')!(req, ctx);
+    expect(result.status).toBe(400);
+    expect(result.jsonBody.error).toContain('Invalid duration format');
+  });
+
+  it('returns 201 for valid MM:SS duration "9:05" on create', async () => {
+    const req = makePostReq('http://localhost/api/runs', {
+      date: '2026-05-01',
+      distance: 5,
+      duration: '9:05',
+    });
+    const result = await handlers.get('createRun')!(req, ctx);
+    expect(result.status).toBe(201);
+  });
+});

@@ -653,6 +653,55 @@ test.describe('Cycling Session Features', () => {
   })
 })
 
+test.describe('RunDetailModal duration validation', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.clear())
+  })
+
+  test('RunDetailModal: rejects invalid duration on update', async ({ page }) => {
+    await loginWithPlan(page)
+
+    const testRun = {
+      _id: 'run-edit-001',
+      date: '2026-04-01',
+      distance: 5,
+      duration: '25:00',
+      pace: 5.0,
+      createdAt: '2026-04-01T00:00:00.000Z',
+      updatedAt: '2026-04-01T00:00:00.000Z',
+    }
+
+    // Route runs list and individual run fetch
+    await page.route('**/api/runs**', async (route: any) => {
+      const url = route.request().url()
+      if (url.includes('/run-edit-001')) {
+        await route.fulfill({ contentType: 'application/json', body: JSON.stringify(testRun) })
+      } else {
+        await route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({ runs: [testRun], total: 1, totalAll: 1 }),
+        })
+      }
+    })
+
+    // Navigate to Activities and open the run detail modal
+    await page.getByRole('link', { name: 'Activities' }).click()
+    await expect(page.getByText('5km')).toBeVisible({ timeout: 10_000 })
+    await page.getByText('5km').click() // opens RunDetailModal
+
+    // Clear duration and enter invalid value
+    const durationInput = page.getByPlaceholder('45:30')
+    await durationInput.fill('12:0011')
+
+    // Try to save
+    await page.getByRole('button', { name: /save changes/i }).click()
+
+    // Error should appear; no PATCH should have been made (route not set up for PATCH)
+    await expect(page.getByText(/invalid duration/i)).toBeVisible({ timeout: 5_000 })
+  })
+})
+
 test.describe('Run delete and unlink flows', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
