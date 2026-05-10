@@ -147,18 +147,6 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
 
 5. **Seed your first user** — insert the document from the **Seed your first user** step above into your Atlas `ai-training-coach.users` collection. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
 
-## GitHub Repository Rename
-
-The GitHub repository has been renamed from `joacoleza/ai-running-coach` to `joacoleza/ai-training-coach`.
-
-After the rename is complete (GitHub Settings → General → Repository name), update your local git remote:
-
-```bash
-git remote set-url origin https://github.com/joacoleza/ai-training-coach.git
-```
-
-The badge URLs and workflow references in this README already point to the new repository path.
-
 ## Roadmap
 
 See [.planning/ROADMAP.md](.planning/ROADMAP.md).
