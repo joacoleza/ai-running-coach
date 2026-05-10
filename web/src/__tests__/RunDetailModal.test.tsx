@@ -354,6 +354,55 @@ describe('RunDetailModal — exercise unified save', () => {
   });
 });
 
+describe('RunDetailModal — duration validation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: vi.fn().mockResolvedValue('') });
+    vi.mocked(updateRun).mockResolvedValue({ ...mockRun });
+  });
+
+  it('shows error and does not call updateRun when saving with invalid duration format', async () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // Change duration to invalid value to make form dirty
+    const durationInput = screen.getByPlaceholderText('45:30');
+    fireEvent.change(durationInput, { target: { value: '12:0011' } });
+
+    // Save changes button appears because form is dirty
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    expect(screen.getByText(/invalid duration/i)).toBeInTheDocument();
+    expect(updateRun).not.toHaveBeenCalled();
+  });
+
+  it('allows saving with valid HH:MM:SS duration', async () => {
+    vi.mocked(updateRun).mockResolvedValue({ ...mockRun, duration: '1:30:00' });
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // Change duration to valid HH:MM:SS
+    const durationInput = screen.getByPlaceholderText('45:30');
+    fireEvent.change(durationInput, { target: { value: '1:30:00' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+    });
+
+    await waitFor(() =>
+      expect(updateRun).toHaveBeenCalledWith(
+        mockRun._id,
+        expect.objectContaining({ duration: '1:30:00' })
+      )
+    );
+  });
+});
+
 describe('RunDetailModal — delete session', () => {
   const onDeleted = vi.fn();
 

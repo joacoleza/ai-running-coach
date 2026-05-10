@@ -100,10 +100,17 @@ export function RunDetailModal({ run, onClose, onUpdated, onDeleted, activePlanI
   const isGym = (run.discipline ?? 'run') === 'gym';
   const editSpeed = isCycle ? computeSpeed(editDistNum, editDuration) : null;
 
+  const durationValid =
+    /^\d{1,2}:\d{2}$/.test(editDuration) || /^\d{1,3}:\d{2}:\d{2}$/.test(editDuration);
+
   const handleSave = async () => {
     if (isSaving) return;
     if (!isValidDate(editDate)) {
       setError('Please enter a valid date.');
+      return;
+    }
+    if (editDuration !== run.duration && !durationValid) {
+      setError('Invalid duration format. Use MM:SS or HH:MM:SS.');
       return;
     }
     setIsSaving(true);
