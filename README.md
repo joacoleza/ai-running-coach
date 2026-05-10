@@ -8,9 +8,9 @@
 
 ![CI](https://github.com/joacoleza/ai-training-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-89.1%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-404%2F404-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-637%2F637-brightgreen)
-![E2E Tests](https://img.shields.io/badge/e2e_tests-99%2F99-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-413%2F413-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-639%2F639-brightgreen)
+![E2E Tests](https://img.shields.io/badge/e2e_tests-100%2F100-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
