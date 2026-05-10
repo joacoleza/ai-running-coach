@@ -55,7 +55,7 @@
 - [x] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart (completed 2026-05-09)
 - [x] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI (completed 2026-05-09)
 - [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
-- [ ] **Phase 19: User Unit Preferences** — Settings panel for distance (km/miles) and weight (kg/lbs) units; persisted per user, coach-aware, entries stored with creation-time units, dashboards convert on display
+- [ ] **Phase 19: Unit Standardization** — Lock the app to meters/km (distance) and kg (weight) only; remove lbs from Exercise type and all UI; instruct coach to never use imperial units; API rejects lbs payloads
 - [ ] **Phase 20: Plan Week Date Anchoring** — Anchor plan weeks to real calendar dates; plan view shows date ranges per week, coach reasons in calendar terms, adding/removing weeks shifts dates automatically
 
 ## Backlog
@@ -200,18 +200,16 @@ Plans:
   4. Completing the session (marking the day done) is still possible regardless of exercise completion state
 **Plans**: TBD
 
-### Phase 19: User Unit Preferences
-**Goal**: Users can set preferred units (distance: km/miles, weight: kg/lbs) in a Settings panel accessible from the sidebar user menu (alongside Logout and Usage). The coach is aware of these preferences and uses them in responses. Entries are stored with the unit used at creation time; changing preferences only affects new entries. Dashboards normalize units when displaying aggregated data.
+### Phase 19: Unit Standardization
+**Goal**: The app and coach exclusively use meters and km for distance, and kg for weight — no miles or lbs anywhere. The Exercise interface drops 'lbs', the system prompt instructs the coach to never use imperial units, and any UI that previously offered a unit choice is simplified to a single fixed unit.
 **Depends on**: Phase 18
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
-  1. Settings panel is accessible from the sidebar user menu (same submenu as Logout and Usage)
-  2. Settings has two fields: distance unit (km / miles) and weight unit (kg / lbs)
-  3. Preferences are persisted per user (MongoDB) and survive logout/login
-  4. Coach system prompt includes the user's unit preferences so responses use the correct units
-  5. When logging a run or gym session, the entry form defaults to the user's preferred units
-  6. The unit is stored alongside each entry at creation time; changing preferences does not alter historical entries
-  7. Dashboard stat cards and charts convert all stored values to the user's current preferred unit before display
+  1. Exercise weight unit is `'kg'` only — `'lbs'` is removed from the TypeScript type and all UI dropdowns
+  2. Coach system prompt explicitly instructs Claude to always use km for distance and kg for weight — never miles or lbs
+  3. No UI element offers a miles or lbs option
+  4. Existing runs stored with `unit: 'lbs'` are migrated or treated as kg (decision: document chosen approach)
+  5. API rejects `unit: 'lbs'` on exercise payloads with a 400 error
 **Plans**: TBD
 
 ### Phase 20: Plan Week Date Anchoring
@@ -246,5 +244,5 @@ Plans:
 | 16. Multi-Discipline Dashboard | 3/3 | Complete    | 2026-05-09 |
 | 17. App Rename | 2/3 | Complete    | 2026-05-09 |
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
-| 19. User Unit Preferences | 0/? | Not started | — |
+| 19. Unit Standardization | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
