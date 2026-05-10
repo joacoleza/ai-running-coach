@@ -213,3 +213,42 @@ describe('WeightProgressionChart', () => {
     mockFetch.mockRestore();
   });
 });
+
+describe('defaultExercise prop', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem('access_token', 'test-token');
+  });
+
+  it('auto-fetches and selects the defaultExercise on mount', async () => {
+    const mockFetch = vi.spyOn(global, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        exercise: 'Squat',
+        data: [{ date: '2026-04-01', maxWeight: 80, unit: 'kg' }],
+      }),
+    } as Response);
+
+    render(<WeightProgressionChart exerciseOptions={['Squat', 'Bench Press']} defaultExercise="Squat" />);
+
+    // Should auto-fetch on mount
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/runs/exercise-weights?exercise=Squat',
+        expect.any(Object)
+      );
+    });
+
+    // Chart should show data
+    await waitFor(() => {
+      expect(screen.getByTestId('line-chart')).toBeInTheDocument();
+    });
+
+    mockFetch.mockRestore();
+  });
+
+  it('renders without auto-fetch when defaultExercise is not provided', () => {
+    render(<WeightProgressionChart exerciseOptions={['Squat']} />);
+    expect(screen.getByText('Select an exercise to see weight progression')).toBeInTheDocument();
+  });
+});
