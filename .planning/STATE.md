@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: executing
-last_updated: "2026-05-10T14:31:08.774Z"
+status: verifying
+stopped_at: Completed 21-03-PLAN.md
+last_updated: "2026-05-10T14:58:07.220Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 12
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 24
-  completed_plans: 22
+  completed_plans: 24
   percent: 45
 ---
 
@@ -26,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 
 Phase: 21 (dashboard-discipline-sections) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-05-10
-Last session: 2026-05-10T14:39:31Z
-Stopped at: Completed 21-02-PLAN.md
+Last session: 2026-05-10T14:58:07.215Z
+Stopped at: Completed 21-03-PLAN.md
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -145,6 +146,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 17-app-rename]: Intentional historical reference preserved in README GitHub Repository Rename section showing old repo name in migration guide
 - [Phase 21-01]: WeeklySpeedChart exports SpeedDataPoint type so Dashboard can define speed data arrays with type safety
 - [Phase 21-01]: WeightProgressionChart useEffect placed after handleExerciseSelect definition to avoid reference-before-assignment
+- [Phase 21]: Dashboard.test.tsx was already rewritten in Plan 02; Plan 03 only added defaultExercise and per-discipline describe blocks
+- [Phase 21]: E2E dashboard tests updated to match new per-discipline section layout: Avg Speed label, combobox check for WeightProgressionChart, planId in cycleRun fixture
 
 ### Quick Tasks Completed
 
