@@ -247,7 +247,7 @@ Plans:
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. Unit Standardization | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
-| 21. Dashboard Discipline Sections | 3/3 | Complete   | 2026-05-10 |
+| 21. Dashboard Discipline Sections | 3/3 | Complete    | 2026-05-10 |
 
 ### Phase 21: Dashboard Discipline Sections
 
