@@ -197,10 +197,10 @@ test.describe('Discipline filter', () => {
     await expect(page.getByText('Total Runs')).not.toBeVisible()
   })
 
-  test('Cycle filter shows Total Speed, hides Total Runs', async ({ page }) => {
+  test('Cycle filter shows Avg Speed, hides Total Runs', async ({ page }) => {
     const cycleRun = {
       _id: 'cycle-001', discipline: 'cycle', distance: 20, duration: '60:00', pace: 0,
-      date: '2026-04-09', createdAt: '2026-04-09T00:00:00Z', updatedAt: '2026-04-09T00:00:00Z',
+      date: '2026-04-09', planId: 'plan-dash-001', createdAt: '2026-04-09T00:00:00Z', updatedAt: '2026-04-09T00:00:00Z',
     }
     const allRuns = [...mockRuns, cycleRun]
     await page.route('**/api/runs*', async (route: any) => {
@@ -211,23 +211,29 @@ test.describe('Discipline filter', () => {
 
     await page.getByRole('button', { name: 'Cycle' }).click()
 
-    await expect(page.getByText('Total Speed')).toBeVisible()
+    await expect(page.getByText('Avg Speed', { exact: true })).toBeVisible()
     await expect(page.getByText('Total Runs')).not.toBeVisible()
   })
 
   test('WeightProgressionChart visible when gym runs exist', async ({ page }) => {
-    const allRuns = [...mockRuns, mockGymRun]
+    const gymRunWithExercise = {
+      ...mockGymRun,
+      exercises: [{ name: 'Squat', sets: 3, reps: 10, weight: 80, unit: 'kg' }],
+    }
+    const allRuns = [...mockRuns, gymRunWithExercise]
     await page.route('**/api/runs*', async (route: any) => {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ runs: allRuns, total: allRuns.length, totalAll: allRuns.length }) })
     })
     // registered after **/api/runs* so it takes precedence (Playwright LIFO)
     await page.route('**/api/runs/exercise-weights**', async (route: any) => {
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ exercise: '', data: [] }) })
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ exercise: 'Squat', data: [] }) })
     })
     await page.goto('/dashboard')
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible({ timeout: 10_000 })
 
-    await expect(page.getByRole('heading', { name: 'Weight Progression' })).toBeVisible()
+    // WeightProgressionChart renders inside the Gym section when gym runs exist;
+    // when exercises are present it shows a select dropdown with exercise options
+    await expect(page.getByRole('combobox')).toBeVisible()
   })
 
   test('WeightProgressionChart not visible when no gym runs exist', async ({ page }) => {
