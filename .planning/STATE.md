@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-29)
 Phase: 18
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-05-10
+Last activity: 2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id
 Last session: 2026-05-09T21:11:45.724Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
@@ -152,3 +152,4 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 | 260423-wnm | Sidebar user email + logout dropdown, show-password toggle on login/reset | 2026-04-24 | 8bbb26f | [260423-wnm-sidebar-user-email-display-with-logout-d](.planning/quick/260423-wnm-sidebar-user-email-display-with-logout-d/) | PR #81 |
 | 260428-drl | security review of the whole code - write security.md in .docs with findings | 2026-04-28 | a5dbdea | [260428-drl-security-review-of-the-whole-code-write-](.planning/quick/260428-drl-security-review-of-the-whole-code-write-/) | PR #87 |
 | 260509-003 | phase 15 bug fixes — gym session exercises, unified save, duration validation, link modal gym display, log a session label | 2026-05-08 | c0a2870 | [260509-003-phase-15-bug-fixes-gym-session-exercises](.planning/quick/260509-003-phase-15-bug-fixes-gym-session-exercises/) |
+| 260510-j7c | Fix duration validation missing on PATCH /api/runs/:id — invalid values like "12:0011" accepted on update | 2026-05-10 | ea76c9c | [260510-j7c-fix-duration-validation-on-session-updat](.planning/quick/260510-j7c-fix-duration-validation-on-session-updat/) |
