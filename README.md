@@ -81,7 +81,7 @@ cd api && npm install && cd ..
 }
 ```
 
-**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `ai-training-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `ai-training-coach-e2e` database so they never touch your dev data.
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `ai-training-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `ai-training-coach-e2e` database so they never touch your dev data. For common MongoDB operations (reset passwords, clear rate limits, wipe data) see [`.docs/useful-commands.md`](.docs/useful-commands.md).
 
 ```js
 {
