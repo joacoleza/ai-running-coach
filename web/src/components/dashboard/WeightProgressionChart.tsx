@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LineChart,
   Line,
@@ -11,10 +11,11 @@ import {
 
 interface WeightProgressionChartProps {
   exerciseOptions: string[]
+  defaultExercise?: string
 }
 
-export function WeightProgressionChart({ exerciseOptions }: WeightProgressionChartProps) {
-  const [selectedExercise, setSelectedExercise] = useState<string>('')
+export function WeightProgressionChart({ exerciseOptions, defaultExercise }: WeightProgressionChartProps) {
+  const [selectedExercise, setSelectedExercise] = useState<string>(defaultExercise ?? '')
   const [chartData, setChartData] = useState<Array<{ date: string; maxWeight: number; unit: string }>>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -53,6 +54,12 @@ export function WeightProgressionChart({ exerciseOptions }: WeightProgressionCha
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (defaultExercise) {
+      void handleExerciseSelect(defaultExercise)
+    }
+  }, [defaultExercise])
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4">
