@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-10T01:04:00.254Z"
-last_activity: 2026-05-10
+last_updated: "2026-05-10T13:11:12.860Z"
+last_activity: "2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id"
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 7
   total_plans: 21
   completed_plans: 21
@@ -28,7 +28,7 @@ Phase: 18
 Plan: Not started
 Status: Ready to execute
 Last activity: 2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id
-Last session: 2026-05-09T21:11:45.724Z
+Last session: 2026-05-10T13:11:12.854Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -53,6 +53,7 @@ Progress: [█████░░░░░] 45% (3/5 phases complete)
 
 ### Roadmap Evolution
 
+- Phase 21 added: Dashboard Discipline Sections — separate dashboard sections per discipline (Run/Cycling/Gym) with dedicated charts; sections hidden when no data for the active time filter
 - Phase 20 added: Plan Week Date Anchoring — anchor plan weeks to a real Monday; all week date ranges derive from a single anchor, coach uses calendar dates, adding/removing weeks shifts dates
 - Phase 15.2 inserted after Phase 15.1: Week Number Desync Bug Fix — runs.weekNumber not updated when assignPlanStructure renumbers after week deletion/addition (URGENT)
 - Phase 19 added: User Unit Preferences — settings panel for distance (km/miles) and weight (kg/lbs) per user; coach-aware, entries stored with creation-time units, dashboards convert on display
