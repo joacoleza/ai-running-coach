@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -85,8 +85,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
-  await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
 });
 
 const makeWeekDays = (runOverrides: Partial<Record<string, unknown>> = {}) => [
@@ -120,7 +120,7 @@ const validActivePlan = {
 
 describe('PATCH /api/plan/phases/:phaseIndex', () => {
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
   it('returns 400 for invalid phaseIndex (NaN)', async () => {
@@ -208,7 +208,7 @@ describe('POST /api/plan/phases', () => {
   });
 
   it('creates a new phase with auto-numbered name when body is empty', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makePostReq();
     const result = await handlers.get('addPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -217,7 +217,7 @@ describe('POST /api/plan/phases', () => {
   });
 
   it('creates a new phase with provided name and description', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makePostReq({ name: 'Race Prep', description: 'Final push' });
     const result = await handlers.get('addPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -226,7 +226,7 @@ describe('POST /api/plan/phases', () => {
   });
 
   it('new phase has correct globally sequential weekNumber via assignPlanStructure', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makePostReq();
     const result = await handlers.get('addPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -236,7 +236,7 @@ describe('POST /api/plan/phases', () => {
   });
 
   it('new phase starts with one empty week and no days', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makePostReq();
     const result = await handlers.get('addPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -246,7 +246,7 @@ describe('POST /api/plan/phases', () => {
   });
 
   it('handles missing body gracefully (no JSON body)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makePostReq();
     vi.spyOn(req, 'json').mockRejectedValue(new SyntaxError('No body'));
     const result = await handlers.get('addPhase')!(req, ctx);
@@ -276,7 +276,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('returns 400 for non-integer phaseIndex', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('abc');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(400);
@@ -284,7 +284,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('returns 400 for negative phaseIndex', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('-1');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(400);
@@ -292,7 +292,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('returns 404 when phaseIndex is out of bounds', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('5');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(404);
@@ -300,7 +300,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('adds an empty week to the specified phase and returns 201', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('0');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -310,7 +310,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('recomputes globally sequential week numbers after adding a week', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('0');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -322,7 +322,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks', () => {
   });
 
   it('does not modify other phases', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeAddWeekReq('1');
     const result = await handlers.get('addWeekToPhase')!(req, ctx);
     expect(result.status).toBe(201);
@@ -369,12 +369,12 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last', () => {
   };
 
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...twoPhasesTwoWeeks });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...twoPhasesTwoWeeks });
   });
 
   it('returns 404 when no active plan exists (no beforeEach insert)', async () => {
     // Override: clear the collection that was just seeded
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
     const req = makeDeleteLastWeekReq('0');
     const result = await handlers.get('deleteLastWeekOfPhase')!(req, ctx);
     expect(result.status).toBe(404);
@@ -403,8 +403,8 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last', () => {
   });
 
   it('returns 400 when phase has only one week', async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
         { name: 'Base', description: '', weeks: [{ weekNumber: 1, days: [] }] },
@@ -418,8 +418,8 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last', () => {
   });
 
   it('returns 400 when last week has a non-rest day', async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
         {
@@ -473,17 +473,17 @@ describe('POST /api/plan/phases/:phaseIndex/weeks — weekNumber migration', () 
   const PLAN_OID = new ObjectId();
 
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
     // Insert plan with known _id
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       _id: PLAN_OID,
     });
   });
 
   it('increments weekNumber on runs whose weekNumber >= newly inserted week number', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     // Seed a run linked to phase1's week (weekNumber: 2) — should shift to 3
     const runOnWeek2 = await db.collection('runs').insertOne({
       planId: PLAN_OID,
@@ -522,7 +522,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks — weekNumber migration', () 
   });
 
   it('does NOT increment weekNumber on runs whose weekNumber < newly inserted week number', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     await db.collection('runs').insertOne({
       planId: PLAN_OID,
       weekNumber: 1,
@@ -541,7 +541,7 @@ describe('POST /api/plan/phases/:phaseIndex/weeks — weekNumber migration', () 
     expect(result.status).toBe(201);
 
     // Week1 run should be unchanged
-    const run = await mongoClient.db('running-coach').collection('runs').findOne({ planId: PLAN_OID, weekNumber: 1 });
+    const run = await mongoClient.db('ai-training-coach').collection('runs').findOne({ planId: PLAN_OID, weekNumber: 1 });
     expect(run).not.toBeNull();
     expect(run?.weekNumber).toBe(1);
   });
@@ -551,8 +551,8 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last — weekNumber migratio
   const PLAN_OID_DEL = new ObjectId();
 
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('runs').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
     // twoPhasesTwoWeeks but with a known _id
     const twoPhasesTwoWeeksPlan = {
       ...validActivePlan,
@@ -576,11 +576,11 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last — weekNumber migratio
         },
       ],
     };
-    await mongoClient.db('running-coach').collection('plans').insertOne(twoPhasesTwoWeeksPlan);
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne(twoPhasesTwoWeeksPlan);
   });
 
   it('decrements weekNumber on runs whose weekNumber > deleted week number', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     // Run on week3 (phase1) — should shift to week2 after deleting week2 of phase0
     const runOnWeek3 = await db.collection('runs').insertOne({
       planId: PLAN_OID_DEL,
@@ -619,7 +619,7 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last — weekNumber migratio
   });
 
   it('does NOT decrement weekNumber on runs whose weekNumber <= deleted week number', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
     // Run on week1 — should be unchanged
     await db.collection('runs').insertOne({
       planId: PLAN_OID_DEL,
@@ -646,7 +646,7 @@ describe('DELETE /api/plan/phases/:phaseIndex/weeks/last — weekNumber migratio
 
 describe('DELETE /api/plan/phases/last', () => {
   it('returns 400 when only one phase exists', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [validActivePlan.phases[0]],
     });
@@ -657,7 +657,7 @@ describe('DELETE /api/plan/phases/last', () => {
   });
 
   it('returns 409 when last phase has completed days', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
         validActivePlan.phases[0],
@@ -675,7 +675,7 @@ describe('DELETE /api/plan/phases/last', () => {
   });
 
   it('returns 200 and deletes last phase', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeDeleteReq();
     const result = await handlers.get('deleteLastPhase')!(req, ctx);
     expect(result.status).toBe(200);
@@ -684,7 +684,7 @@ describe('DELETE /api/plan/phases/last', () => {
   });
 
   it('does not affect earlier phases when deleting last phase', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const req = makeDeleteReq();
     const result = await handlers.get('deleteLastPhase')!(req, ctx);
     expect(result.status).toBe(200);

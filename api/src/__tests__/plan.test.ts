@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -61,8 +61,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
-  await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
 });
 
 const TEST_USER_OID = new ObjectId(TEST_USER_ID);
@@ -121,7 +121,7 @@ describe('Plan Schema (PLAN-02)', () => {
 
 describe('createPlan - active plan guard', () => {
   it('returns 409 when an active plan exists (with completed days)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
       onboardingStep: 6,
@@ -140,7 +140,7 @@ describe('createPlan - active plan guard', () => {
   });
 
   it('returns 409 when an active plan exists (no completed days)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
       onboardingStep: 6,
@@ -158,7 +158,7 @@ describe('createPlan - active plan guard', () => {
   });
 
   it('allows creating a new plan when only an onboarding plan exists (onboarding is deleted first)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'onboarding',
       onboardingMode: 'conversational',
       onboardingStep: 2,
@@ -193,7 +193,7 @@ describe('Plan CRUD', () => {
     await createTestPlan();
 
     const firstPlan = await mongoClient
-      .db('running-coach')
+      .db('ai-training-coach')
       .collection('plans')
       .findOne({ _id: new ObjectId(firstId) });
     expect(firstPlan).toBeNull(); // deleted, not archived
@@ -210,7 +210,7 @@ describe('Plan CRUD', () => {
   });
 
   it('GET /api/plan does not return archived plans', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'archived',
       onboardingStep: 6,
       goal: {},
@@ -229,13 +229,13 @@ describe('Plan CRUD', () => {
   it('GET /api/plan includes linkedRuns map keyed by weekNumber-dayLabel', async () => {
     const planId = await createTestPlan();
     // Patch plan to active with a completed phase/week/day
-    await mongoClient.db('running-coach').collection('plans').updateOne(
+    await mongoClient.db('ai-training-coach').collection('plans').updateOne(
       { _id: new ObjectId(planId) },
       { $set: { status: 'active', phases: validPhases } }
     );
     // Insert a run linked to this plan
     const planOid = new ObjectId(planId);
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId: planOid,
       weekNumber: 1,
       dayLabel: 'A',
@@ -266,7 +266,7 @@ describe('Plan CRUD', () => {
   });
 
   it('GET /api/plan returns null for stale sessions-based plans', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingStep: 6,
       goal: {},
@@ -293,7 +293,7 @@ describe('Plan CRUD', () => {
 
 describe('PATCH /api/plan - patchPlan', () => {
   async function seedActivePlan() {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
       onboardingStep: 6,
@@ -326,13 +326,13 @@ describe('PATCH /api/plan - patchPlan', () => {
     const result = await handlers.get('patchPlan')!(req, ctx);
     expect(result.status).toBe(200);
     // verify in DB
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     expect(plan?.targetDate).toBe('2026-11-01');
   });
 
   it('unsets targetDate when empty string and returns 200', async () => {
     // Insert plan with existing targetDate
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       onboardingMode: 'conversational',
       onboardingStep: 6,
@@ -347,7 +347,7 @@ describe('PATCH /api/plan - patchPlan', () => {
     const result = await handlers.get('patchPlan')!(req, ctx);
     expect(result.status).toBe(200);
     // targetDate should be absent (unset), not empty string
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     expect(plan?.targetDate).toBeUndefined();
   });
 
@@ -356,7 +356,7 @@ describe('PATCH /api/plan - patchPlan', () => {
     const req = makeReq('PATCH', { targetDate: '2026-11-01', progressFeedback: 'On track!' });
     const result = await handlers.get('patchPlan')!(req, ctx);
     expect(result.status).toBe(200);
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     expect(plan?.targetDate).toBe('2026-11-01');
     expect(plan?.progressFeedback).toBe('On track!');
   });

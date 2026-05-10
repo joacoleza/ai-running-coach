@@ -3,7 +3,7 @@
 Connect to the local MongoDB container first:
 
 ```bash
-docker exec -it ai-running-coach-mongodb-1 mongosh
+docker exec -it ai-training-coach-mongodb-1 mongosh
 ```
 
 Then run any of the commands below inside the shell.
@@ -11,7 +11,10 @@ Then run any of the commands below inside the shell.
 ---
 
 ```js
-use running-coach
+// `ai-training-coach` is the default DB name (no path in MONGODB_CONNECTION_STRING).
+// If your local.settings.json overrides it (e.g. mongodb://localhost:27017/running-coach),
+// replace `ai-training-coach` below with your actual DB name.
+use ai-training-coach
 
 // ── Users ────────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -128,15 +128,15 @@ beforeEach(async () => {
   _resetDbForTest();
   vi.clearAllMocks();
   vi.mocked(requireAuth).mockResolvedValue(null);
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
-  await mongoClient.db('running-coach').collection('messages').deleteMany({});
-  await mongoClient.db('running-coach').collection('usage_events').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('messages').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('usage_events').deleteMany({});
 });
 
 const TEST_USER_OID = new ObjectId('000000000000000000000002');
 
 async function insertOnboardingPlan() {
-  const { insertedId } = await mongoClient.db('running-coach').collection('plans').insertOne({
+  const { insertedId } = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
     status: 'onboarding',
     onboardingStep: 0,
     onboardingMode: 'conversational',
@@ -167,7 +167,7 @@ describe('Usage Capture (USAGE-01 through USAGE-04)', () => {
 
     // Verify a usage_events document was inserted
     const usageEvents = await mongoClient
-      .db('running-coach')
+      .db('ai-training-coach')
       .collection('usage_events')
       .find({})
       .toArray();
@@ -232,7 +232,7 @@ describe('Usage Capture (USAGE-01 through USAGE-04)', () => {
     await consumeStream(result.body as ReadableStream<Uint8Array>);
 
     const events = await mongoClient
-      .db('running-coach')
+      .db('ai-training-coach')
       .collection('usage_events')
       .find({})
       .toArray();

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -75,7 +75,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
 });
 
 // Fixed test user ObjectId — matches getAuthContext mock
@@ -125,7 +125,7 @@ describe('PATCH /api/plan/days/:week/:day', () => {
   });
 
   it('can undo a completed day using string false values', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
         {
@@ -144,14 +144,14 @@ describe('PATCH /api/plan/days/:week/:day', () => {
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(200);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const day = plan?.phases[0]?.weeks[0]?.days[0];
     expect(day?.completed).toBe(false);
     expect(day?.skipped).toBe(false);
   });
 
   it('can undo a completed day using boolean false values (runtime coercion guard)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [
         {
@@ -165,13 +165,13 @@ describe('PATCH /api/plan/days/:week/:day', () => {
     const result = await handlers.get('patchDay')!(req, ctx);
     expect(result.status).toBe(200);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const day = plan?.phases[0]?.weeks[0]?.days[0];
     expect(day?.completed).toBe(false);
   });
 
   it('updates guidelines for a non-completed day', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
 
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { guidelines: 'Updated guidelines' });
     const result = await handlers.get('patchDay')!(req, ctx);
@@ -187,7 +187,7 @@ describe('PATCH /api/plan/days/:week/:day', () => {
   });
 
   it('updates discipline field via PATCH /api/plan/days/:week/:day', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const handler = handlers.get('patchDay')!;
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { discipline: 'cycle' });
     const res = await handler(req, ctx);
@@ -202,7 +202,7 @@ describe('PATCH /api/plan/days/:week/:day', () => {
     const handler = handlers.get('patchDay')!;
     const exercises = [{ name: 'Squat', sets: 3, reps: 5, completed: false }];
     // Insert test plan with gym day that has exercises
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       status: 'active',
       userId: TEST_USER_OID,
       phases: [{
@@ -238,7 +238,7 @@ describe('PATCH /api/plan/days/:week/:day', () => {
   });
 
   it('returns 400 for invalid exercises JSON', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const handler = handlers.get('patchDay')!;
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { exercises: 'not-json' });
     const res = await handler(req, ctx);
@@ -247,7 +247,7 @@ describe('PATCH /api/plan/days/:week/:day', () => {
   });
 
   it('returns 400 when exercises is a JSON object (not array)', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
     const handler = handlers.get('patchDay')!;
     const req = makeReq('PATCH', { week: '1', day: 'A' }, { exercises: '{"name":"Squat"}' });
     const res = await handler(req, ctx);
@@ -258,8 +258,8 @@ describe('PATCH /api/plan/days/:week/:day', () => {
 
 describe('DELETE /api/plan/days/:week/:day', () => {
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
   it('converts the run day to rest (does not remove it)', async () => {
@@ -267,7 +267,7 @@ describe('DELETE /api/plan/days/:week/:day', () => {
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(200);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const days = plan?.phases[0]?.weeks[0]?.days;
     expect(days).toHaveLength(7); // week still has 7 days
     const day = days?.find((d: any) => d.label === 'A');
@@ -280,15 +280,15 @@ describe('DELETE /api/plan/days/:week/:day', () => {
   });
 
   it('returns 404 when no active plan exists', async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
     const req = makeReq('DELETE', { week: '1', day: 'A' });
     const result = await handlers.get('deleteDay')!(req, ctx);
     expect(result.status).toBe(404);
   });
 
   it('returns 409 when trying to delete a completed day', async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...validActivePlan,
       phases: [{ ...validActivePlan.phases[0], weeks: [{ weekNumber: 1, days: makeWeekDays({ completed: true }) }] }],
     });
@@ -314,8 +314,8 @@ describe('DELETE /api/plan/days/:week/:day', () => {
 
 describe('POST /api/plan/days', () => {
   beforeEach(async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
-    await mongoClient.db('running-coach').collection('plans').insertOne({ ...validActivePlan });
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({ ...validActivePlan });
   });
 
   it('pushes a new day into the week and returns 201', async () => {
@@ -323,7 +323,7 @@ describe('POST /api/plan/days', () => {
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(201);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const days = plan?.phases[0]?.weeks[0]?.days;
     const newDay = days?.find((d: any) => d.label === 'B');
     expect(newDay?.type).toBe('run');
@@ -335,7 +335,7 @@ describe('POST /api/plan/days', () => {
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(201);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const newDay = plan?.phases[0]?.weeks[0]?.days?.find((d: any) => d.label === 'B');
     expect(newDay?.objective?.value).toBe(10);
     expect(newDay?.objective?.unit).toBe('km');
@@ -377,7 +377,7 @@ describe('POST /api/plan/days', () => {
   });
 
   it('returns 404 when no active plan exists', async () => {
-    await mongoClient.db('running-coach').collection('plans').deleteMany({});
+    await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
     const req = makePostReq({ weekNumber: 1, label: 'B', type: 'run' });
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(404);
@@ -388,7 +388,7 @@ describe('POST /api/plan/days', () => {
     const result = await handlers.get('addDay')!(req, ctx);
     expect(result.status).toBe(201);
 
-    const plan = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'active' });
+    const plan = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'active' });
     const newDay = plan?.phases[0]?.weeks[0]?.days?.find((d: any) => d.label === 'B');
     expect(newDay?.completed).toBe(true);
   });

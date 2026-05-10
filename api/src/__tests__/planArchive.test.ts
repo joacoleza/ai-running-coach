@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -73,7 +73,7 @@ afterAll(async () => {
 }, 30_000);
 
 beforeEach(async () => {
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
 });
 
 const TEST_USER_OID = new ObjectId('000000000000000000000001');
@@ -108,7 +108,7 @@ const planWithPhases = {
 
 describe('POST /api/plan/archive', () => {
   it('archives active plan with phases and returns 200 with archived status', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...planWithPhases,
       status: 'active',
     });
@@ -118,12 +118,12 @@ describe('POST /api/plan/archive', () => {
     expect(result.status).toBe(200);
     expect(result.jsonBody.plan.status).toBe('archived');
 
-    const inDb = await mongoClient.db('running-coach').collection('plans').findOne({ status: 'archived' });
+    const inDb = await mongoClient.db('ai-training-coach').collection('plans').findOne({ status: 'archived' });
     expect(inDb).not.toBeNull();
   });
 
   it('deletes (not archives) active plan with no phases to prevent empty archive entries', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'active',
     });
@@ -133,14 +133,14 @@ describe('POST /api/plan/archive', () => {
     expect(result.status).toBe(200);
 
     // Plan should be deleted, not in archived collection
-    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    const archived = await mongoClient.db('ai-training-coach').collection('plans').find({ status: 'archived' }).toArray();
     expect(archived).toHaveLength(0);
-    const remaining = await mongoClient.db('running-coach').collection('plans').countDocuments();
+    const remaining = await mongoClient.db('ai-training-coach').collection('plans').countDocuments();
     expect(remaining).toBe(0);
   });
 
   it('deletes (not archives) onboarding plan with no phases', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'onboarding',
     });
@@ -149,12 +149,12 @@ describe('POST /api/plan/archive', () => {
     const result = await handlers.get('archivePlan')!(req, ctx);
     expect(result.status).toBe(200);
 
-    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    const archived = await mongoClient.db('ai-training-coach').collection('plans').find({ status: 'archived' }).toArray();
     expect(archived).toHaveLength(0);
   });
 
   it('deletes (not archives) plan with phases but only rest days — no actual workouts', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertOne({
+    await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'active',
       phases: [
@@ -180,9 +180,9 @@ describe('POST /api/plan/archive', () => {
     expect(result.status).toBe(200);
 
     // Plan with only rest days should be deleted, not archived
-    const archived = await mongoClient.db('running-coach').collection('plans').find({ status: 'archived' }).toArray();
+    const archived = await mongoClient.db('ai-training-coach').collection('plans').find({ status: 'archived' }).toArray();
     expect(archived).toHaveLength(0);
-    const remaining = await mongoClient.db('running-coach').collection('plans').countDocuments();
+    const remaining = await mongoClient.db('ai-training-coach').collection('plans').countDocuments();
     expect(remaining).toBe(0);
   });
 
@@ -196,7 +196,7 @@ describe('POST /api/plan/archive', () => {
 
 describe('GET /api/plans/archived', () => {
   it('returns list of archived plans', async () => {
-    await mongoClient.db('running-coach').collection('plans').insertMany([
+    await mongoClient.db('ai-training-coach').collection('plans').insertMany([
       { ...basePlan, status: 'archived' },
       { ...basePlan, status: 'archived' },
     ]);
@@ -217,7 +217,7 @@ describe('GET /api/plans/archived', () => {
 
 describe('GET /api/plans/archived/:id', () => {
   it('returns single archived plan by id with linkedRuns', async () => {
-    const insertResult = await mongoClient.db('running-coach').collection('plans').insertOne({
+    const insertResult = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'archived',
     });
@@ -232,13 +232,13 @@ describe('GET /api/plans/archived/:id', () => {
   });
 
   it('returns linkedRuns keyed by weekNumber-dayLabel for runs linked to archived plan', async () => {
-    const insertResult = await mongoClient.db('running-coach').collection('plans').insertOne({
+    const insertResult = await mongoClient.db('ai-training-coach').collection('plans').insertOne({
       ...basePlan,
       status: 'archived',
     });
     const planId = insertResult.insertedId;
 
-    await mongoClient.db('running-coach').collection('runs').insertOne({
+    await mongoClient.db('ai-training-coach').collection('runs').insertOne({
       planId,
       weekNumber: 1,
       dayLabel: 'A',
@@ -256,7 +256,7 @@ describe('GET /api/plans/archived/:id', () => {
     expect(result.jsonBody.linkedRuns['1-A']).toBeDefined();
     expect(result.jsonBody.linkedRuns['1-A'].date).toBe('2026-04-01');
 
-    await mongoClient.db('running-coach').collection('runs').deleteMany({ planId });
+    await mongoClient.db('ai-training-coach').collection('runs').deleteMany({ planId });
   });
 
   it('returns 400 for invalid ObjectId format', async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -79,7 +79,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
   // Reset auth context to user A for each test
   vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 });
@@ -111,7 +111,7 @@ const makeValidPlan = (userId: ObjectId) => ({
 
 describe('PATCH /api/plan/days/:week/:day — data isolation', () => {
   it('user B cannot patch user A plan day — returns 404', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));
@@ -130,7 +130,7 @@ describe('PATCH /api/plan/days/:week/:day — data isolation', () => {
   });
 
   it('user A can patch their own plan day', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));
@@ -147,7 +147,7 @@ describe('PATCH /api/plan/days/:week/:day — data isolation', () => {
 
 describe('DELETE /api/plan/days/:week/:day — data isolation', () => {
   it('user B cannot delete user A plan day — returns 404', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));
@@ -166,7 +166,7 @@ describe('DELETE /api/plan/days/:week/:day — data isolation', () => {
   });
 
   it('user A can delete their own plan day', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));
@@ -187,7 +187,7 @@ describe('DELETE /api/plan/days/:week/:day — data isolation', () => {
 
 describe('POST /api/plan/days — data isolation', () => {
   it('user B cannot add day to user A plan — returns 404', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));
@@ -206,7 +206,7 @@ describe('POST /api/plan/days — data isolation', () => {
   });
 
   it('user A can add day to their own plan', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert plan belonging to user A
     await db.collection('plans').insertOne(makeValidPlan(USER_A_OID));

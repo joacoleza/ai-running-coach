@@ -42,7 +42,7 @@ export function Sidebar() {
         >
           {/* Logo */}
           <div className="bg-white rounded-full p-1 flex-shrink-0 flex items-center justify-center w-8 h-8 md:w-9 md:h-9">
-            <img src="/logo.png" alt="AI Running Coach" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
+            <img src="/logo.png" alt="AI Training Coach" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
           </div>
           {/* Email — desktop only */}
           <span className="ml-2 flex-1 text-xs text-gray-300 truncate hidden md:block">

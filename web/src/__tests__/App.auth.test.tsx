@@ -11,9 +11,9 @@ describe('App auth gate', () => {
     global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: vi.fn().mockResolvedValue({}) } as unknown as Response)
   })
 
-  it('renders LoginPage (AI Running Coach heading + Log In button) when no access_token in localStorage', () => {
+  it('renders LoginPage (AI Training Coach heading + Log In button) when no access_token in localStorage', () => {
     render(<App />)
-    expect(screen.getByText('AI Running Coach')).toBeInTheDocument()
+    expect(screen.getByText('AI Training Coach')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument()
   })
 

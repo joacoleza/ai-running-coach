@@ -1,15 +1,15 @@
-# AI Running Coach
+# AI Training Coach
 
 <p align="center">
-  <img src="web/public/logo-bg.png" alt="AI Running Coach Logo" width="180" />
+  <img src="web/public/logo-bg.png" alt="AI Training Coach Logo" width="180" />
 </p>
 
-![Deploy](https://github.com/joacoleza/ai-running-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
+![Deploy](https://github.com/joacoleza/ai-training-coach/actions/workflows/azure-static-web-apps.yml/badge.svg)
 
-![CI](https://github.com/joacoleza/ai-running-coach/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/joacoleza/ai-training-coach/actions/workflows/ci.yml/badge.svg)
 ![Coverage](https://img.shields.io/badge/coverage-89.1%25-brightgreen)
-![API Tests](https://img.shields.io/badge/api_tests-396%2F396-brightgreen)
-![Web Tests](https://img.shields.io/badge/web_tests-635%2F635-brightgreen)
+![API Tests](https://img.shields.io/badge/api_tests-404%2F404-brightgreen)
+![Web Tests](https://img.shields.io/badge/web_tests-637%2F637-brightgreen)
 ![E2E Tests](https://img.shields.io/badge/e2e_tests-99%2F99-brightgreen)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
@@ -18,7 +18,7 @@
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)
 ![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_API-D97757?logo=anthropic&logoColor=white)
 
-A personal web app that acts as an AI running coach. Set a goal, get a training plan, log your runs, and receive coaching feedback that adapts the plan over time.
+A personal web app that acts as an AI training coach. Set a goal, get a training plan, log your sessions, and receive coaching feedback that adapts the plan over time.
 
 ## What it does
 
@@ -81,7 +81,7 @@ cd api && npm install && cd ..
 }
 ```
 
-**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `running-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `running-coach-e2e` database so they never touch your dev data.
+**Seed your first user** — start MongoDB (`docker compose up -d mongodb`), then insert this document into the `ai-training-coach.users` collection (via Compass or mongosh). Note: E2E tests use a separate `ai-training-coach-e2e` database so they never touch your dev data. For common MongoDB operations (reset passwords, clear rate limits, wipe data) see [`.docs/useful-commands.md`](.docs/useful-commands.md).
 
 ```js
 {
@@ -116,7 +116,7 @@ cd web && npx vitest run
 
 # E2E tests — Playwright starts the stack automatically
 # Stop the dev API server first (port 7071) — if it's already running, Playwright
-# reuses it (running-coach DB) while global-setup seeds into running-coach-e2e, causing login failures.
+# reuses it (ai-training-coach DB) while global-setup seeds into ai-training-coach-e2e, causing login failures.
 npx playwright test
 ```
 
@@ -145,7 +145,19 @@ Merges to `master` are automatically deployed via the [Azure Static Web Apps CI/
    - `JWT_SECRET` — a long random secret (e.g. `openssl rand -hex 32`)
    - `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com) → API Keys
 
-5. **Seed your first user** — insert the document from the **Seed your first user** step above into your Atlas `running-coach.users` collection. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
+5. **Seed your first user** — insert the document from the **Seed your first user** step above into your Atlas `ai-training-coach.users` collection. Keep `tempPassword: true` so the user is prompted to set a new password on first login.
+
+## GitHub Repository Rename
+
+The GitHub repository has been renamed from `joacoleza/ai-running-coach` to `joacoleza/ai-training-coach`.
+
+After the rename is complete (GitHub Settings → General → Repository name), update your local git remote:
+
+```bash
+git remote set-url origin https://github.com/joacoleza/ai-training-coach.git
+```
+
+The badge URLs and workflow references in this README already point to the new repository path.
 
 ## Roadmap
 

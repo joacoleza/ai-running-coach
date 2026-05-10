@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { _resetDbForTest } from '../shared/db.js';
@@ -74,8 +74,8 @@ afterAll(async () => {
 
 beforeEach(async () => {
   _resetDbForTest();
-  await mongoClient.db('running-coach').collection('plans').deleteMany({});
-  await mongoClient.db('running-coach').collection('runs').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('plans').deleteMany({});
+  await mongoClient.db('ai-training-coach').collection('runs').deleteMany({});
   // Reset auth context to user A for each test
   vi.mocked(getAuthContext).mockReturnValue({ userId: USER_A_ID, email: 'a@test.com', isAdmin: false });
 });
@@ -118,7 +118,7 @@ const planWithPhases = (userId: ObjectId) => ({
 
 describe('GET /api/plans/archived — data isolation', () => {
   it('user B cannot see user A archived plans — returns empty list', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plans for user A
     await db.collection('plans').insertMany([
@@ -136,7 +136,7 @@ describe('GET /api/plans/archived — data isolation', () => {
   });
 
   it('user A can see their own archived plans', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plans for user A
     await db.collection('plans').insertMany([
@@ -162,7 +162,7 @@ describe('GET /api/plans/archived — data isolation', () => {
 
 describe('GET /api/plans/archived/:id — data isolation', () => {
   it('user B cannot get user A archived plan — returns 404', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plan for user A
     const { insertedId } = await db.collection('plans').insertOne({
@@ -180,7 +180,7 @@ describe('GET /api/plans/archived/:id — data isolation', () => {
   });
 
   it('user A can get their own archived plan', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plan for user A
     const { insertedId } = await db.collection('plans').insertOne({
@@ -200,7 +200,7 @@ describe('GET /api/plans/archived/:id — data isolation', () => {
   });
 
   it('user A cannot access archived plan from user B even with valid ID', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plan for user B
     const { insertedId } = await db.collection('plans').insertOne({
@@ -218,7 +218,7 @@ describe('GET /api/plans/archived/:id — data isolation', () => {
   });
 
   it('linked runs are only returned if they belong to authenticated user', async () => {
-    const db = mongoClient.db('running-coach');
+    const db = mongoClient.db('ai-training-coach');
 
     // Insert archived plan for user A
     const { insertedId: planId } = await db.collection('plans').insertOne({

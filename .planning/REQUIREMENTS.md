@@ -10,7 +10,7 @@
 
 ### RENAME — App Rename
 
-- [ ] **RENAME-01**: App title, package names (package.json), HTML `<title>`, README, and all UI strings updated from "Running Coach" / "ai-running-coach" to "Training Coach" / "ai-training-coach" (GitHub repo renamed accordingly)
+- [x] **RENAME-01**: App title, package names (package.json), HTML `<title>`, README, and all UI strings updated from "Running Coach" / "ai-running-coach" to "Training Coach" / "ai-training-coach" (GitHub repo renamed accordingly)
 
 ### DISC — Discipline Infrastructure
 
@@ -66,7 +66,7 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| RENAME-01 | Phase 17 | Pending |
+| RENAME-01 | Phase 17 | Complete |
 | DISC-01 | Phase 13 | Complete |
 | DISC-02 | Phase 13 | Complete |
 | DISC-03 | Phase 14 | Complete |
