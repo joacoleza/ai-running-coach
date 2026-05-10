@@ -46,8 +46,8 @@
 
 ### DASH2 — Dashboard Discipline Sections
 
-- [ ] **DASH2-01**: Dashboard reorganized into three stacked per-discipline sections (Run, Cycling, Gym), each with its own stat cards and charts, when the discipline filter is set to "All"
-- [ ] **DASH2-02**: The combined `WeeklyVolumeChart` (all disciplines in one bar chart) is removed; each discipline section has its own dedicated charts instead
+- [x] **DASH2-01**: Dashboard reorganized into three stacked per-discipline sections (Run, Cycling, Gym), each with its own stat cards and charts, when the discipline filter is set to "All"
+- [x] **DASH2-02**: The combined `WeeklyVolumeChart` (all disciplines in one bar chart) is removed; each discipline section has its own dedicated charts instead
 - [ ] **DASH2-03**: A discipline section is hidden when the active time filter returns no data for that discipline; shown with an empty-state message when the single-discipline filter explicitly selects it
 - [ ] **DASH2-04**: When a single discipline is selected (Run / Gym / Cycle), only that discipline's section is shown; other sections are not rendered
 - [ ] **DASH2-05**: Each discipline section has discipline-specific stat cards and charts: Run (Total Distance, Total Runs, Total Time + pace/HR charts), Cycling (Total Distance, Avg Speed, Total Time + speed/distance charts), Gym (Total Sessions, Total Duration + duration/weight-progression charts)

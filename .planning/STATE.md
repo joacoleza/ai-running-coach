@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
 status: executing
-last_updated: "2026-05-10T13:11:12.860Z"
-last_activity: "2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id"
+last_updated: "2026-05-10T14:31:08.774Z"
+last_activity: 2026-05-10
 progress:
   total_phases: 12
   completed_phases: 7
-  total_plans: 21
-  completed_plans: 21
+  total_plans: 24
+  completed_plans: 22
   percent: 45
 ---
 
@@ -20,15 +20,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 17 — app-rename
+**Current focus:** Phase 21 — dashboard-discipline-sections
 
 ## Current Position
 
-Phase: 18
-Plan: Not started
+Phase: 21 (dashboard-discipline-sections) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id
-Last session: 2026-05-10T13:11:12.854Z
+Last activity: 2026-05-10
+Last session: 2026-05-10T14:31:08.767Z
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -142,6 +142,8 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 16]: WeightProgressionChart manages its own fetch state and X-Authorization header; gymExerciseOptions filtered to exercises with weight !== undefined to exclude bodyweight movements
 - [Phase 17-app-rename]: Pre-existing TypeScript build errors in unrelated test files are out-of-scope and deferred
 - [Phase 17-app-rename]: Intentional historical reference preserved in README GitHub Repository Rename section showing old repo name in migration guide
+- [Phase 21-01]: WeeklySpeedChart exports SpeedDataPoint type so Dashboard can define speed data arrays with type safety
+- [Phase 21-01]: WeightProgressionChart useEffect placed after handleExerciseSelect definition to avoid reference-before-assignment
 
 ### Quick Tasks Completed
 

@@ -247,16 +247,16 @@ Plans:
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. Unit Standardization | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
-| 21. Dashboard Discipline Sections | 0/3 | Not started | — |
+| 21. Dashboard Discipline Sections | 1/3 | In Progress|  |
 
 ### Phase 21: Dashboard Discipline Sections
 
 **Goal:** Reorganize the dashboard into separate sections per discipline (Run, Cycling, Gym). Run section: distance/pace charts same as before. Cycling section: same charts as run but using km/h. Gym section: weight progression chart (defaulting to the exercise with the most data points) plus a weekly duration totals chart. When a specific discipline is selected in the filter, only that discipline's section is shown. Sections are hidden when the active time filter contains no entries for that discipline.
 **Requirements**: DASH2-01, DASH2-02, DASH2-03, DASH2-04, DASH2-05
 **Depends on:** Phase 17
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 21-01-PLAN.md — New chart components: WeeklySpeedChart (cycling), WeeklyDurationChart (gym) + WeightProgressionChart defaultExercise prop
+- [x] 21-01-PLAN.md — New chart components: WeeklySpeedChart (cycling), WeeklyDurationChart (gym) + WeightProgressionChart defaultExercise prop
 - [ ] 21-02-PLAN.md — useDashboard.ts per-discipline data exports + Dashboard.tsx per-discipline section restructure (remove WeeklyVolumeChart)
 - [ ] 21-03-PLAN.md — Test updates: Dashboard.test.tsx rewrite, new WeeklySpeedChart/WeeklyDurationChart tests, WeightProgressionChart defaultExercise tests, delete WeeklyVolumeChart.test.tsx + build verification
