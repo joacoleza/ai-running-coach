@@ -4,10 +4,14 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 import { Dashboard } from '../pages/Dashboard';
 import { useDashboard, type DisciplineFilter } from '../hooks/useDashboard';
+import type { WeekBucket } from '../hooks/useDashboard';
 
 vi.mock('../hooks/useDashboard', () => ({
   useDashboard: vi.fn(),
   formatPaceToMMSS: (v: number) => String(v),
+  parseDurationToMinutes: (_v: string) => 0,
+  formatTotalTime: (_v: number) => '0m',
+  computeAvgSpeed: (_runs: unknown[]) => '0.0 km/h',
 }))
 
 const mockNavigate = vi.fn()
@@ -41,14 +45,38 @@ vi.mock('../components/dashboard/DisciplineSelector', () => ({
     </div>
   ),
 }))
-vi.mock('../components/dashboard/WeeklyVolumeChart', () => ({
-  WeeklyVolumeChart: () => <div data-testid="weekly-volume-chart" />,
+vi.mock('../components/dashboard/WeeklySpeedChart', () => ({
+  WeeklySpeedChart: () => <div data-testid="weekly-speed-chart" />,
+}))
+vi.mock('../components/dashboard/WeeklyDurationChart', () => ({
+  WeeklyDurationChart: () => <div data-testid="weekly-duration-chart" />,
 }))
 vi.mock('../components/dashboard/WeightProgressionChart', () => ({
   WeightProgressionChart: () => <div data-testid="weight-progression-chart" />,
 }))
 
 const mockUseDashboard = vi.mocked(useDashboard)
+
+const emptyBucket: WeekBucket = {
+  weekKey: '2026-04-07',
+  weekLabel: 'Apr 7',
+  distance: 0,
+  avgPace: null,
+  totalDurationMinutes: 0,
+  hrValues: [],
+}
+
+const makeRunRun = (overrides = {}) => ({
+  _id: 'run1',
+  date: '2026-04-07',
+  distance: 15,
+  duration: '1:30:00',
+  pace: 6.0,
+  discipline: 'run' as const,
+  createdAt: '2026-04-07',
+  updatedAt: '2026-04-07',
+  ...overrides,
+})
 
 function makeDefaults(overrides: Partial<ReturnType<typeof useDashboard>> = {}): ReturnType<typeof useDashboard> {
   return {
@@ -57,9 +85,9 @@ function makeDefaults(overrides: Partial<ReturnType<typeof useDashboard>> = {}):
     activeDiscipline: 'all' as DisciplineFilter,
     setActiveDiscipline: vi.fn(),
     stats: { totalDistance: '42.5km', totalRuns: 8, totalTime: '3h25m', adherence: '75%', progress: '40%' },
-    weeklyData: [{ weekLabel: 'Apr 7', distance: 15 }],
+    weeklyData: [],
     multiWeeklyData: [],
-    paceData: [{ weekLabel: 'Apr 7', pace: 5.2 }],
+    paceData: [],
     paceBpmData: [],
     runs: [],
     runRuns: [],
@@ -80,46 +108,44 @@ beforeEach(() => {
   mockUseDashboard.mockReturnValue(makeDefaults())
 })
 
-describe('with active plan and data', () => {
+describe('with active plan and run data', () => {
+  beforeEach(() => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [{ ...emptyBucket, distance: 15, avgPace: 6.0, totalDurationMinutes: 90 }],
+    }))
+  })
+
   it('renders h1 Dashboard', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByRole('heading', { name: /^dashboard$/i })).toBeInTheDocument()
   })
 
-  it('renders Total Distance label and value', () => {
+  it('renders Run section header with session count', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Total Distance')).toBeInTheDocument()
-    expect(screen.getByText('42.5km')).toBeInTheDocument()
+    expect(screen.getByText('Run (1 sessions)')).toBeInTheDocument()
   })
 
-  it('renders Total Runs label and value', () => {
+  it('renders Total Runs label', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Total Runs')).toBeInTheDocument()
-    expect(screen.getByText('8')).toBeInTheDocument()
   })
 
-  it('renders Total Time label and value', () => {
+  it('renders Total Time label in run section', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Total Time')).toBeInTheDocument()
-    expect(screen.getByText('3h25m')).toBeInTheDocument()
   })
 
-  it('renders Adherence label and value', () => {
+  it('renders Adherence label in run section when activeFilter is current-plan', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Adherence')).toBeInTheDocument()
     expect(screen.getByText('75%')).toBeInTheDocument()
   })
 
-  it('renders Weekly Volume chart section', () => {
+  it('renders Weekly Distance bar chart in run section', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Weekly Volume')).toBeInTheDocument()
-    expect(screen.getByTestId('weekly-volume-chart')).toBeInTheDocument()
-  })
-
-  it('renders Weekly Avg Pace chart section', () => {
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Weekly Avg Pace')).toBeInTheDocument()
-    expect(screen.getByTestId('line-chart')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Distance')).toBeInTheDocument()
+    expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
   })
 
   it('navigates to /plan when Adherence card is clicked', () => {
@@ -136,9 +162,6 @@ describe('empty state - no active plan', () => {
       activeFilter: 'current-plan',
       hasPlan: false,
       isLoading: false,
-      weeklyData: [],
-      paceData: [],
-      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
     }))
   })
 
@@ -152,40 +175,37 @@ describe('empty state - no active plan', () => {
     expect(screen.getByRole('button', { name: /start planning/i })).toBeInTheDocument()
   })
 
-  it('does NOT render Weekly Volume chart section', () => {
+  it('does NOT render discipline sections', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Weekly Volume')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gym \(/)).not.toBeInTheDocument()
   })
 })
 
-describe('empty state - has plan but no runs', () => {
+describe('empty state - has plan but no sessions in range', () => {
   beforeEach(() => {
     mockUseDashboard.mockReturnValue(makeDefaults({
       activeFilter: 'last-4-weeks',
       activeDiscipline: 'all' as DisciplineFilter,
       hasPlan: true,
       isLoading: false,
-      weeklyData: [],
-      paceData: [],
-      runs: [],
-      stats: { totalDistance: '0km', totalRuns: 0, totalTime: '0m', adherence: 'N/A', progress: 'N/A' },
+      runRuns: [],
+      cycleRuns: [],
+      gymRuns: [],
     }))
   })
 
-  it('renders "No runs yet" empty state text', () => {
+  it('renders "No sessions yet" when all discipline sections are hidden', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('No runs yet')).toBeInTheDocument()
+    expect(screen.getByText('No sessions yet')).toBeInTheDocument()
   })
 
-  it('does NOT render Weekly Volume chart section', () => {
+  it('does NOT render section headers when no data', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Weekly Volume')).not.toBeInTheDocument()
-  })
-
-  it('shows stat cards (not no-plan empty state)', () => {
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Total Distance')).toBeInTheDocument()
-    expect(screen.queryByText('No active training plan')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gym \(/)).not.toBeInTheDocument()
   })
 })
 
@@ -193,8 +213,6 @@ describe('loading state', () => {
   beforeEach(() => {
     mockUseDashboard.mockReturnValue(makeDefaults({
       isLoading: true,
-      weeklyData: [],
-      paceData: [],
     }))
   })
 
@@ -204,48 +222,71 @@ describe('loading state', () => {
     expect(svg).toBeInTheDocument()
   })
 
-  it('shows "—" placeholders for stat values while loading', () => {
+  it('does NOT render discipline sections while loading', () => {
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(3)
+    expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
   })
 })
 
 describe('adherence card guard', () => {
-  it('shows Adherence card when activeFilter is current-plan', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'current-plan' }))
+  it('shows Adherence card in run section when activeFilter is current-plan', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeFilter: 'current-plan',
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [emptyBucket],
+    }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Adherence')).toBeInTheDocument()
   })
 
   it('hides Adherence card when activeFilter is last-4-weeks', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'last-4-weeks' }))
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Adherence')).not.toBeInTheDocument()
-  })
-
-  it('hides Adherence card when activeFilter is all-time', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({ activeFilter: 'all-time' }))
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeFilter: 'last-4-weeks',
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [emptyBucket],
+    }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.queryByText('Adherence')).not.toBeInTheDocument()
   })
 })
 
-describe('Weekly Avg Pace vs Heart Rate ComposedChart', () => {
-  it('renders ComposedChart when paceBpmData has entries with data', () => {
+describe('Weekly Avg Pace chart', () => {
+  it('renders pace chart when runWeeklyBuckets has avgPace data', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
-      paceBpmData: [{ weekLabel: 'Apr 7', pace: 5.2, avgBPM: 145 }],
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [{ ...emptyBucket, avgPace: 6.0, distance: 15, totalDurationMinutes: 90 }],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Weekly Avg Pace')).toBeInTheDocument()
+  })
+
+  it('does NOT render pace chart when no avgPace data', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [{ ...emptyBucket, avgPace: null }],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText('Weekly Avg Pace')).not.toBeInTheDocument()
+  })
+})
+
+describe('Weekly Avg Pace vs Heart Rate ComposedChart', () => {
+  it('renders ComposedChart when runWeeklyBuckets has avgPace and hrValues data', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [{ ...emptyBucket, avgPace: 5.2, hrValues: [145], distance: 15, totalDurationMinutes: 90 }],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Weekly Avg Pace vs Heart Rate')).toBeInTheDocument()
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
   })
 
-  it('does NOT render ComposedChart when paceBpmData has no actual data', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({ paceBpmData: [] }))
+  it('does NOT render ComposedChart when no pace or HR data', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      runRuns: [],
+    }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.queryByText('Weekly Avg Pace vs Heart Rate')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
   })
 })
 
@@ -261,118 +302,125 @@ describe('DisciplineSelector integration', () => {
   })
 })
 
-describe('Gym discipline stat cards', () => {
-  it('renders Total Sessions label and value when activeDiscipline is gym', () => {
+describe('Cycling section', () => {
+  it('renders Cycling section header when cycleRuns exist', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
-      activeDiscipline: 'gym' as DisciplineFilter,
-      stats: {
-        totalDistance: '0km',
-        totalRuns: 0,
-        totalTime: '0m',
-        adherence: '75%',
-        progress: '40%',
-        totalSessions: 5,
-        totalDuration: '2h30m',
-      },
+      cycleRuns: [{ _id: 'c1', date: '2026-04-07', distance: 25, duration: '1:00:00', pace: 0, discipline: 'cycle', createdAt: '', updatedAt: '' }],
+      cycleWeeklyBuckets: [emptyBucket],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Cycling (1 sessions)')).toBeInTheDocument()
+  })
+
+  it('renders WeeklySpeedChart in cycling section', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      cycleRuns: [{ _id: 'c1', date: '2026-04-07', distance: 25, duration: '1:00:00', pace: 0, discipline: 'cycle', createdAt: '', updatedAt: '' }],
+      cycleWeeklyBuckets: [{ ...emptyBucket, distance: 25, totalDurationMinutes: 60 }],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Weekly Avg Speed')).toBeInTheDocument()
+    expect(screen.getByTestId('weekly-speed-chart')).toBeInTheDocument()
+  })
+
+  it('does NOT render Cycling section when no cycleRuns and discipline is "all"', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      cycleRuns: [],
+      activeDiscipline: 'all',
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
+  })
+
+  it('renders Cycling empty state when discipline is "cycle" but no cycleRuns', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      cycleRuns: [],
+      activeDiscipline: 'cycle',
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Cycling (0 sessions)')).toBeInTheDocument()
+    expect(screen.getByText('No cycling sessions in selected period')).toBeInTheDocument()
+  })
+})
+
+describe('Gym section', () => {
+  it('renders Gym section header when gymRuns exist', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      gymRuns: [{ _id: 'g1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', createdAt: '', updatedAt: '' }],
+      gymWeeklyBuckets: [emptyBucket],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Gym (1 sessions)')).toBeInTheDocument()
+  })
+
+  it('renders Total Sessions label when gym discipline', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      gymRuns: [{ _id: 'g1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', createdAt: '', updatedAt: '' }],
+      gymWeeklyBuckets: [emptyBucket],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByText('Total Sessions')).toBeInTheDocument()
-    expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('renders Total Duration label and value when activeDiscipline is gym', () => {
+  it('renders WeeklyDurationChart in gym section', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
-      activeDiscipline: 'gym' as DisciplineFilter,
-      stats: {
-        totalDistance: '0km',
-        totalRuns: 0,
-        totalTime: '0m',
-        adherence: '75%',
-        progress: '40%',
-        totalSessions: 5,
-        totalDuration: '2h30m',
-      },
+      gymRuns: [{ _id: 'g1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', createdAt: '', updatedAt: '' }],
+      gymWeeklyBuckets: [{ ...emptyBucket, totalDurationMinutes: 45 }],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Total Duration')).toBeInTheDocument()
-    expect(screen.getByText('2h30m')).toBeInTheDocument()
+    expect(screen.getByText('Weekly Duration')).toBeInTheDocument()
+    expect(screen.getByTestId('weekly-duration-chart')).toBeInTheDocument()
   })
 
-  it('does NOT render Total Runs label when activeDiscipline is gym', () => {
+  it('renders WeightProgressionChart in gym section', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
-      activeDiscipline: 'gym' as DisciplineFilter,
-      stats: {
-        totalDistance: '0km',
-        totalRuns: 0,
-        totalTime: '0m',
-        adherence: '75%',
-        progress: '40%',
-        totalSessions: 5,
-        totalDuration: '2h30m',
-      },
-    }))
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Total Runs')).not.toBeInTheDocument()
-  })
-})
-
-describe('Cycle discipline stat cards', () => {
-  it('renders Total Speed label and value when activeDiscipline is cycle', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({
-      activeDiscipline: 'cycle' as DisciplineFilter,
-      stats: {
-        totalDistance: '120.0km',
-        totalRuns: 0,
-        totalTime: '6h0m',
-        adherence: '75%',
-        progress: '40%',
-        avgSpeed: '18.5 km/h',
-      },
-    }))
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByText('Total Speed')).toBeInTheDocument()
-    expect(screen.getByText('18.5 km/h')).toBeInTheDocument()
-  })
-
-  it('does NOT render Total Runs label when activeDiscipline is cycle', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({
-      activeDiscipline: 'cycle' as DisciplineFilter,
-      stats: {
-        totalDistance: '120.0km',
-        totalRuns: 0,
-        totalTime: '6h0m',
-        adherence: '75%',
-        progress: '40%',
-        avgSpeed: '18.5 km/h',
-      },
-    }))
-    render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByText('Total Runs')).not.toBeInTheDocument()
-  })
-})
-
-describe('WeightProgressionChart visibility', () => {
-  it('renders WeightProgressionChart when runs includes a gym session', () => {
-    mockUseDashboard.mockReturnValue(makeDefaults({
-      weeklyData: [{ weekLabel: 'Apr 7', distance: 0 }],
-      runs: [{ _id: 'run1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', exercises: [], createdAt: '2026-04-07', updatedAt: '2026-04-07' }],
+      gymRuns: [{ _id: 'g1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', createdAt: '', updatedAt: '' }],
+      gymWeeklyBuckets: [emptyBucket],
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
     expect(screen.getByTestId('weight-progression-chart')).toBeInTheDocument()
   })
 
-  it('does NOT render WeightProgressionChart when runs array is empty', () => {
+  it('does NOT render Gym section when no gymRuns and discipline is "all"', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
-      runs: [],
+      gymRuns: [],
+      activeDiscipline: 'all',
     }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.queryByTestId('weight-progression-chart')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gym \(/)).not.toBeInTheDocument()
+  })
+
+  it('renders Gym empty state when discipline is "gym" but no gymRuns', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      gymRuns: [],
+      activeDiscipline: 'gym',
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Gym (0 sessions)')).toBeInTheDocument()
+    expect(screen.getByText('No gym sessions in selected period')).toBeInTheDocument()
   })
 })
 
-describe('WeeklyVolumeChart renders', () => {
-  it('renders WeeklyVolumeChart when weeklyData is not empty', () => {
+describe('section visibility with activeDiscipline filter', () => {
+  it('shows only Run section when activeDiscipline is "run"', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeDiscipline: 'run',
+      runRuns: [makeRunRun()],
+      runWeeklyBuckets: [emptyBucket],
+    }))
     render(<MemoryRouter><Dashboard /></MemoryRouter>)
-    expect(screen.getByTestId('weekly-volume-chart')).toBeInTheDocument()
+    expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gym \(/)).not.toBeInTheDocument()
+  })
+
+  it('shows only Gym section when activeDiscipline is "gym"', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeDiscipline: 'gym',
+      gymRuns: [{ _id: 'g1', date: '2026-04-07', distance: 0, duration: '45:00', pace: 0, discipline: 'gym', createdAt: '', updatedAt: '' }],
+      gymWeeklyBuckets: [emptyBucket],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
+    expect(screen.getByText('Gym (1 sessions)')).toBeInTheDocument()
   })
 })

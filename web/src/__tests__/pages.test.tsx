@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { Coach } from '../pages/Coach';
 import { Dashboard } from '../pages/Dashboard';
 import { FILTER_PRESETS } from '../pages/Dashboard';
+import type { WeekBucket } from '../hooks/useDashboard';
 
 vi.mock('../hooks/useDashboard', () => ({
   useDashboard: vi.fn(() => ({
@@ -17,22 +18,37 @@ vi.mock('../hooks/useDashboard', () => ({
     paceData: [],
     paceBpmData: [],
     runs: [],
+    runRuns: [],
+    cycleRuns: [],
+    gymRuns: [],
+    runWeeklyBuckets: [],
+    cycleWeeklyBuckets: [],
+    gymWeeklyBuckets: [],
     isLoading: false,
     isPlanLoading: false,
     hasPlan: true,
   })),
   formatPaceToMMSS: (v: number) => String(v),
+  parseDurationToMinutes: (_v: string) => 0,
+  formatTotalTime: (_v: number) => '0m',
+  computeAvgSpeed: (_runs: unknown[]) => '0.0 km/h',
 }))
 
 vi.mock('../components/dashboard/DisciplineSelector', () => ({
   DisciplineSelector: () => <div data-testid="discipline-selector" />,
 }))
-vi.mock('../components/dashboard/WeeklyVolumeChart', () => ({
-  WeeklyVolumeChart: () => <div data-testid="weekly-volume-chart" />,
+vi.mock('../components/dashboard/WeeklySpeedChart', () => ({
+  WeeklySpeedChart: () => <div data-testid="weekly-speed-chart" />,
+}))
+vi.mock('../components/dashboard/WeeklyDurationChart', () => ({
+  WeeklyDurationChart: () => <div data-testid="weekly-duration-chart" />,
 }))
 vi.mock('../components/dashboard/WeightProgressionChart', () => ({
   WeightProgressionChart: () => <div data-testid="weight-progression-chart" />,
 }))
+
+// Silence WeekBucket type import — used implicitly in overrides below
+const _unused: WeekBucket | null = null; void _unused;
 
 describe('Coach page', () => {
   it('renders heading', () => {
@@ -70,15 +86,13 @@ describe('Dashboard page', () => {
     expect(screen.getByText('All time')).toBeInTheDocument();
   });
 
-  it('renders stat card labels', () => {
+  it('renders "No sessions yet" empty state when no data', () => {
     render(
       <MemoryRouter>
         <Dashboard />
       </MemoryRouter>
     );
-    expect(screen.getByText('Total Distance')).toBeInTheDocument();
-    expect(screen.getByText('Total Runs')).toBeInTheDocument();
-    expect(screen.getByText('Total Time')).toBeInTheDocument();
-    expect(screen.getByText('Adherence')).toBeInTheDocument();
+    // With no runs in any discipline, shows the global empty state
+    expect(screen.getByText('No sessions yet')).toBeInTheDocument();
   });
 });
