@@ -150,3 +150,15 @@ Phase 21 achieved its goal. The Dashboard was fully restructured from a flat sin
 
 _Verified: 2026-05-10T23:05:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## Human Verification Confirmed
+
+_Confirmed: 2026-05-14 by Joaquin_
+
+| # | Test | Result |
+|---|------|--------|
+| 1 | Three stacked sections in "All" mode; correct section shown per filter; discipline colors correct | ✅ Confirmed |
+| 2 | WeightProgressionChart auto-selects most frequent exercise on mount | ❌ Not working — tracked as GYM-09 in Phase 18 for fix |
+| 3 | Adherence card per-section with "Current Plan" filter | ✅ Confirmed |

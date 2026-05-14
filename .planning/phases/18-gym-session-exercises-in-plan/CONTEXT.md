@@ -56,6 +56,16 @@ Implementation notes:
 - A curated exercise library / catalog — free-text names stay free-text; suggestions are just a convenience
 - Retroactive renaming of past exercises logged under different names
 
+## Known bug to fix in this phase
+
+### GYM-09 — WeightProgressionChart auto-select not working
+
+`WeightProgressionChart` was built with a `defaultExercise` prop (Phase 21) intended to auto-select the most frequent exercise and load its data on mount — without the user having to touch the dropdown. This was verified passing in code review but confirmed **not working** in browser UAT (the chart renders but does not pre-select or load data automatically).
+
+The bug is somewhere in the `useEffect` + `defaultExercise` → `handleExerciseSelect` flow inside `WeightProgressionChart.tsx`. Fix must be included in Phase 18 since this component is directly relevant to exercise name consistency work.
+
+**Expected behavior:** When the Dashboard's Gym section loads and gym sessions with exercises exist, the Weight Progression chart immediately shows data for the most frequently logged exercise — no user interaction required.
+
 ## Open questions before planning
 
 1. Should `exercise-names` deduplicate case-insensitively (e.g. "bench press" and "Bench Press" → return only "Bench Press")? Simpler UX but loses the user's original casing for the other variant.

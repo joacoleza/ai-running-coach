@@ -165,3 +165,16 @@ No gaps. All 9 requirements (GYM-01 through GYM-06, DISC-03 through DISC-05) are
 
 _Verified: 2026-05-04T03:15:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## Human Verification Confirmed
+
+_Confirmed: 2026-05-14 by Joaquin_
+
+| # | Test | Result |
+|---|------|--------|
+| 1 | Gym session entry: distance field disappears, Session Type appears, orange badge, correct subtitle | ✅ Confirmed |
+| 2 | Exercise logging: add/save/persist exercise in detail modal works correctly | ✅ Confirmed |
+| 3 | Exercise checklist on gym plan days | — Deferred: this is Phase 18 scope, not Phase 14 |
+| 4 | Coach generates gym plan day with exercises via XML tags | — Not tested (LLM output nondeterministic; deferred to Phase 18 UAT) |

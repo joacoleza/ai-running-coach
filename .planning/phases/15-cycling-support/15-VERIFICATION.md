@@ -132,3 +132,16 @@ No gaps found. All 7 observable truths are verified at all four levels (exists, 
 
 _Verified: 2026-05-07T02:10:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## Human Verification Confirmed
+
+_Confirmed: 2026-05-14 by Joaquin_
+
+| # | Test | Result |
+|---|------|--------|
+| 1 | Cycling entry form: speed computed live, no Session Type picker | ✅ Confirmed |
+| 2 | Cycling session appears in Runs list under All/Cycling tabs (not Runs tab) with green badge and speed format | ✅ Confirmed |
+| 3 | RunDetailModal shows "Speed (km/h)" label with live recompute on edit | ✅ Confirmed |
+| 4 | LinkRunModal shows speed (not pace) for cycling runs | ✅ Confirmed |

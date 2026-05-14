@@ -162,3 +162,18 @@ The phase goal is fully achieved: the dashboard shows discipline-filtered stat c
 
 _Verified: 2026-05-09T18:30:00Z_
 _Verifier: Claude (gsd-verifier)_
+
+---
+
+## Human Verification Confirmed
+
+_Confirmed: 2026-05-14 by Joaquin_
+
+| # | Test | Result |
+|---|------|--------|
+| 1 | Discipline selector active button has distinct background/bold style | ✅ Confirmed |
+| 2 | Weight Progression chart renders with exercise data | ✅ Confirmed |
+| 3 | Discipline filter persists via localStorage across navigation | ✅ Confirmed |
+| 4 | Weekly volume chart shows blue/orange/green bars per discipline | ✅ Confirmed |
+
+**Note:** WeightProgressionChart auto-select (defaultExercise prop) confirmed **not working** — chart renders but does not pre-select or load data on mount without user interaction. Tracked as GYM-09 in Phase 18 context for fix.
