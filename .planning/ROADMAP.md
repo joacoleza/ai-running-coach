@@ -54,7 +54,7 @@
 - [x] **Phase 15.2: Week Number Desync Bug Fix** — Bulk-update runs.weekNumber when assignPlanStructure renumbers the plan after week deletion/addition (completed 2026-05-09)
 - [x] **Phase 16: Multi-Discipline Dashboard** — Discipline filter, adapted stat cards, multi-discipline volume chart, weight progression chart (completed 2026-05-09)
 - [x] **Phase 17: App Rename** — Rename ai-running-coach to ai-training-coach across all files and UI (completed 2026-05-09)
-- [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
+- [ ] **Phase 18: Gym Session Exercises in Plan** — Exercise name consistency: coach reuses previously-logged exercise names in plans, exercise entry form suggests matching names as the user types
 - [ ] **Phase 19: Unit Standardization** — Lock the app to meters/km (distance) and kg (weight) only; remove lbs from Exercise type and all UI; instruct coach to never use imperial units; API rejects lbs payloads
 - [ ] **Phase 20: Plan Week Date Anchoring** — Anchor plan weeks to real calendar dates; plan view shows date ranges per week, coach reasons in calendar terms, adding/removing weeks shifts dates automatically
 - [x] **Phase 21: Dashboard Discipline Sections** — Separate dashboard sections per discipline (Run/Cycling/Gym) with dedicated charts; sections hidden when no data for that discipline in the selected time range (completed 2026-05-10)
@@ -191,14 +191,16 @@ Plans:
 - [x] 17-03-PLAN.md — README.md + CLAUDE.md docs + GitHub rename instructions
 
 ### Phase 18: Gym Session Exercises in Plan
-**Goal**: Planned gym days can include a list of exercises (created by the coach), rendered as a checklist in the plan view so the user can mark each exercise done during the session
+**Goal**: Exercise names are consistent across plan days and session logs so the dashboard can group them correctly. The coach reuses exercise names the user has already logged when writing gym plan days. The manual exercise entry form suggests matching names as the user types, making it easy to reuse the same name without a rigid exercise library.
+**Note**: The original Phase 18 scope (exercise checklists on plan days, GYM-03/04/05) was delivered early in Phase 14. This phase focuses on the consistency layer built on top of that foundation.
 **Depends on**: Phase 17
-**Requirements**: TBD
+**Requirements**: GYM-07, GYM-08
 **Success Criteria** (what must be TRUE):
-  1. Coach can generate gym plan days that include an exercises list (sets, reps, optional weight)
-  2. Gym plan days in PlanView show an expandable exercises checklist
-  3. User can check/uncheck individual exercises; state is persisted to the plan day
-  4. Completing the session (marking the day done) is still possible regardless of exercise completion state
+  1. The coach system prompt instructs Claude to fetch and reuse the user's previously logged exercise names when generating or updating gym plan days
+  2. `GET /api/runs/exercise-names` (or equivalent) returns distinct exercise names the user has logged, so the system prompt can inject them
+  3. When a user types in the exercise name field in the manual entry form, a dropdown appears showing previously-logged exercise names that contain the typed string (case-insensitive)
+  4. The suggestion dropdown dismisses on selection (populating the field) or on blur/Escape
+  5. The weight progression chart in the dashboard correctly groups sessions that used the suggestions (same name = same chart line)
 **Plans**: TBD
 
 ### Phase 19: Unit Standardization
