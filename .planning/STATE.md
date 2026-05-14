@@ -1,27 +1,27 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Multi-Discipline Training Coach
-status: shipped
-stopped_at: Phase 21 shipped — PR #104
-last_updated: "2026-05-14T00:00:00.000Z"
-last_activity: 2026-05-14
+milestone: v3.x
+milestone_name: Next Milestone (TBD)
+status: planning
+stopped_at: "v3.0 milestone archived — run /gsd:new-milestone to start next"
+last_updated: "2026-05-15T00:00:00.000Z"
+last_activity: 2026-05-15
 progress:
-  total_phases: 12
-  completed_phases: 8
-  total_plans: 24
-  completed_plans: 24
-  percent: 45
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-29)
+See: .planning/PROJECT.md (updated 2026-05-15)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 21 — dashboard-discipline-sections
+**Current focus:** v3.x planning — exercise name consistency, unit standardization, plan date anchoring
 
 ## Current Position
 
