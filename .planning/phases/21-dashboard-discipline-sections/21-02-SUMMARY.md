@@ -132,5 +132,7 @@ None — all data is wired from `useDashboard` through `runRuns`/`cycleRuns`/`gy
 - `web/src/hooks/useDashboard.ts` — FOUND (modified with new exports)
 - `web/src/pages/Dashboard.tsx` — FOUND (fully restructured)
 - `web/src/components/dashboard/WeeklyVolumeChart.tsx` — CONFIRMED DELETED
+- `21-02-SUMMARY.md` — FOUND
 - Commit 010c1ec — FOUND
 - Commit 686b724 — FOUND
+- Commit 139271c — FOUND
