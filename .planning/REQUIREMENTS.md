@@ -29,6 +29,8 @@
 - [x] **GYM-04**: User can mark individual exercises on a gym plan day as done or skipped from the plan view
 - [x] **GYM-05**: Coach can generate gym plan days with exercise target lists via plan XML tags (`<plan:add>` / `<plan:update>`)
 - [x] **GYM-06**: Coach receives gym session history (including exercise log) in chat context and provides coaching feedback
+- [ ] **GYM-07**: When generating or updating plan gym days, the coach reuses exercise names that the user has already logged (pulled from session history), so dashboard grouping (e.g. weight progression chart) works consistently across plan and log data
+- [ ] **GYM-08**: The manual exercise entry form shows a live suggestion dropdown as the user types an exercise name — filtered from their previously logged exercise names containing the typed string — to encourage consistent naming without enforcing a fixed library
 
 ### CYCLE — Cycling
 
@@ -86,6 +88,8 @@
 | GYM-04 | Phase 14 | Complete |
 | GYM-05 | Phase 14 | Complete |
 | GYM-06 | Phase 14 | Complete |
+| GYM-07 | Phase 18 | Not started |
+| GYM-08 | Phase 18 | Not started |
 | CYCLE-01 | Phase 15 | Complete |
 | CYCLE-02 | Phase 15 | Complete |
 | CYCLE-03 | Phase 15 | Complete |
