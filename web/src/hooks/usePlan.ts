@@ -14,7 +14,7 @@ export interface Exercise {
 
 export interface PlanDay {
   label: string;         // "A"-"G" for non-rest days, "" for rest days
-  type: 'run' | 'rest' | 'cross-train';
+  type: 'run' | 'rest' | 'cross-train' | 'upper body' | 'lower body' | 'full body' | 'other';
   objective?: { kind: 'distance' | 'time'; value: number; unit: 'km' | 'min'; };
   guidelines: string;
   completed: boolean;

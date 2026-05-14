@@ -127,6 +127,21 @@ describe('fetchUnlinkedRuns', () => {
     expect(url).toContain('limit=50');
   });
 
+  it('appends discipline param when discipline is provided', async () => {
+    mockFetch.mockReturnValue(mockOk({ runs: [], total: 0 }));
+    await fetchUnlinkedRuns(100, 'gym');
+    const url = (mockFetch.mock.calls[0] as [string])[0];
+    expect(url).toContain('discipline=gym');
+    expect(url).toContain('unlinked=true');
+  });
+
+  it('does NOT append discipline param when discipline is undefined', async () => {
+    mockFetch.mockReturnValue(mockOk({ runs: [], total: 0 }));
+    await fetchUnlinkedRuns(100, undefined);
+    const url = (mockFetch.mock.calls[0] as [string])[0];
+    expect(url).not.toContain('discipline=');
+  });
+
   it('throws on failure', async () => {
     mockFetch.mockReturnValue(mockError({}, 500));
     await expect(fetchUnlinkedRuns()).rejects.toThrow('Failed to fetch unlinked runs');
