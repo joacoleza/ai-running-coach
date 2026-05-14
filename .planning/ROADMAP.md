@@ -187,7 +187,7 @@ Plans:
 
 Plans:
 - [x] 17-01-PLAN.md — UI display strings: LoginPage, ChangePasswordPage, PasswordPage, Sidebar, Coach, index.html, unauthorized.html
-- [ ] 17-02-PLAN.md — Package names + MongoDB DB fallbacks (db.ts, playwright.config.ts, global-setup.ts) + prompts.ts JSDoc
+- [x] 17-02-PLAN.md — Package names + MongoDB DB fallbacks (db.ts, playwright.config.ts, global-setup.ts) + prompts.ts JSDoc
 - [x] 17-03-PLAN.md — README.md + CLAUDE.md docs + GitHub rename instructions
 
 ### Phase 18: Gym Session Exercises in Plan
