@@ -322,6 +322,15 @@ describe('Cycling section', () => {
     expect(screen.getByTestId('weekly-speed-chart')).toBeInTheDocument()
   })
 
+  it('renders Avg Speed stat card in cycling section', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      cycleRuns: [{ _id: 'c1', date: '2026-04-07', distance: 25, duration: '1:00:00', pace: 0, discipline: 'cycle', createdAt: '', updatedAt: '' }],
+      cycleWeeklyBuckets: [emptyBucket],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.getByText('Avg Speed')).toBeInTheDocument()
+  })
+
   it('does NOT render Cycling section when no cycleRuns and discipline is "all"', () => {
     mockUseDashboard.mockReturnValue(makeDefaults({
       cycleRuns: [],
@@ -422,5 +431,17 @@ describe('section visibility with activeDiscipline filter', () => {
     expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Cycling \(/)).not.toBeInTheDocument()
     expect(screen.getByText('Gym (1 sessions)')).toBeInTheDocument()
+  })
+
+  it('shows only Cycling section when activeDiscipline is "cycle"', () => {
+    mockUseDashboard.mockReturnValue(makeDefaults({
+      activeDiscipline: 'cycle',
+      cycleRuns: [{ _id: 'c1', date: '2026-04-07', distance: 25, duration: '1:00:00', pace: 0, discipline: 'cycle', createdAt: '', updatedAt: '' }],
+      cycleWeeklyBuckets: [emptyBucket],
+    }))
+    render(<MemoryRouter><Dashboard /></MemoryRouter>)
+    expect(screen.queryByText(/Run \(/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Gym \(/)).not.toBeInTheDocument()
+    expect(screen.getByText('Cycling (1 sessions)')).toBeInTheDocument()
   })
 })
