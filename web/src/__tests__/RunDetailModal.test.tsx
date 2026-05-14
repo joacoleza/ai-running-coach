@@ -280,6 +280,90 @@ describe('RunDetailModal', () => {
   });
 });
 
+describe('RunDetailModal — RunBadge in header', () => {
+  it('shows Run badge in header for run sessions', () => {
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={mockRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // RunBadge renders "Run" label for default (undefined) discipline
+    expect(screen.getByText('Run')).toBeInTheDocument();
+  });
+
+  it('shows Gym badge in header for gym sessions', () => {
+    const gymRun: Run = { ...mockRun, discipline: 'gym', type: 'upper body' };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Gym')).toBeInTheDocument();
+  });
+
+  it('shows Cycling badge in header for cycle sessions', () => {
+    const cycleRun: Run = { ...mockRun, discipline: 'cycle' };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={cycleRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText('Cycling')).toBeInTheDocument();
+  });
+
+  it('hides Distance field for gym sessions', () => {
+    const gymRun: Run = { ...mockRun, discipline: 'gym', type: 'upper body', exercises: [] };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    // Distance label should not appear for gym
+    expect(screen.queryByText('Distance')).not.toBeInTheDocument();
+  });
+
+  it('hides Pace/Speed field for gym sessions', () => {
+    const gymRun: Run = { ...mockRun, discipline: 'gym', type: 'upper body', exercises: [] };
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    expect(screen.queryByText(/^Pace$/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Speed (km/h)')).not.toBeInTheDocument();
+  });
+});
+
+describe('RunDetailModal — gym-specific coaching feedback message', () => {
+  it('includes session type and exercise count in gym feedback prompt', async () => {
+    const gymRun: Run = {
+      ...mockRun,
+      discipline: 'gym',
+      type: 'upper body',
+      exercises: [
+        { name: 'Bench Press', sets: 3, reps: 8 },
+        { name: 'Pull-ups', sets: 3, reps: 10 },
+      ],
+    };
+    const mockSendMessage = vi.fn().mockResolvedValue('Gym feedback');
+    vi.mocked(useChatContext).mockReturnValue({ ...defaults, sendMessage: mockSendMessage });
+    vi.mocked(updateRun).mockResolvedValue({ ...gymRun, insight: 'Gym feedback' });
+
+    render(
+      <MemoryRouter>
+        <RunDetailModal run={gymRun} onClose={vi.fn()} onUpdated={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /get coaching feedback/i }));
+
+    await waitFor(() => expect(mockSendMessage).toHaveBeenCalled());
+    const [prompt] = mockSendMessage.mock.calls[0] as [string];
+    expect(prompt).toContain('gym session');
+    expect(prompt).toContain('upper body');
+    expect(prompt).toContain('2 logged');
+  });
+});
+
 describe('RunDetailModal — exercise unified save', () => {
   const gymRun: Run = {
     ...mockRun,

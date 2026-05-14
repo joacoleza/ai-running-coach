@@ -249,6 +249,36 @@ describe('LinkRunModal', () => {
     expect(screen.queryByText(/0km/)).not.toBeInTheDocument();
   });
 
+  it('calls fetchUnlinkedRuns with dayDiscipline when provided', async () => {
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} dayDiscipline="gym" />);
+    });
+    // fetchUnlinkedRuns should have been called with discipline='gym'
+    expect(mockFetchUnlinkedRuns).toHaveBeenCalledWith(100, 'gym');
+  });
+
+  it('calls fetchUnlinkedRuns without discipline when dayDiscipline is not provided', async () => {
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} />);
+    });
+    expect(mockFetchUnlinkedRuns).toHaveBeenCalledWith(100, undefined);
+  });
+
+  it('shows discipline-aware empty state message when dayDiscipline is provided', async () => {
+    mockFetchUnlinkedRuns.mockResolvedValue([]);
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} dayDiscipline="cycle" />);
+    });
+    expect(screen.getByText(/no unlinked cycle sessions available/i)).toBeInTheDocument();
+  });
+
+  it('header says "Link a session to Week N Day X"', async () => {
+    await act(async () => {
+      render(<LinkRunModal {...defaultProps} weekNumber={3} dayLabel="C" />);
+    });
+    expect(screen.getByText(/link a session to week 3 day c/i)).toBeInTheDocument();
+  });
+
   it('gym session can be searched by duration', async () => {
     const gymRun = {
       ...baseRun,

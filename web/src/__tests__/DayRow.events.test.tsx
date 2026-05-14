@@ -124,6 +124,97 @@ describe('DayRow — UX-NAV-01: Run date clickable button emits open-run-detail 
   });
 });
 
+describe('DayRow — discipline indicator badge', () => {
+  it('renders RunBadge with "Gym" label when day discipline is gym', () => {
+    const gymDay = makeRunDay({ discipline: 'gym', type: 'upper body' });
+    render(
+      <DayRow
+        day={gymDay}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+      />
+    );
+    expect(screen.getByText('Gym')).toBeInTheDocument();
+  });
+
+  it('renders RunBadge with "Cycling" label when day discipline is cycle', () => {
+    const cycleDay = makeRunDay({ discipline: 'cycle' });
+    render(
+      <DayRow
+        day={cycleDay}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+      />
+    );
+    expect(screen.getByText('Cycling')).toBeInTheDocument();
+  });
+
+  it('does not render RunBadge when day discipline is undefined', () => {
+    render(
+      <DayRow
+        day={makeRunDay()}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+      />
+    );
+    // No badge when discipline is not set
+    expect(screen.queryByText('Run')).not.toBeInTheDocument();
+    expect(screen.queryByText('Gym')).not.toBeInTheDocument();
+    expect(screen.queryByText('Cycling')).not.toBeInTheDocument();
+  });
+});
+
+describe('DayRow — "Link session" button', () => {
+  it('renders "Link session" button when onRunLinked prop is provided', () => {
+    render(
+      <DayRow
+        day={makeRunDay()}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+        onRunLinked={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('button', { name: /link session/i })).toBeInTheDocument();
+  });
+
+  it('does not render "Link session" button when onRunLinked prop is not provided', () => {
+    render(
+      <DayRow
+        day={makeRunDay()}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /link session/i })).not.toBeInTheDocument();
+  });
+
+  it('calls onRunLinked when "Link session" button is clicked', () => {
+    const onRunLinked = vi.fn();
+    render(
+      <DayRow
+        day={makeRunDay()}
+        weekNumber={defaultWeekNumber}
+        onUpdate={noop}
+        onDelete={noop}
+        linkedRun={null}
+        onRunLinked={onRunLinked}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: /link session/i }));
+    expect(onRunLinked).toHaveBeenCalledOnce();
+  });
+});
+
 describe('DayRow — UX-DAY-01: "Log run" button on completed days without linked run', () => {
   it('shows "Log run" button for completed day without linked run', () => {
     render(
