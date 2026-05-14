@@ -1,5 +1,30 @@
 # Milestones
 
+## v3.0 Multi-Discipline Training Coach (Shipped: 2026-05-15)
+
+**Phases completed:** 8 phases (13, 14, 15, 15.1, 15.2, 16, 17, 21) | 24 plans | 2026-04-29 → 2026-05-15
+
+**Key accomplishments:**
+
+1. **Multi-discipline data layer** — `Discipline` type (`'run'|'gym'|'cycle'`) added to TypeScript interfaces; startup migration backfills all pre-v3.0 run and plan day documents; all API create/patch endpoints accept and return the field; coach system prompt updated to "AI Training Coach" identity with discipline-aware coaching instructions
+2. **Gym sessions with exercise logs** — Users log gym sessions (type, duration) with an interactive exercise log (sets × reps × weight); plan days show a collapsible exercise checklist users can tick off; coach generates gym plan days with exercise targets and receives exercise history in context
+3. **Cycling sessions with speed display** — Users log cycling sessions with distance/duration; speed (km/h) shown everywhere pace (min/km) appeared; coach generates cycling plan days and receives session history as "Cycled: DD/MM/YYYY, Xkm @ Y.Y km/h"
+4. **Discipline-aware UI** — All labels, fields, and navigation updated: Sidebar "Activities", RunDetailModal discipline badge + gym field hiding, DayRow "Log/Link session" labels, RunEntryForm pre-selection from plan day, LinkRunModal discipline filtering; week number desync bug fixed (bulk-updates runs.weekNumber after plan restructuring)
+5. **Multi-discipline dashboard** — Discipline selector (All/Run/Gym/Cycle) with per-discipline sections: Run (pace/HR charts), Cycling (WeeklySpeedChart), Gym (WeeklyDurationChart + WeightProgressionChart); sections auto-hide when no data in range; WeeklyVolumeChart replaced by per-discipline charts
+6. **App renamed** — All "AI Running Coach" / "ai-running-coach" references replaced with "AI Training Coach" / "ai-training-coach" across UI strings, package.json, HTML title, README, system prompt, and test fixtures
+
+**Known gaps (carried to next milestone):**
+- GYM-07: Coach does not yet reuse user's exercise history when generating gym plan days (Phase 18)
+- GYM-08: Exercise entry form does not yet show name suggestions from prior sessions (Phase 18)
+
+**Archived:**
+
+- `.planning/milestones/v3.0-ROADMAP.md`
+- `.planning/milestones/v3.0-REQUIREMENTS.md`
+- `.planning/milestones/v3.0-MILESTONE-AUDIT.md`
+
+---
+
 ## v2.1 Usage & Plan Controls (Shipped: 2026-04-28)
 
 **Phases completed:** 2 phases (11–12), 5 plans

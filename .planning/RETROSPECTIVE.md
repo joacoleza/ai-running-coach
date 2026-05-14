@@ -93,15 +93,50 @@
 
 ---
 
+## Milestone: v3.0 — Multi-Discipline Training Coach
+
+**Shipped:** 2026-05-15
+**Phases:** 8 (13, 14, 15, 15.1, 15.2, 16, 17, 21) | **Plans:** 24 | **Timeline:** 16 days (2026-04-29 to 2026-05-15)
+
+### What Was Built
+
+- Multi-discipline data layer: Discipline type on all Run/PlanDay interfaces, startup migration backfilling existing docs, API endpoints accepting the field
+- Gym sessions: exercise log (sets x reps x weight), interactive plan day checklist, coach gym context with exercise history
+- Cycling sessions: speed (km/h) display everywhere pace appeared, coach cycling context format
+- Discipline-aware UI: Sidebar "Activities", RunDetailModal badge + gym field hiding, DayRow "Log/Link session", LinkRunModal discipline filtering, plan day discipline badges
+- Multi-discipline dashboard: per-discipline sections (Run/Cycling/Gym), WeeklySpeedChart, WeeklyDurationChart, WeightProgressionChart; sections auto-hide when no data
+- App renamed: all "AI Running Coach" / "ai-running-coach" replaced with "AI Training Coach" / "ai-training-coach"
+- Bug fix: runs.weekNumber bulk-updated after plan restructuring (phase 15.2)
+
+### What Worked
+
+- **Decimal phases for inserted work:** 15.1 (polish) and 15.2 (bug fix) inserted cleanly without renumbering the main sequence. 15.2 was an urgent bug fix that shipped in one plan with full test coverage.
+- **Nyquist validation caught real gaps:** Retroactive validation of Phase 15.1 found 8 coverage gaps (ExerciseList, RunDetailModal gym fields, DayRow discipline badge, LinkRunModal dayDiscipline). 30 tests added.
+- **Audit-first before complete-milestone:** The milestone audit clearly separated in-scope requirements (25/27 satisfied) from deferred Phase 18 work, preventing scope creep.
+
+### What Was Inefficient
+
+- **Phase 21 was late:** Dashboard Discipline Sections was added after Phase 17 complete, requiring a return to dashboard work. Better upfront roadmap scope would have included it earlier.
+- **MILESTONES.md raw one-liners:** CLI-generated accomplishments required manual cleanup — SUMMARY.md one-liner fields were often raw implementation notes, not human-readable.
+
+### Key Lessons
+
+1. **Decimal phases are the right pattern for urgent inserts.** 15.1 and 15.2 shipped without disrupting the numbered sequence.
+2. **Retroactive Nyquist is valuable but expensive.** Building validation into execute-phase would avoid the separate cleanup PR.
+3. **Know "foundational" vs "complete round-trip" scope.** Deferring GYM-05 full exercises round-trip to Phase 18 was correct — Phase 14 delivered enough to ship.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Phases | Plans | Key Change |
 |-----------|--------|-------|------------|
-| v1.1 | 11 | 41 | Established plan → execute → verify loop; hierarchical plan model; agent XML protocol |
+| v1.1 | 11 | 41 | Established plan to execute to verify loop; hierarchical plan model; agent XML protocol |
 | v2.0 | 5 | 17 | Added gap-closure sub-phases (09-04, 10-03); first multi-user security milestone; audit-milestone workflow used |
 | v2.1 | 2 | 5 | Focused micro-milestone; Nyquist retroactively applied; symmetric tag pattern established |
+| v3.0 | 8 | 24 | Largest feature scope; decimal phases established; retroactive Nyquist closed 30 test gaps |
 
 ### Cumulative Quality
 
@@ -110,8 +145,10 @@
 | v1.1 | ~223 | ~427 | ~66 |
 | v2.0 | 309 | 469 | 77+ |
 | v2.1 | 344 | 507 | 45 |
+| v3.0 | ~41 | ~675 | ~100 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **E2E tests catch what unit tests miss.** Both milestones used E2E as the final gate and both caught real issues (mobile layout, auth flow edge cases, plan linking bugs) that unit tests passed through.
-2. **Gap-closure phases are better than shipping with known gaps.** The 09-04 and 10-03 plans produced substantially better end-state than stopping at 09-03 / 10-02 would have.
+1. **E2E tests catch what unit tests miss.** Every milestone used E2E as the final gate and caught real issues (mobile layout, auth flow edge cases, plan linking bugs, discipline filter contamination) that unit tests passed through.
+2. **Gap-closure phases are better than shipping with known gaps.** The 09-04, 10-03, 15.1, and 15.2 plans produced substantially better end-state than stopping early would have.
+3. **Audit before archiving.** Running audit-milestone before complete-milestone consistently surfaces deferred items and prevents premature closure.

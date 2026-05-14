@@ -8,23 +8,24 @@ A multi-user web app that acts as a personal AI training coach. Each user sets a
 
 A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened — not generic training templates.
 
-## Current Milestone: v3.0 Multi-Discipline Training Coach
+## Current State: v3.0 Shipped
 
-**Goal:** Extend the app from run-only to support gym and cycling alongside running, with a unified training plan and dashboard.
+**Shipped:** 2026-05-15 — Multi-Discipline Training Coach
 
-**Target features:**
-- App renamed: ai-running-coach → ai-training-coach throughout (repo, titles, strings)
-- Discipline tag on every session and plan day (Run / Gym / Cycle)
-- Gym session logging: duration, type, notes
-- Gym plan days include an exercise checklist (sets × reps × weight) user can tick off or skip
-- Cycling session logging: distance, duration, speed, optional HR + notes
-- Training plan: one unified plan, days tagged by discipline, coach generates cross-discipline load
-- Dashboard: discipline filter + adapted stats per discipline + multi-discipline volume chart
+v3.0 extended the app from run-only to full multi-discipline: gym sessions with exercise logs, cycling sessions with speed display, discipline-aware UI throughout, per-discipline dashboard sections, and full app rename to "AI Training Coach". All 25 in-scope requirements satisfied.
+
+**Next milestone:** v3.x — exercise name consistency (GYM-07/08), unit standardization (km/kg only), plan week date anchoring
 
 ## Requirements
 
 ### Validated
 
+- ✓ App renamed to ai-training-coach throughout (repo, package.json, HTML title, README, system prompt) — v3.0
+- ✓ Discipline type (run/gym/cycle) on every session and plan day; existing data backfilled via startup migration — v3.0
+- ✓ User can log gym sessions with exercise logs (sets × reps × weight); gym plan days show interactive exercise checklist — v3.0
+- ✓ User can log cycling sessions; speed (km/h) displayed everywhere pace appeared; coach receives cycling history in context — v3.0
+- ✓ All UI labels and fields are discipline-aware (Sidebar "Activities", RunDetailModal badge + gym field hiding, DayRow "Log/Link session", LinkRunModal discipline filtering) — v3.0
+- ✓ Dashboard has per-discipline sections (Run/Cycling/Gym) with dedicated charts; DisciplineSelector scopes all cards and charts; sections auto-hide when no data in range — v3.0
 - ✓ App deployed to Azure using free-tier services — v1.1
 - ✓ Access restricted to a single authorized user via pre-shared password — v1.1
 - ✓ Testing pyramid established (unit → integration → E2E) with CI on every PR — v1.1
@@ -58,14 +59,10 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - [ ] User can upload Apple Health export (ZIP/XML) after each run
 - [ ] Coach parses Apple Health data and provides feedback via chat
-- ✓ App renamed to ai-training-coach throughout (repo, package.json, HTML title, README) — Phase 17
-- ✓ Discipline type (run/gym/cycle) added to TypeScript interfaces; existing documents backfilled via startup migration; four API endpoints accept discipline field; AI coach identity updated to "training coach" with discipline coaching instructions — Phase 13
-- ✓ User can log gym sessions with exercises; gym plan days show interactive exercise checklist; coach generates gym plan days and receives gym session history — Phase 14
-- ✓ User can log cycling sessions; speed (km/h) displayed instead of pace across all UI components; coach generates cycling plan days and receives cycling context as "Cycled: DD/MM/YYYY, Xkm @ Y.Y km/h" — Phase 15
-- ✓ All discipline-unaware UI labels, fields, and actions updated: Sidebar "Activities", ExerciseList/Form button labels, RunDetailModal discipline badge + gym field hiding + neutral button labels, DayRow discipline badge + "Log/Link session" labels, LinkRunModal discipline filtering — Phase 15.1
-- ✓ Week number desync bug fixed: `addWeekToPhase` and `deleteLastWeekOfPhase` now bulk-update `runs.weekNumber` after renumbering so linked runs point to the correct week — Phase 15.2
-- ✓ Dashboard supports multi-discipline filter and adapted stats: DisciplineSelector (All/Run/Gym/Cycle), discipline-aware stat cards (gym→sessions/duration, cycle→distance/speed, run/all→existing), multi-discipline WeeklyVolumeChart, gym WeightProgressionChart with exercise dropdown — Phase 16
-- ✓ Dashboard restructured into per-discipline sections (Run/Cycling/Gym): each section has its own stat cards, charts (WeeklySpeedChart for cycling, WeeklyDurationChart for gym, pace/HR for run), auto-hides when no data in range; WeeklyVolumeChart replaced — Phase 21
+- [ ] Coach reuses previously-logged exercise names when generating gym plan days (GYM-07 — Phase 18)
+- [ ] Exercise entry form shows live suggestion dropdown from prior exercise names (GYM-08 — Phase 18)
+- [ ] App uses km and kg exclusively — lbs and miles removed from all types, UI, and API (Phase 19)
+- [ ] Plan weeks anchored to real calendar dates; plan view shows date ranges; coach reasons in calendar terms (Phase 20)
 
 ### Out of Scope
 
@@ -83,9 +80,9 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
-- **Test coverage:** 386 API tests, 643 web unit tests, 100 E2E tests — all green as of Phase 21
+- **Test coverage:** ~41 API tests, ~675 web unit tests, ~100 E2E tests — all green as of v3.0
 - **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
-- **Discipline:** `Discipline` type (`'run' | 'gym' | 'cycle'`) added to `types.ts`; optional on `Run` and `PlanDay` interfaces; startup migration backfills pre-Phase-13 documents; `createRun`, `patchRun`, `addDay`, `patchDay` all accept discipline via body; AI system prompt updated to "training coach" with `## Disciplines` coaching section
+- **Discipline:** `Discipline` type (`'run' | 'gym' | 'cycle'`) on all `Run` and `PlanDay` interfaces; startup migration backfills pre-v3.0 documents; `createRun`, `patchRun`, `addDay`, `patchDay` all accept discipline via body; AI system prompt updated to "training coach" with `## Disciplines` coaching section; units are currently mixed (km/miles, kg/lbs) — Phase 19 will lock to km/kg
 - **Agent protocol:** 11 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:delete-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live
 - **Usage tracking:** `usage_events` MongoDB collection captures raw token counts per chat call; `pricing.ts` computes USD cost at query time from `MODEL_PRICING`; `GET /api/usage/me` for users, `GET /api/users/usage-summary` for admins
 - **Admin panel:** `/api/users` (admin-only routes guarded by `requireAdmin`); user management: list, create with temp password, reset password, deactivate/activate; deactivated users blocked at login and on every API request; responsive mobile + desktop layout; `lastLoginAt` updated on every token refresh
@@ -120,6 +117,11 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 | Admin-provisioned accounts only | Closed system; no signup friction; keeps Claude API costs low | ✓ Good — correct for small team |
 | Raw token storage (compute cost at query time) | Allows repricing historical data without re-running writes; `MODEL_PRICING` map is the single source of truth | ✓ Good — clean separation |
 | "− week" button disabled (not hidden) when last week has workout days | Consistent disabled-button pattern from CLAUDE.md; avoids confusion about why action is unavailable | ✓ Good — consistent UX |
+| Discipline as optional field on Run/PlanDay (not required) | Preserves compatibility with 30+ existing test fixtures; startup migration backfills existing documents | ✓ Good — zero breaking changes |
+| ExerciseList buffers changes locally, flushes on "Done" click | Single PATCH call instead of one per checkbox; avoids partial-save state during exercise logging | ✓ Good — clean UX |
+| Speed computed at query time from distance+duration (not stored) | Distance and duration already stored; computing avoids a migration when formula changes | ✓ Good — no DB migration needed |
+| WeeklyVolumeChart replaced by per-discipline sections (Phase 21) | Per-discipline charts are more useful than a single combined bar chart for cross-training athletes | ✓ Good — cleaner information hierarchy |
+| Route `runs/exercise-weights` registered before `runs/{id}` wildcard | Azure Functions would shadow the named route as the `:id` param without explicit ordering | ✓ Good — avoids 404 in production |
 
 ## Evolution
 
@@ -141,4 +143,4 @@ Last updated: 2026-05-09 — Phase 17 App Rename complete.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-09 — Phase 17 complete: App renamed from AI Running Coach to AI Training Coach throughout (UI strings, package names, DB fallbacks, test fixtures, documentation)*
+*Last updated: 2026-05-15 — v3.0 complete: Multi-Discipline Training Coach shipped (gym + cycling sessions, discipline-aware UI, per-discipline dashboard sections, app renamed to AI Training Coach)*
