@@ -457,6 +457,16 @@ export function useDashboard() {
   const filteredRuns = filterRunsByDiscipline(runs, activeDisciplineState)
   const multiWeeklyData = groupRunsByDiscipline(filteredRuns)
 
+  // Per-discipline run arrays
+  const runRuns = filterRunsByDiscipline(runs, 'run')
+  const cycleRuns = filterRunsByDiscipline(runs, 'cycle')
+  const gymRuns = filterRunsByDiscipline(runs, 'gym')
+
+  // Per-discipline weekly buckets (for per-section distance/duration charts)
+  const runWeeklyBuckets = fillWeekGaps(groupRunsByWeek(runRuns))
+  const cycleWeeklyBuckets = fillWeekGaps(groupRunsByWeek(cycleRuns))
+  const gymWeeklyBuckets = fillWeekGaps(groupRunsByWeek(gymRuns))
+
   const weekBuckets = fillWeekGaps(groupRunsByWeek(runs))
 
   const weeklyData: WeeklyDataPoint[] = weekBuckets.map(w => ({
@@ -491,6 +501,12 @@ export function useDashboard() {
     paceBpmData,
     multiWeeklyData,
     runs,
+    runRuns,
+    cycleRuns,
+    gymRuns,
+    runWeeklyBuckets,
+    cycleWeeklyBuckets,
+    gymWeeklyBuckets,
     isLoading,
     isPlanLoading,
     hasPlan: plan !== null && plan.status === 'active',

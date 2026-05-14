@@ -57,6 +57,7 @@
 - [ ] **Phase 18: Gym Session Exercises in Plan** — Coach-created exercise checklists on planned gym days, user can check off exercises during the session
 - [ ] **Phase 19: Unit Standardization** — Lock the app to meters/km (distance) and kg (weight) only; remove lbs from Exercise type and all UI; instruct coach to never use imperial units; API rejects lbs payloads
 - [ ] **Phase 20: Plan Week Date Anchoring** — Anchor plan weeks to real calendar dates; plan view shows date ranges per week, coach reasons in calendar terms, adding/removing weeks shifts dates automatically
+- [x] **Phase 21: Dashboard Discipline Sections** — Separate dashboard sections per discipline (Run/Cycling/Gym) with dedicated charts; sections hidden when no data for that discipline in the selected time range (completed 2026-05-10)
 
 ## Backlog
 
@@ -246,3 +247,16 @@ Plans:
 | 18. Gym Session Exercises in Plan | 0/? | Not started | — |
 | 19. Unit Standardization | 0/? | Not started | — |
 | 20. Plan Week Date Anchoring | 0/? | Not started | — |
+| 21. Dashboard Discipline Sections | 3/3 | Complete    | 2026-05-10 |
+
+### Phase 21: Dashboard Discipline Sections
+
+**Goal:** Reorganize the dashboard into separate sections per discipline (Run, Cycling, Gym). Run section: distance/pace charts same as before. Cycling section: same charts as run but using km/h. Gym section: weight progression chart (defaulting to the exercise with the most data points) plus a weekly duration totals chart. When a specific discipline is selected in the filter, only that discipline's section is shown. Sections are hidden when the active time filter contains no entries for that discipline.
+**Requirements**: DASH2-01, DASH2-02, DASH2-03, DASH2-04, DASH2-05
+**Depends on:** Phase 17
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 21-01-PLAN.md — New chart components: WeeklySpeedChart (cycling), WeeklyDurationChart (gym) + WeightProgressionChart defaultExercise prop
+- [x] 21-02-PLAN.md — useDashboard.ts per-discipline data exports + Dashboard.tsx per-discipline section restructure (remove WeeklyVolumeChart)
+- [x] 21-03-PLAN.md — Test updates: Dashboard.test.tsx rewrite, new WeeklySpeedChart/WeeklyDurationChart tests, WeightProgressionChart defaultExercise tests, delete WeeklyVolumeChart.test.tsx + build verification

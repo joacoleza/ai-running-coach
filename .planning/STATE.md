@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Multi-Discipline Training Coach
-status: executing
-last_updated: "2026-05-10T01:04:00.254Z"
-last_activity: 2026-05-10
+status: shipped
+stopped_at: Phase 21 shipped — PR #104
+last_updated: "2026-05-14T00:00:00.000Z"
+last_activity: 2026-05-14
 progress:
-  total_phases: 11
-  completed_phases: 7
-  total_plans: 21
-  completed_plans: 21
+  total_phases: 12
+  completed_phases: 8
+  total_plans: 24
+  completed_plans: 24
   percent: 45
 ---
 
@@ -20,15 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-29)
 
 **Core value:** A persistent coach that remembers your goal, knows your history, and adapts your plan based on what actually happened.
-**Current focus:** Phase 17 — app-rename
+**Current focus:** Phase 21 — dashboard-discipline-sections
 
 ## Current Position
 
-Phase: 18
+Phase: 999.1
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-10 - Completed quick task 260510-j7c: Fix duration validation missing on PATCH /api/runs/:id
-Last session: 2026-05-09T21:11:45.724Z
+Status: Phase 21 shipped — PR #104
+Last activity: 2026-05-14
+Last session: 2026-05-10T14:58:07.215Z
+Stopped at: Phase 21 shipped — PR #104
 
 Progress: [█████░░░░░] 45% (3/5 phases complete)
 
@@ -53,6 +55,7 @@ Progress: [█████░░░░░] 45% (3/5 phases complete)
 
 ### Roadmap Evolution
 
+- Phase 21 added: Dashboard Discipline Sections — separate dashboard sections per discipline (Run/Cycling/Gym) with dedicated charts; sections hidden when no data for the active time filter
 - Phase 20 added: Plan Week Date Anchoring — anchor plan weeks to a real Monday; all week date ranges derive from a single anchor, coach uses calendar dates, adding/removing weeks shifts dates
 - Phase 15.2 inserted after Phase 15.1: Week Number Desync Bug Fix — runs.weekNumber not updated when assignPlanStructure renumbers after week deletion/addition (URGENT)
 - Phase 19 added: User Unit Preferences — settings panel for distance (km/miles) and weight (kg/lbs) per user; coach-aware, entries stored with creation-time units, dashboards convert on display
@@ -141,6 +144,10 @@ _Last updated: 2026-04-15 — Plan 06-04 complete (Phase 6 complete)_
 - [Phase 16]: WeightProgressionChart manages its own fetch state and X-Authorization header; gymExerciseOptions filtered to exercises with weight !== undefined to exclude bodyweight movements
 - [Phase 17-app-rename]: Pre-existing TypeScript build errors in unrelated test files are out-of-scope and deferred
 - [Phase 17-app-rename]: Intentional historical reference preserved in README GitHub Repository Rename section showing old repo name in migration guide
+- [Phase 21-01]: WeeklySpeedChart exports SpeedDataPoint type so Dashboard can define speed data arrays with type safety
+- [Phase 21-01]: WeightProgressionChart useEffect placed after handleExerciseSelect definition to avoid reference-before-assignment
+- [Phase 21]: Dashboard.test.tsx was already rewritten in Plan 02; Plan 03 only added defaultExercise and per-discipline describe blocks
+- [Phase 21]: E2E dashboard tests updated to match new per-discipline section layout: Avg Speed label, combobox check for WeightProgressionChart, planId in cycleRun fixture
 
 ### Quick Tasks Completed
 

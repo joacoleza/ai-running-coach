@@ -65,6 +65,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 - ✓ All discipline-unaware UI labels, fields, and actions updated: Sidebar "Activities", ExerciseList/Form button labels, RunDetailModal discipline badge + gym field hiding + neutral button labels, DayRow discipline badge + "Log/Link session" labels, LinkRunModal discipline filtering — Phase 15.1
 - ✓ Week number desync bug fixed: `addWeekToPhase` and `deleteLastWeekOfPhase` now bulk-update `runs.weekNumber` after renumbering so linked runs point to the correct week — Phase 15.2
 - ✓ Dashboard supports multi-discipline filter and adapted stats: DisciplineSelector (All/Run/Gym/Cycle), discipline-aware stat cards (gym→sessions/duration, cycle→distance/speed, run/all→existing), multi-discipline WeeklyVolumeChart, gym WeightProgressionChart with exercise dropdown — Phase 16
+- ✓ Dashboard restructured into per-discipline sections (Run/Cycling/Gym): each section has its own stat cards, charts (WeeklySpeedChart for cycling, WeeklyDurationChart for gym, pace/HR for run), auto-hides when no data in range; WeeklyVolumeChart replaced — Phase 21
 
 ### Out of Scope
 
@@ -82,7 +83,7 @@ A persistent coach that remembers your goal, knows your history, and adapts your
 
 - **Stack:** React + TypeScript + Vite (web), Azure Functions v4 + Node.js 22 (API), MongoDB (Azure Cosmos DB for MongoDB free tier), Claude API (Anthropic), Azure Static Web Apps (hosting)
 - **Auth:** Full JWT auth stack (v2.0): `AuthContext` + `AuthProvider` + `useAuth()` in frontend; `LoginPage` + `ChangePasswordPage` UI; `App.tsx` auth gate; global 401 interceptor with silent refresh; all hooks use `Authorization: Bearer`; Sidebar logout calls `POST /api/auth/logout`
-- **Test coverage:** 386 API tests, 549 web unit tests, 50 E2E tests — all green as of Phase 15.2
+- **Test coverage:** 386 API tests, 643 web unit tests, 100 E2E tests — all green as of Phase 21
 - **Data isolation:** Per-user data isolation enforced (v2.0 Phase 8); all MongoDB queries scoped by userId; startup migration backfills v1.1 orphaned documents to seed admin on first v2.0 deployment
 - **Discipline:** `Discipline` type (`'run' | 'gym' | 'cycle'`) added to `types.ts`; optional on `Run` and `PlanDay` interfaces; startup migration backfills pre-Phase-13 documents; `createRun`, `patchRun`, `addDay`, `patchDay` all accept discipline via body; AI system prompt updated to "training coach" with `## Disciplines` coaching section
 - **Agent protocol:** 11 XML tags (`<plan:update>`, `<plan:add>`, `<plan:add-phase>`, `<plan:add-week>`, `<plan:delete-week>`, `<plan:update-goal>`, `<plan:update-feedback>`, `<plan:unlink>`, `<run:create>`, `<run:update-insight>`, `<app:navigate>`) stripped during streaming and applied live

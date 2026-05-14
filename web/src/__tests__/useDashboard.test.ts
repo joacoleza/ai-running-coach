@@ -498,3 +498,23 @@ describe('computeAvgSpeed', () => {
     expect(computeAvgSpeed(runs)).toBe('20.0 km/h')
   })
 })
+
+describe('useDashboard per-discipline exports', () => {
+  // These are pure functions already tested above via groupRunsByWeek/filterRunsByDiscipline.
+  // Here we verify the filterRunsByDiscipline combinations used in the hook.
+
+  it('filterRunsByDiscipline with run returns runs with discipline run or undefined', () => {
+    const runs = [
+      makeDisciplineRun('2026-04-07', 5, '40:00', 'run'),
+      makeDisciplineRun('2026-04-08', 0, '45:00', 'gym'),
+      makeDisciplineRun('2026-04-09', 20, '60:00', 'cycle'),
+      makeDisciplineRun('2026-04-10', 5, '40:00', undefined),
+    ]
+    const runRuns = filterRunsByDiscipline(runs, 'run')
+    const cycleRuns = filterRunsByDiscipline(runs, 'cycle')
+    const gymRuns = filterRunsByDiscipline(runs, 'gym')
+    expect(runRuns).toHaveLength(2)   // run + undefined
+    expect(cycleRuns).toHaveLength(1)
+    expect(gymRuns).toHaveLength(1)
+  })
+})
